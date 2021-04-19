@@ -24,7 +24,7 @@ namespace Singulink.Collections
     /// <see cref="CopyDelay"/> then the internal copy operation is performed on a background thread and lookups are restored to full speed.
     /// </para>
     /// </remarks>
-    public class CopyOnWriteDictionary<TKey, TValue> : IDictionary<TKey, TValue> where TKey : notnull
+    public class CopyOnWriteDictionary<TKey, TValue> where TKey : notnull
     {
         private Dictionary<TKey, TValue> _lookup;
         private Dictionary<TKey, TValue>? _pendingAdds;
@@ -287,7 +287,7 @@ namespace Singulink.Collections
 
             #if DEBUG
             DebugCheckState();
-            Debug.Assert(CountInternal == preAddCount + 1);
+            Debug.Assert(CountInternal == preAddCount + 1, "incorrect final count");
             #endif
 
             return true;
@@ -356,50 +356,52 @@ namespace Singulink.Collections
 
         #region Explicit Interface Members
 
-        bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly => false;
+        // Removed until ICollection<T> is safe to implement in a concurent collection without breaking LINQ due to ICollection optimization race conditions.
 
-        TValue IDictionary<TKey, TValue>.this[TKey key] {
-            get => this[key];
-            set => throw new NotSupportedException();
-        }
+        // bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly => false;
 
-        void IDictionary<TKey, TValue>.Add(TKey key, TValue value) => Add(key, value);
+        // TValue IDictionary<TKey, TValue>.this[TKey key] {
+        //     get => this[key];
+        //     set => throw new NotSupportedException();
+        // }
 
-        void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> item) => Add(item.Key, item.Value);
+        // void IDictionary<TKey, TValue>.Add(TKey key, TValue value) => Add(key, value);
 
-        bool ICollection<KeyValuePair<TKey, TValue>>.Contains(KeyValuePair<TKey, TValue> item)
-        {
-            if (TryGetValue(item.Key, out var value))
-                return EqualityComparer<TValue>.Default.Equals(item.Value, value);
+        // void ICollection<KeyValuePair<TKey, TValue>>.Add(KeyValuePair<TKey, TValue> item) => Add(item.Key, item.Value);
 
-            return false;
-        }
+        // bool ICollection<KeyValuePair<TKey, TValue>>.Contains(KeyValuePair<TKey, TValue> item)
+        // {
+        //     if (TryGetValue(item.Key, out var value))
+        //         return EqualityComparer<TValue>.Default.Equals(item.Value, value);
+        //
+        //     return false;
+        // }
 
-        void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
-        {
-            ICollection<KeyValuePair<TKey, TValue>> lookup;
+        // void ICollection<KeyValuePair<TKey, TValue>>.CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+        // {
+        //     ICollection<KeyValuePair<TKey, TValue>> lookup;
+        //
+        //     lock (_syncRoot) {
+        //         if (_pendingAdds != null)
+        //             lookup = new MergedCollection<KeyValuePair<TKey, TValue>>(_lookup, _pendingAdds.ToList());
+        //         else
+        //             lookup = _lookup;
+        //     }
+        //
+        //     lookup.CopyTo(array, arrayIndex);
+        // }
 
-            lock (_syncRoot) {
-                if (_pendingAdds != null)
-                    lookup = new MergedCollection<KeyValuePair<TKey, TValue>>(_lookup, _pendingAdds.ToList());
-                else
-                    lookup = _lookup;
-            }
+        // IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-            lookup.CopyTo(array, arrayIndex);
-        }
+        // #endregion
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        // #region Not Supported
 
-        #endregion
+        // bool IDictionary<TKey, TValue>.Remove(TKey key) => throw new NotSupportedException();
 
-        #region Not Supported
+        // bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item) => throw new NotSupportedException();
 
-        bool IDictionary<TKey, TValue>.Remove(TKey key) => throw new NotSupportedException();
-
-        bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item) => throw new NotSupportedException();
-
-        void ICollection<KeyValuePair<TKey, TValue>>.Clear() => throw new NotSupportedException();
+        // void ICollection<KeyValuePair<TKey, TValue>>.Clear() => throw new NotSupportedException();
 
         #endregion
     }
