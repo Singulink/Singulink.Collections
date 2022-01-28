@@ -470,6 +470,24 @@ namespace Singulink.Collections
             }
         }
 
+        /// <summary>
+        /// Sets the key/value set pair capacity of this dictionary to hold up a specified number of entries without any further expansion of its backing
+        /// storage, and optionally trims all the value sets in the dictionary as well.
+        /// </summary>
+        /// <param name="dictionaryCapacity">The new key/value set pair capacity.</param>
+        /// <param name="trimValueSets"><see langword="true"/> to trim all the value sets as well, or <see langword="false"/> to only trim the
+        /// dictionary.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Capacity specified is less than the number of entries in the dictionary.</exception>
+        public void TrimExcess(int dictionaryCapacity, bool trimValueSets = true)
+        {
+            _lookup.TrimExcess(dictionaryCapacity);
+
+            if (trimValueSets) {
+                foreach (var valueSet in _lookup.Values)
+                    valueSet.TrimExcess();
+            }
+        }
+
         private void CheckVersion(int enumeratorVersion)
         {
             if (enumeratorVersion != _version)

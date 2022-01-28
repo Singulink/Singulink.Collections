@@ -755,6 +755,24 @@ namespace Singulink.Collections
         }
 
         /// <summary>
+        /// Sets the key/value list pair capacity of this dictionary to hold up a specified number of entries without any further expansion of its backing
+        /// storage, and optionally sets the capacity of each value list to the actual number of values in the list.
+        /// </summary>
+        /// <param name="dictionaryCapacity">The new key/value list pair capacity.</param>
+        /// <param name="trimValueLists"><see langword="true"/> to trim all the value lists as well, or <see langword="false"/> to only trim the
+        /// dictionary.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Capacity specified is less than the number of entries in the dictionary.</exception>
+        public void TrimExcess(int dictionaryCapacity, bool trimValueLists = true)
+        {
+            _lookup.TrimExcess(dictionaryCapacity);
+
+            if (trimValueLists) {
+                foreach (var valueList in _lookup.Values)
+                    valueList.TrimExcess();
+            }
+        }
+
+        /// <summary>
         /// Gets the values for the specified key or <see langword="null"/> if the key was not found.
         /// </summary>
         /// <returns>A value indicating whether the key was found.</returns>
