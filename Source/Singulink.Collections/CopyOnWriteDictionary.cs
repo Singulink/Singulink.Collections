@@ -35,7 +35,7 @@ namespace Singulink.Collections
         private readonly object _syncRoot = new object();
 
         /// <summary>
-        /// Initializes a new copy-on-write dictionary that is empty and uses the specified comparer.
+        /// Initializes a new instance of the <see cref="CopyOnWriteDictionary{TKey, TValue}"/> class.
         /// </summary>
         public CopyOnWriteDictionary(IEqualityComparer<TKey>? comparer = null)
         {
@@ -43,14 +43,11 @@ namespace Singulink.Collections
         }
 
         /// <summary>
-        /// Initialized a new copy-on-write dictionary that contains elements copied from the specified collection and uses the specified comparer.
+        /// Initializes a new instance of the <see cref="CopyOnWriteDictionary{TKey, TValue}"/> class with elements copied from the specified collection.
         /// </summary>
         public CopyOnWriteDictionary(IEnumerable<KeyValuePair<TKey, TValue>> keyValuePairs, IEqualityComparer<TKey>? comparer = null)
         {
-            _lookup = new Dictionary<TKey, TValue>(keyValuePairs.KnownCount() ?? 0, comparer);
-
-            foreach (var kvp in keyValuePairs)
-                _lookup.Add(kvp.Key, kvp.Value);
+            _lookup = new Dictionary<TKey, TValue>(keyValuePairs, comparer);
         }
 
         /// <summary>
@@ -327,7 +324,7 @@ namespace Singulink.Collections
 
             #if DEBUG
             DebugCheckState();
-            Debug.Assert(CountInternal == preCopyCount);
+            Debug.Assert(CountInternal == preCopyCount, "unexpected count");
             #endif
         }
 
