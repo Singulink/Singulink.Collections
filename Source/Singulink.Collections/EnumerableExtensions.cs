@@ -13,8 +13,8 @@ namespace Singulink.Collections
         /// </summary>
         public static int? KnownCount<T>(this IEnumerable<T> source)
         {
-            if (source is ICollection<T> genericCollection)
-                return genericCollection.Count;
+            if (source is ICollection<T> collection)
+                return collection.Count;
 
             return null;
         }
