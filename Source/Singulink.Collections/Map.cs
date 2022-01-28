@@ -8,18 +8,46 @@ using System.Threading.Tasks;
 namespace Singulink.Collections
 {
     /// <summary>
-    /// Represents a collection of two types of values that map between each other.
+    /// Represents a collection of two types of values that map between each other in a 1:1 relationship. Values on each side of the map must be unique on their
+    /// respective side.
     /// </summary>
     public class Map<TLeft, TRight>
         where TLeft : notnull
         where TRight : notnull
     {
+        /// <summary>
+        /// Gets the left side of the map which performs lookups from left values to right values.
+        /// </summary>
+        public MapSide<TLeft, TRight> Left { get; }
+
+        /// <summary>
+        /// Gets the right side of the map which performs lookups from right values to left values.
+        /// </summary>
+        public MapSide<TRight, TLeft> Right { get; }
+
+        /// <summary>
+        /// Gets the number of mappings contained in the <see cref="Map{TLeft, TRight}"/>.
+        /// </summary>
+        public int Count => Left.Lookup.Count;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Map{TLeft, TRight}"/> class.
+        /// </summary>
         public Map() : this(0, null, null) { }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Map{TLeft, TRight}"/> class with the specified capacity.
+        /// </summary>
         public Map(int capacity) : this(capacity, null, null) { }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Map{TLeft, TRight}"/> class with the specified value comparers.
+        /// </summary>
         public Map(IEqualityComparer<TLeft>? leftComparer = null, IEqualityComparer<TRight>? rightComparer = null) : this(0, leftComparer, rightComparer) { }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Map{TLeft, TRight}"/> class with the specified capacity and value comparers.
+        /// </summary>
         public Map(int capacity, IEqualityComparer<TLeft>? leftComparer = null, IEqualityComparer<TRight>? rightComparer = null)
         {
             var leftToRight = new Dictionary<TLeft, TRight>(capacity, leftComparer ?? EqualityComparer<TLeft>.Default);
@@ -30,53 +58,45 @@ namespace Singulink.Collections
         }
 
         /// <summary>
-        /// Gets the left side of the map which performs lookups from left values to right values.
-        /// </summary>
-        public MapSide<TLeft, TRight> Left { get; }
-
-        /// <summary>
-        /// Gets the right side of the map which performs lookups from the right values to left values.
-        /// </summary>
-        public MapSide<TRight, TLeft> Right { get; }
-
-        /// <summary>
-        /// Gets the number of mappings contained in the <see cref="Map{TLeft, TRight}"/>.
-        /// </summary>
-        public int Count => Left.Lookup.Count;
-
-        /// <summary>
-        /// Gets a value indicating if the map contains an association between the specified left and right value.
-        /// </summary>
-        public bool Contains(TLeft leftValue, TRight rightValue) => Left.TryGetValue(leftValue, out var storedRightValue) && Right.Lookup.Comparer.Equals(storedRightValue, rightValue);
-
-        /// <summary>
         /// Adds an association to map between the specified left and right value.
         /// </summary>
         public void Add(TLeft leftValue, TRight rightValue)
         {
-            if (Left.Contains(leftValue))
-                throw new ArgumentException("Duplicate left value.", nameof(leftValue));
+            if (!Left.Lookup.TryAdd(leftValue, rightValue))
+                throw new ArgumentException("Duplicate left value in the map.", nameof(leftValue));
 
-            try {
-                Right.Lookup.Add(rightValue, leftValue);
+            if (!Right.Lookup.TryAdd(rightValue, leftValue)) {
+                Left.Lookup.Remove(leftValue);
+                throw new ArgumentException("Duplicate right value in the map.", nameof(rightValue));
             }
-            catch (ArgumentException) {
-                throw new ArgumentException("Duplicate right value.", nameof(rightValue));
-            }
-
-            Left.Lookup.Add(leftValue, rightValue);
         }
 
         /// <summary>
-        /// Sets an association from the map between the specified left and right value, overriding any previous associations these values had.
+        /// Removes all mappings from the map.
         /// </summary>
-        public void Set(TLeft leftValue, TRight rightValue)
+        public void Clear()
         {
-            Left.Remove(leftValue);
-            Right.Remove(rightValue);
+            Left.Lookup.Clear();
+            Right.Lookup.Clear();
+        }
 
-            Left.Lookup.Add(leftValue, rightValue);
-            Right.Lookup.Add(rightValue, leftValue);
+        /// <summary>
+        /// Gets a value indicating if the map contains an association between the specified left and right value.
+        /// </summary>
+        public bool Contains(TLeft leftValue, TRight rightValue)
+        {
+            return Left.TryGetValue(leftValue, out var existingRightValue) && Right.Lookup.Comparer.Equals(existingRightValue, rightValue);
+        }
+
+        /// <summary>
+        /// Ensures that this map can hold up to a specified number of entries without any further expansion of its backing storage.
+        /// </summary>
+        /// <param name="capacity">The number of entries.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Capacity specified is less than 0.</exception>
+        public void EnsureCapacity(int capacity)
+        {
+            Left.Lookup.EnsureCapacity(capacity);
+            Right.Lookup.EnsureCapacity(capacity);
         }
 
         /// <summary>
@@ -92,6 +112,38 @@ namespace Singulink.Collections
             Debug.Assert(removeResult, "expected successful removal");
 
             return true;
+        }
+
+        /// <summary>
+        /// Sets an association from the map between the specified left and right value, overriding any previous associations these values had.
+        /// </summary>
+        public void Set(TLeft leftValue, TRight rightValue)
+        {
+            Left.Remove(leftValue);
+            Right.Remove(rightValue);
+
+            Left.Lookup.Add(leftValue, rightValue);
+            Right.Lookup.Add(rightValue, leftValue);
+        }
+
+        /// <summary>
+        /// Sets the capacity of this map to what it would be if it had been originally initialized with all its entries.
+        /// </summary>
+        public void TrimExcess()
+        {
+            Left.Lookup.TrimExcess();
+            Right.Lookup.TrimExcess();
+        }
+
+        /// <summary>
+        /// Sets the capacity of this map to hold up a specified number of entries without any further expansion of its backing storage.
+        /// </summary>
+        /// <param name="capacity">The new capacity.</param>
+        /// <exception cref="ArgumentOutOfRangeException">Capacity specified is less than the number of entries in the map.</exception>
+        public void TrimExcess(int capacity)
+        {
+            Left.Lookup.TrimExcess(capacity);
+            Right.Lookup.TrimExcess(capacity);
         }
     }
 }
