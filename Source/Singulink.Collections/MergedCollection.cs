@@ -16,7 +16,7 @@ namespace Singulink.Collections
         private readonly ICollection<T> _second;
 
         /// <summary>
-        /// Create a new instance of <see cref="MergedCollection{T}"/> using the provided collections.
+        /// Initializes a new instance of the <see cref="MergedCollection{T}"/> class using the provided collections.
         /// </summary>
         /// <param name="first">The first collection to wrap.</param>
         /// <param name="second">The second collection to wrap.</param>
@@ -51,18 +51,23 @@ namespace Singulink.Collections
                 yield return item;
         }
 
+        /// <inheritdoc/>
         IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+        /// <inheritdoc/>
         void ICollection<T>.CopyTo(T[] array, int arrayIndex)
         {
             _first.CopyTo(array, arrayIndex);
             _second.CopyTo(array, arrayIndex + _first.Count);
         }
 
+        /// <inheritdoc/>
         void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
+        /// <inheritdoc/>
         void ICollection<T>.Clear() => throw new NotSupportedException();
 
+        /// <inheritdoc/>
         bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
     }
 }
