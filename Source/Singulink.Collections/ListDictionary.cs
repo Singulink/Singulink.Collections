@@ -235,6 +235,7 @@ namespace Singulink.Collections
         /// </summary>
         /// <param name="capacity">The number of key/value list pairs.</param>
         /// <returns>The currect capacity of the dictionary.</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Capacity specified is less than 0.</exception>
         public int EnsureCapacity(int capacity) => _lookup.EnsureCapacity(capacity);
 
         /// <summary>
@@ -808,6 +809,7 @@ namespace Singulink.Collections
         /// Setter is not supported.
         /// </summary>
         /// <inheritdoc/>
+        /// <exception cref="NotSupportedException">Calling the setter is not supported.</exception>
         ValueList IDictionary<TKey, ValueList>.this[TKey key] {
             get => this[key] ?? throw new KeyNotFoundException();
             set => throw new NotSupportedException();
@@ -848,19 +850,34 @@ namespace Singulink.Collections
 
         // Not Supported
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
         void IDictionary<TKey, ValueList>.Add(TKey key, ValueList value) => throw new NotSupportedException();
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
         bool IDictionary<TKey, ValueList>.Remove(TKey key) => throw new NotSupportedException();
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
         void ICollection<KeyValuePair<TKey, ValueList>>.Add(KeyValuePair<TKey, ValueList> item) => throw new NotSupportedException();
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
         void ICollection<KeyValuePair<TKey, ValueList>>.Clear() => throw new NotSupportedException();
 
-        /// <inheritdoc/>
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
         bool ICollection<KeyValuePair<TKey, ValueList>>.Remove(KeyValuePair<TKey, ValueList> item) => throw new NotSupportedException();
 
         #endregion

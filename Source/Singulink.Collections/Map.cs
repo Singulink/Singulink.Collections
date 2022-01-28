@@ -8,8 +8,8 @@ using System.Threading.Tasks;
 namespace Singulink.Collections
 {
     /// <summary>
-    /// Represents a collection of two types of values that map between each other in a 1:1 relationship. Values on each side of the map must be unique on their
-    /// respective side.
+    /// Represents a collection of two types of values that map between each other in a one-to-one relationship. Values on each side of the map must be unique
+    /// on their respective side.
     /// </summary>
     public class Map<TLeft, TRight>
         where TLeft : notnull

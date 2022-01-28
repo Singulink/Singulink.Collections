@@ -191,16 +191,19 @@ public class ReadOnlyHashSet<T>
     /// <summary>
     /// Not supported.
     /// </summary>
+    /// <exception cref="NotSupportedException">This operation is not supported.</exception>
     void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
     /// <summary>
     /// Not supported.
     /// </summary>
+    /// <exception cref="NotSupportedException">This operation is not supported.</exception>
     void ICollection<T>.Clear() => throw new NotSupportedException();
 
     /// <summary>
     /// Not supported.
     /// </summary>
+    /// <exception cref="NotSupportedException">This operation is not supported.</exception>
     bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
     private sealed class ReadOnlySetEqualityComparer : EqualityComparer<ReadOnlyHashSet<T>>

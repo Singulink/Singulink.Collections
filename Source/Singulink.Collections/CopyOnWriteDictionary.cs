@@ -10,19 +10,18 @@ using System.Threading;
 namespace Singulink.Collections
 {
     /// <summary>
-    /// Thread-safe append-only dictionary with internal copy-on-write behavior that enables the fastest possible lock-free lookups.
+    /// Thread-safe append-only dictionary with internal copy-on-write behavior that enables fast lock-free lookups and consistent point-in-time snapshot
+    /// enumeration.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The performance characteristics of this dictionary make it perfect for use as a permanent object cache. Updates to the dictionary are temporarily
-    /// cached in a synchronized mutable collection which allows copying to be delayed so that updates are batched together to reduce copying and improve write
-    /// performance. This dictionary has identical lookup performance to <see cref="Dictionary{TKey, TValue}"/> for values that have been copied into the main
-    /// lookup.
-    /// </para>
+    /// The performance characteristics of this dictionary make it perfect for use as a permanent object cache. Updates to the dictionary are temporarily cached
+    /// in a synchronized mutable collection which allows copying to be delayed so that updates are batched together to reduce copying and improve write
+    /// performance. This dictionary has similar lookup performance to <see cref="Dictionary{TKey, TValue}"/> for values that have been copied into the main
+    /// lookup.</para>
     /// <para>
     /// Delayed updates are stored in a temporary synchronized mutable lookup. Once there have been no updates to the dictionary for the amount of time set on
-    /// <see cref="CopyDelay"/> then the internal copy operation is performed on a background thread and lookups are restored to full speed.
-    /// </para>
+    /// <see cref="CopyDelay"/> then the internal copy operation is performed on a background thread and lookups are restored to full speed.</para>
     /// </remarks>
     public class CopyOnWriteDictionary<TKey, TValue> where TKey : notnull
     {

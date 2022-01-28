@@ -32,7 +32,12 @@ namespace Singulink.Collections
         /// <inheritdoc/>
         public T this[int index] => _list[index];
 
+        /// <summary>
         /// <inheritdoc/>
+        /// Setter is not supported.
+        /// </summary>
+        /// <inheritdoc/>
+        /// <exception cref="NotSupportedException">Calling the setter is not supported.</exception>
         T IList<T>.this[int index] {
             get => _list[index];
             set => throw new NotSupportedException();
@@ -279,26 +284,31 @@ namespace Singulink.Collections
         /// <summary>
         /// Not supported.
         /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
         void ICollection<T>.Add(T item) => throw new NotSupportedException();
 
         /// <summary>
         /// Not supported.
         /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
         void ICollection<T>.Clear() => throw new NotSupportedException();
 
         /// <summary>
         /// Not supported.
         /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
         void IList<T>.Insert(int index, T item) => throw new NotSupportedException();
 
         /// <summary>
         /// Not supported.
         /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
         bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
         /// <summary>
         /// Not supported.
         /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
         void IList<T>.RemoveAt(int index) => throw new NotSupportedException();
     }
 }
