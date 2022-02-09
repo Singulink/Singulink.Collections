@@ -17,8 +17,8 @@ namespace Singulink.Collections
         where TLeft : notnull
         where TRight : notnull
     {
-        private readonly Dictionary<TLeft, TRight> _leftLookup;
-        private readonly Dictionary<TRight, TLeft> _rightLookup;
+        private readonly Dictionary<TLeft, TRight> _leftSide;
+        private readonly Dictionary<TRight, TLeft> _rightSide;
 
         private Map<TRight, TLeft>? _reverse;
 
@@ -42,16 +42,16 @@ namespace Singulink.Collections
         /// </summary>
         public Map(int capacity, IEqualityComparer<TLeft>? leftComparer = null, IEqualityComparer<TRight>? rightComparer = null)
         {
-            _leftLookup = new Dictionary<TLeft, TRight>(capacity, leftComparer);
-            _rightLookup = new Dictionary<TRight, TLeft>(capacity, rightComparer);
+            _leftSide = new Dictionary<TLeft, TRight>(capacity, leftComparer);
+            _rightSide = new Dictionary<TRight, TLeft>(capacity, rightComparer);
         }
 
         // Private ctor used for creating the reverse map.
-        private Map(Map<TRight, TLeft> reverse, Dictionary<TLeft, TRight> leftLookup, Dictionary<TRight, TLeft> rightLookup)
+        private Map(Map<TRight, TLeft> reverse, Dictionary<TLeft, TRight> leftSide, Dictionary<TRight, TLeft> rightSide)
         {
             _reverse = reverse;
-            _leftLookup = leftLookup;
-            _rightLookup = rightLookup;
+            _leftSide = leftSide;
+            _rightSide = rightSide;
         }
 
         /// <summary>
@@ -61,39 +61,39 @@ namespace Singulink.Collections
         /// <exception cref="KeyNotFoundException">The key was not found.</exception>
         /// <exception cref="ArgumentException">The right value being set is a duplicate value on another mapping.</exception>
         public TRight this[TLeft leftValue] {
-            get => _leftLookup[leftValue];
+            get => _leftSide[leftValue];
             set {
-                if (_rightLookup.TryGetValue(value, out var existingLeftValue)) {
-                    if (_leftLookup.Comparer.Equals(leftValue, existingLeftValue))
+                if (_rightSide.TryGetValue(value, out var existingLeftValue)) {
+                    if (_leftSide.Comparer.Equals(leftValue, existingLeftValue))
                         return;
 
                     throw new ArgumentException("Duplicate right value in the map.");
                 }
 
-                _leftLookup[leftValue] = value;
-                _rightLookup.Add(value, leftValue);
+                _leftSide[leftValue] = value;
+                _rightSide.Add(value, leftValue);
             }
         }
 
         /// <summary>
         /// Gets the number of mappings contained in the map.
         /// </summary>
-        public int Count => _leftLookup.Count;
+        public int Count => _leftSide.Count;
 
         /// <summary>
         /// Gets the values on the left side of the map.
         /// </summary>
-        public Dictionary<TLeft, TRight>.KeyCollection LeftValues => _leftLookup.Keys;
+        public Dictionary<TLeft, TRight>.KeyCollection LeftValues => _leftSide.Keys;
 
         /// <summary>
         /// Gets the values on the right side of the map.
         /// </summary>
-        public Dictionary<TRight, TLeft>.KeyCollection RightValues => _rightLookup.Keys;
+        public Dictionary<TRight, TLeft>.KeyCollection RightValues => _rightSide.Keys;
 
         /// <summary>
         /// Gets the reverse map where the left and right side are flipped.
         /// </summary>
-        public Map<TRight, TLeft> Reverse => _reverse ??= new Map<TRight, TLeft>(this, _rightLookup, _leftLookup);
+        public Map<TRight, TLeft> Reverse => _reverse ??= new Map<TRight, TLeft>(this, _rightSide, _leftSide);
 
         /// <summary>
         /// Adds an association to map between the specified left and right value.
@@ -101,11 +101,11 @@ namespace Singulink.Collections
         /// <exception cref="ArgumentNullException">The specified left or right value was null.</exception>
         public void Add(TLeft leftValue, TRight rightValue)
         {
-            if (!_leftLookup.TryAdd(leftValue, rightValue))
+            if (!_leftSide.TryAdd(leftValue, rightValue))
                 throw new ArgumentException("Duplicate left value in the map.", nameof(leftValue));
 
-            if (!_rightLookup.TryAdd(rightValue, leftValue)) {
-                _leftLookup.Remove(leftValue);
+            if (!_rightSide.TryAdd(rightValue, leftValue)) {
+                _leftSide.Remove(leftValue);
                 throw new ArgumentException("Duplicate right value in the map.", nameof(rightValue));
             }
         }
@@ -115,8 +115,8 @@ namespace Singulink.Collections
         /// </summary>
         public void Clear()
         {
-            _leftLookup.Clear();
-            _rightLookup.Clear();
+            _leftSide.Clear();
+            _rightSide.Clear();
         }
 
         /// <summary>
@@ -125,7 +125,7 @@ namespace Singulink.Collections
         /// <exception cref="ArgumentNullException">The specified left or right value was null.</exception>
         public bool Contains(TLeft leftValue, TRight rightValue)
         {
-            return _leftLookup.TryGetValue(leftValue, out var existingRightValue) && _rightLookup.Comparer.Equals(existingRightValue, rightValue);
+            return _leftSide.TryGetValue(leftValue, out var existingRightValue) && _rightSide.Comparer.Equals(existingRightValue, rightValue);
         }
 
         /// <summary>
@@ -134,7 +134,7 @@ namespace Singulink.Collections
         /// <param name="leftValue">The left value to locate.</param>
         /// <returns><see langword="true"/> if this map contains the specified left value, otherwise <see langword="false"/>.</returns>
         /// <exception cref="ArgumentNullException">The specified left value was null.</exception>
-        public bool ContainsLeft(TLeft leftValue) => _leftLookup.ContainsKey(leftValue);
+        public bool ContainsLeft(TLeft leftValue) => _leftSide.ContainsKey(leftValue);
 
         /// <summary>
         /// Determines whether this map contains the specified right value.
@@ -142,7 +142,7 @@ namespace Singulink.Collections
         /// <param name="rightValue">The right value to locate.</param>
         /// <returns><see langword="true"/> if this map contains the specified right value, otherwise <see langword="false"/>.</returns>
         /// <exception cref="ArgumentNullException">The specified right value was null.</exception>
-        public bool ContainsRight(TRight rightValue) => _rightLookup.ContainsKey(rightValue);
+        public bool ContainsRight(TRight rightValue) => _rightSide.ContainsKey(rightValue);
 
         /// <summary>
         /// Ensures that this map can hold up to a specified number of entries without any further expansion of its backing storage.
@@ -151,8 +151,8 @@ namespace Singulink.Collections
         /// <exception cref="ArgumentOutOfRangeException">Capacity specified is less than 0.</exception>
         public void EnsureCapacity(int capacity)
         {
-            _leftLookup.EnsureCapacity(capacity);
-            _rightLookup.EnsureCapacity(capacity);
+            _leftSide.EnsureCapacity(capacity);
+            _rightSide.EnsureCapacity(capacity);
         }
 
         /// <summary>
@@ -165,8 +165,8 @@ namespace Singulink.Collections
             if (!Contains(leftValue, rightValue))
                 return false;
 
-            _leftLookup.Remove(leftValue);
-            _rightLookup.Remove(rightValue);
+            _leftSide.Remove(leftValue);
+            _rightSide.Remove(rightValue);
 
             return true;
         }
@@ -179,8 +179,8 @@ namespace Singulink.Collections
         /// <exception cref="ArgumentNullException">The specified left value was null.</exception>
         public bool RemoveLeft(TLeft leftValue)
         {
-            if (_leftLookup.Remove(leftValue, out var rightValue)) {
-                bool result = _rightLookup.Remove(rightValue);
+            if (_leftSide.Remove(leftValue, out var rightValue)) {
+                bool result = _rightSide.Remove(rightValue);
                 Debug.Assert(result, "right map side remove failure");
 
                 return true;
@@ -197,8 +197,8 @@ namespace Singulink.Collections
         /// <exception cref="ArgumentNullException">The specified right value was null.</exception>
         public bool RemoveRight(TRight rightValue)
         {
-            if (_rightLookup.Remove(rightValue, out var leftValue)) {
-                bool result = _leftLookup.Remove(leftValue);
+            if (_rightSide.Remove(rightValue, out var leftValue)) {
+                bool result = _leftSide.Remove(leftValue);
                 Debug.Assert(result, "left map side remove failure");
 
                 return true;
@@ -213,14 +213,14 @@ namespace Singulink.Collections
         /// <exception cref="ArgumentNullException">The specified left or right value was null.</exception>
         public void Set(TLeft leftValue, TRight rightValue)
         {
-            if (_leftLookup.Remove(leftValue, out var existingRightValue))
-                _rightLookup.Remove(existingRightValue);
+            if (_leftSide.Remove(leftValue, out var existingRightValue))
+                _rightSide.Remove(existingRightValue);
 
-            if (_rightLookup.Remove(rightValue, out var existingLeftValue))
-                _leftLookup.Remove(existingLeftValue);
+            if (_rightSide.Remove(rightValue, out var existingLeftValue))
+                _leftSide.Remove(existingLeftValue);
 
-            _leftLookup.Add(leftValue, rightValue);
-            _rightLookup.Add(rightValue, leftValue);
+            _leftSide.Add(leftValue, rightValue);
+            _rightSide.Add(rightValue, leftValue);
         }
 
         /// <summary>
@@ -228,8 +228,8 @@ namespace Singulink.Collections
         /// </summary>
         public void TrimExcess()
         {
-            _leftLookup.TrimExcess();
-            _rightLookup.TrimExcess();
+            _leftSide.TrimExcess();
+            _rightSide.TrimExcess();
         }
 
         /// <summary>
@@ -239,8 +239,8 @@ namespace Singulink.Collections
         /// <exception cref="ArgumentOutOfRangeException">Capacity specified is less than the number of entries in the map.</exception>
         public void TrimExcess(int capacity)
         {
-            _leftLookup.TrimExcess(capacity);
-            _rightLookup.TrimExcess(capacity);
+            _leftSide.TrimExcess(capacity);
+            _rightSide.TrimExcess(capacity);
         }
 
         /// <summary>
@@ -251,7 +251,7 @@ namespace Singulink.Collections
         /// otherwise, the default value for the type of the right value parameter.</param>
         /// <returns><see langword="true"/> if the map contains the specified left value, otherwise <see langword="false"/>.</returns>
         /// <exception cref="ArgumentNullException">The specified left value was null.</exception>
-        public bool TryGetRightValue(TLeft leftValue, [MaybeNullWhen(false)] out TRight rightValue) => _leftLookup.TryGetValue(leftValue, out rightValue);
+        public bool TryGetRightValue(TLeft leftValue, [MaybeNullWhen(false)] out TRight rightValue) => _leftSide.TryGetValue(leftValue, out rightValue);
 
         /// <summary>
         /// Gets the right value associated with the specified left value.
@@ -261,12 +261,12 @@ namespace Singulink.Collections
         /// otherwise, the default value for the type of the left value parameter.</param>
         /// <returns><see langword="true"/> if the map contains the specified right value, otherwise <see langword="false"/>.</returns>
         /// <exception cref="ArgumentNullException">The specified right value was null.</exception>
-        public bool TryGetLeftValue(TRight rightValue, [MaybeNullWhen(false)] out TLeft leftValue) => _rightLookup.TryGetValue(rightValue, out leftValue);
+        public bool TryGetLeftValue(TRight rightValue, [MaybeNullWhen(false)] out TLeft leftValue) => _rightSide.TryGetValue(rightValue, out leftValue);
 
         /// <summary>
         /// Returns an enumerator that iterates through the keys and values on this map side.
         /// </summary>
-        public Dictionary<TLeft, TRight>.Enumerator GetEnumerator() => _leftLookup.GetEnumerator();
+        public Dictionary<TLeft, TRight>.Enumerator GetEnumerator() => _leftSide.GetEnumerator();
 
         #region Explicit Interface Implementations
 
@@ -303,7 +303,7 @@ namespace Singulink.Collections
         /// <inheritdoc/>
         void ICollection<KeyValuePair<TLeft, TRight>>.CopyTo(KeyValuePair<TLeft, TRight>[] array, int arrayIndex)
         {
-            ((ICollection<KeyValuePair<TLeft, TRight>>)_leftLookup).CopyTo(array, arrayIndex);
+            ((ICollection<KeyValuePair<TLeft, TRight>>)_leftSide).CopyTo(array, arrayIndex);
         }
 
         /// <inheritdoc/>
