@@ -210,8 +210,9 @@ namespace Singulink.Collections
         }
 
         /// <summary>
-        /// Returns a value indicating whether the value set associated with the specified key contains any element in the collection provided. Always returns
-        /// <see langword="true"/> if the collection provided is empty. Returns <see langword="false"/> if the collection is not empty but the key is not found.
+        /// Returns a value indicating whether the value set associated with the specified key contains all the elements in the collection provided. Always
+        /// returns <see langword="true"/> if the collection provided is empty. Returns <see langword="false"/> if the collection is not empty but the key is
+        /// not found.
         /// </summary>
         public bool ContainsAll(TKey key, IEnumerable<TValue> collection)
         {
@@ -227,8 +228,8 @@ namespace Singulink.Collections
         }
 
         /// <summary>
-        /// Returns a value indicating whether the value set associated with the specified key contains all the elements in the collection provided. Always
-        /// returns <see langword="false"/> if the collection provided is empty or the key is not found.
+        /// Returns a value indicating whether the value set associated with the specified key contains any element in the collection provided. Always returns
+        /// <see langword="false"/> if the collection provided is empty or the key is not found.
         /// </summary>
         public bool ContainsAny(TKey key, IEnumerable<TValue> collection)
         {
