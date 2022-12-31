@@ -1,15 +1,46 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.1;net5.0</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net5.0;net6.0</TargetFrameworks>
+    <Version>1.0.1</Version>
+    <Authors>Singulink</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Copyright>© Singulink. All rights reserved.</Copyright>
+    <PackageProjectUrl>https://github.com/Singulink/Singulink.Collections</PackageProjectUrl>
+    <PackageIcon>Singulink Icon 128x128.png</PackageIcon>
+    <Description>Widely useful highly optimized collections that are missing from the .NET BCL.
+
+Commonly Used Types:
+Singulink.Collections.ReadOnlyList&lt;T&gt;
+Singulink.Collections.ReadOnlyHashSet&lt;T&gt;
+Singulink.Collections.Map&lt;TLeft, TRight&gt;
+Singulink.Collections.ListDictionary&lt;TKey, TValue&gt;
+Singulink.Collections.HashSetDictionary&lt;TKey, TValue&gt;</Description>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageTags>List; Dictionary; HashSet; Set</PackageTags>
+    <UserSecretsId>e9d5dddc-d4fb-4a06-84bd-190ee6180360</UserSecretsId>
   </PropertyGroup>
 
-  <ItemGroup>
-    <None Remove="stylecop.json" />
+  <PropertyGroup Label="Source Link" Condition="'$(Configuration)' == 'Release'">
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <ItemGroup Label="Source Link" Condition="'$(Configuration)' == 'Release'">
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
-    <AdditionalFiles Include="stylecop.json" />
+    <None Include="..\..\Resources\Singulink Icon 128x128.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Singulink.Collections.Abstractions\Singulink.Collections.Abstractions.csproj" />
+  </ItemGroup>
 </Project>
