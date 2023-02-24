@@ -7,11 +7,9 @@
 **Singulink.Collections** provides generally useful collections that are missing from .NET. They are highly optimized for performance, well documented and follow the same design principles as the built-in collections so they should feel instantly familiar.
 
 The following collections are included in the package:
-- `CopyOnWriteDictionary`: Thread-safe append-only dictionary with internal copy-on-write behavior that enables fast lock-free lookups and consistent point-in-time snapshot enumeration.
 - `HashSetDictionary`: Collection of keys and hash sets of unique values (per key).
 - `ListDictionary`: Collection of keys and lists of values.
 - `Map`: Collection of two types of values that map between each other in a bidirectional one-to-one relationship.
-- `MergedCollection`: Wrapper around two collections to be presented as one combined collection.
 - `ReadOnlyHashSet`: Read-only wrapper around a HashSet.
 - `ReadOnlyList`: Read-only wrapper around a List.
 

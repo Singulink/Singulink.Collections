@@ -1,630 +1,360 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Linq;
+using Singulink.Collections.Utilities;
 
-namespace Singulink.Collections
+namespace Singulink.Collections;
+
+/// <summary>
+/// Represents a collection of keys mapped to a hash set of unique values per key.
+/// </summary>
+/// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
+/// <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
+public partial class HashSetDictionary<TKey, TValue> :
+    ISetDictionary<TKey, TValue>,
+    IReadOnlyDictionary<TKey, ISet<TValue>>,
+    ICollection<KeyValuePair<TKey, ISet<TValue>>>
+    where TKey : notnull
 {
+    private readonly Dictionary<TKey, ValueSet> _lookup;
+    private readonly IEqualityComparer<TValue>? _valueComparer;
+
+    private KeyCollection? _keys;
+    private ValueSetCollection? _valueSets;
+    private ValueCollection? _values;
+    private int _valueCount;
+    private int _version;
+
     /// <summary>
-    /// Represents a collection of keys and hash sets of unique values (per key).
+    /// Initializes a new instance of the <see cref="HashSetDictionary{TKey, TValue}"/> class.
     /// </summary>
-    /// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
-    /// <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
-    /// <remarks>
-    /// <para>Please note that the <see cref="IDictionary{TKey, TValue}"/> and <see cref="ICollection{T}"/> implementation is read-only because many of the
-    /// operations that modify the dictionary have substantially different behavior than is typically expected from these interfaces.</para>
-    /// </remarks>
-    public partial class HashSetDictionary<TKey, TValue> : IDictionary<TKey, HashSetDictionary<TKey, TValue>.ValueSet>, IReadOnlyDictionary<TKey, HashSetDictionary<TKey, TValue>.ValueSet>
-        where TKey : notnull
+    public HashSetDictionary() : this(0, null, null) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HashSetDictionary{TKey, TValue}"/> class with the specified initial capacity for key/value set pairs.
+    /// </summary>
+    public HashSetDictionary(int capacity) : this(capacity, null, null) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HashSetDictionary{TKey, TValue}"/> class that uses the specified key and value comparers.
+    /// </summary>
+    public HashSetDictionary(IEqualityComparer<TKey>? keyComparer = null, IEqualityComparer<TValue>? valueComparer = null) : this(0, keyComparer, valueComparer) { }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HashSetDictionary{TKey, TValue}"/> class with the specified initial capacity for key/value set pairs,
+    /// and uses the specified key and value comparers.
+    /// </summary>
+    public HashSetDictionary(int capacity, IEqualityComparer<TKey>? keyComparer = null, IEqualityComparer<TValue>? valueComparer = null)
     {
-        private readonly Dictionary<TKey, ValueSet> _lookup;
-        private readonly IEqualityComparer<TValue>? _valueComparer;
+        _lookup = new(capacity, keyComparer);
+        _valueComparer = valueComparer;
+    }
 
-        private KeyCollection? _keys;
-        private ValueSetCollection? _valueSets;
-        private ValueCollection? _values;
-        private int _valueCount = 0;
-        private int _version;
+    /// <summary>
+    /// Gets the value list associated with the specified key. If the key is not found then a new value list is returned which can be used to add values to the
+    /// key or to monitor when items are added to the key.
+    /// </summary>
+    /// <remarks>
+    /// Empty value sets, such as new sets returned using this indexer when the key is not found, are not part of the dictionary until items are added to them.
+    /// When the value set becomes empty again, it is removed from the dictionary. Value sets stay synchronized with their dictionary to always reflect the
+    /// values associated with their key inside the dictionary.
+    /// </remarks>
+    public ValueSet this[TKey key]
+    {
+        get {
+            if (_lookup.TryGetValue(key, out var valueSet))
+            {
+                DebugValid(valueSet);
+                return valueSet;
+            }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="HashSetDictionary{TKey, TValue}"/> class.
-        /// </summary>
-        public HashSetDictionary() : this(0, null, null) { }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="HashSetDictionary{TKey, TValue}"/> class with the specified initial capacity for key/value set pairs.
-        /// </summary>
-        public HashSetDictionary(int capacity) : this(capacity, null, null) { }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="HashSetDictionary{TKey, TValue}"/> class that uses the specified key and value comparers.
-        /// </summary>
-        public HashSetDictionary(IEqualityComparer<TKey>? keyComparer = null, IEqualityComparer<TValue>? valueComparer = null) : this(0, keyComparer, valueComparer) { }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="HashSetDictionary{TKey, TValue}"/> class with the specified initial capacity for key/value set pairs,
-        /// and uses the specified key and value comparers.
-        /// </summary>
-        public HashSetDictionary(int capacity, IEqualityComparer<TKey>? keyComparer = null, IEqualityComparer<TValue>? valueComparer = null)
-        {
-            _lookup = new(capacity, keyComparer);
-            _valueComparer = valueComparer;
+            return new ValueSet(this, key);
         }
+    }
 
-        /// <summary>
-        /// Gets the value set associated with the specified key or <see langword="null"/> if the key was not found.
-        /// </summary>
-        /// <exception cref="ArgumentNullException">The specified key was <see langword="null"/>.</exception>
-        public ValueSet? this[TKey key] => _lookup.TryGetValue(key, out var valueSet) ? valueSet : null;
+    /// <summary>
+    /// Gets the number of keys and associated value sets in the dictionary.
+    /// </summary>
+    public int Count => _lookup.Count;
 
-        /// <summary>
-        /// Gets the number of keys and associated value sets in the dictionary.
-        /// </summary>
-        public int Count => _lookup.Count;
+    /// <summary>
+    /// Gets the comparer that is used to determine equality of the keys.
+    /// </summary>
+    public IEqualityComparer<TKey> KeyComparer => _lookup.Comparer;
 
-        /// <summary>
-        /// Gets a collection containing the keys in the dictionary.
-        /// </summary>
-        public KeyCollection Keys => _keys ??= new KeyCollection(this);
+    /// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}.Keys"/>
+    public KeyCollection Keys => _keys ??= new KeyCollection(this);
 
-        /// <summary>
-        /// Gets a collection containing the value sets in the dictionary.
-        /// </summary>
-        public ValueSetCollection ValueSets => _valueSets ??= new ValueSetCollection(this);
-
-        /// <summary>
-        /// Gets a collection containing all the values in the dictionary across all the keys.
-        /// </summary>
-        public ValueCollection Values => _values ??= new ValueCollection(this);
+    /// <summary>
+    /// Gets the comparer that is used to determine equality of the values.
+    /// </summary>
+    public IEqualityComparer<TValue> ValueComparer => _valueComparer ?? EqualityComparer<TValue>.Default;
 
 #pragma warning disable CA1721 // Property names should not match get methods
 
-        /// <summary>
-        /// Gets the number of values in the dictionary across all keys.
-        /// </summary>
-        public int ValueCount => _valueCount;
+    /// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}.ValueCount"/>
+    public int ValueCount => _valueCount;
 
-#pragma warning restore CA1721 // Property names should not match get methods
+#pragma warning restore CA1721
 
-        /// <summary>
-        /// Gets the number of values in the dictionary associated with the specified key or 0 if the key is not present.
-        /// </summary>
-        public int GetValueCount(TKey key) => _lookup.TryGetValue(key, out var valueSet) ? valueSet.Count : 0;
+    /// <summary>
+    /// Gets a collection containing the value sets in the dictionary.
+    /// </summary>
+    public ValueSetCollection ValueSets => _valueSets ??= new ValueSetCollection(this);
 
-        /// <summary>
-        /// Adds a value to the value set for the specified key.
-        /// </summary>
-        /// <returns>True if the key and value were added, or <see langword="false"/> if they were already present in the dictionary.</returns>
-        public bool Add(TKey key, TValue value) => Add(key, value, out _);
+    /// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}.Values"/>
+    public ValueCollection Values => _values ??= new ValueCollection(this);
 
-        /// <summary>
-        /// Adds a value to the value set for the specified key.
-        /// </summary>
-        /// <returns>True if the value was added, or <see langword="false"/> if the value set for the specified key already contained the value.</returns>
-        public bool Add(TKey key, TValue value, out ValueSet resultingValueSet)
+    /// <summary>
+    /// Clears all keys and values from the dictionary and associated value sets.
+    /// </summary>
+    public void Clear()
+    {
+        _version++;
+
+        if (_valueCount > 0)
         {
-            HashSet<TValue> set;
-
-            if (!_lookup.TryGetValue(key, out var valueSet)) {
-                set = new(_valueComparer);
-                valueSet = new(this, key, set);
-                _lookup.Add(key, valueSet);
-            }
-            else {
-                set = valueSet.WrappedSet;
+            foreach (var valueSet in _lookup.Values)
+            {
+                DebugValid(valueSet);
+                valueSet.LastSet.Clear();
             }
 
-            resultingValueSet = valueSet;
-
-            if (set.Add(value)) {
-                _valueCount++;
-                _version++;
-
-                return true;
-            }
-
-            return false;
+            _lookup.Clear();
+            _valueCount = 0;
         }
 
-        /// <summary>
-        /// Adds the elements of a collection into the value set associated with the specified key.
-        /// </summary>
-        /// <returns>The number of values added to the value set.</returns>
-        public int AddRange(TKey key, IEnumerable<TValue> collection) => AddRange(key, collection, out _);
+        DebugValueCount();
+    }
 
-        /// <summary>
-        /// Adds the elements of a collection into the value set associated with the specified key.
-        /// </summary>
-        /// <param name="key">The key of the value set that should have values added.</param>
-        /// <param name="collection">The collection of elements to add to the value set.</param>
-        /// <param name="resultingValueSet">The resulting value set associated with the specified key, or <see langword="null"/> if the collection provided was
-        /// empty and the key does not exist in the dictionary.</param>
-        /// <returns>The number of values added to the value set.</returns>
-        public int AddRange(TKey key, IEnumerable<TValue> collection, out ValueSet? resultingValueSet)
+    /// <summary>
+    /// Clears the values in the set associated with the specified key and removes the key from the dictionary.
+    /// </summary>
+    public bool Clear(TKey key)
+    {
+        if (_lookup.TryGetValue(key, out var valueSet))
         {
-            HashSet<TValue> set;
-            int added = 0;
+            DebugValid(valueSet);
+            var set = valueSet.LastSet;
 
-            if (_lookup.TryGetValue(key, out var valueSet)) {
-                if (collection is ICollection<TValue> c && c.Count == 0) {
-                    resultingValueSet = null;
-                    return 0;
-                }
-
-                if (valueSet == collection) {
-                    resultingValueSet = valueSet;
-                    return 0;
-                }
-
-                set = valueSet.WrappedSet;
-
-                foreach (var value in collection) {
-                    if (set.Add(value))
-                        added++;
-                }
-            }
-            else {
-                if ((collection is ICollection<TValue> c && c.Count == 0) || (set = collection.ToHashSet(_valueComparer)).Count == 0) {
-                    resultingValueSet = null;
-                    return 0;
-                }
-
-                valueSet = new(this, key, set);
-                _lookup.Add(key, valueSet);
-                added = set.Count;
-            }
-
-            _valueCount += added;
             _version++;
+            _valueCount -= set.Count;
 
-            resultingValueSet = valueSet;
-            return added;
+            set.Clear();
+            _lookup.Remove(key);
+
+            return true;
         }
 
-        /// <summary>
-        /// Clears all keys and values from the dictionary.
-        /// </summary>
-        public void Clear()
+        return false;
+    }
+
+    /// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}.Contains(TKey, TValue)"/>
+    public bool Contains(TKey key, TValue value)
+    {
+        if (_lookup.TryGetValue(key, out var valueSet))
         {
-            if (_valueCount > 0) {
-                foreach (var valueSet in _lookup.Values)
-                    valueSet.Detach();
-
-                _lookup.Clear();
-
-                _valueCount = 0;
-                _version++;
-            }
+            DebugValid(valueSet);
+            return valueSet.LastSet.Contains(value);
         }
 
-        /// <summary>
-        /// Returns a value indicating whether the specified key and associated value are present in the dictionary.
-        /// </summary>
-        public bool Contains(TKey key, TValue value)
+        return false;
+    }
+
+    /// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}.ContainsKey(TKey)"/>
+    public bool ContainsKey(TKey key) => _lookup.ContainsKey(key);
+
+    /// <summary>
+    /// Returns a value indicating whether any of the value sets in the dictionary contain the specified value.
+    /// </summary>
+    public bool ContainsValue(TValue value)
+    {
+        foreach (var valueSet in _lookup.Values)
         {
-            if (_lookup.TryGetValue(key, out var valueSet))
-                return valueSet.WrappedSet.Contains(value);
+            DebugValid(valueSet);
 
-            return false;
-        }
-
-        /// <summary>
-        /// Returns a value indicating whether the value set associated with the specified key contains all the elements in the collection provided. Always
-        /// returns <see langword="true"/> if the collection provided is empty. Returns <see langword="false"/> if the collection is not empty but the key is
-        /// not found.
-        /// </summary>
-        public bool ContainsAll(TKey key, IEnumerable<TValue> collection)
-        {
-            var c = collection as ICollection<TValue>;
-
-            if (c?.Count == 0)
+            if (valueSet.Contains(value))
                 return true;
-
-            if (_lookup.TryGetValue(key, out var valueSet))
-                return valueSet.IsSupersetOf(collection);
-
-            return c == null && !collection.Any();
         }
 
-        /// <summary>
-        /// Returns a value indicating whether the value set associated with the specified key contains any element in the collection provided. Always returns
-        /// <see langword="false"/> if the collection provided is empty or the key is not found.
-        /// </summary>
-        public bool ContainsAny(TKey key, IEnumerable<TValue> collection)
+        return false;
+    }
+
+    /// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}.GetValueCount(TKey)"/>
+    public int GetValueCount(TKey key) => _lookup.TryGetValue(key, out var valueSet) ? valueSet.Count : 0;
+
+    /// <summary>
+    /// Gets the value set for the specified key or <see langword="null"/> if the key was not found.
+    /// </summary>
+    /// <returns>A value indicating whether the key was found.</returns>
+    public bool TryGetValues(TKey key, [MaybeNullWhen(false)] out ValueSet valueSet) => _lookup.TryGetValue(key, out valueSet);
+
+    /// <summary>
+    /// Returns an enumerator that iterates through the value sets in the dictionary.
+    /// </summary>
+    public ValueSetCollection.Enumerator GetEnumerator() => ValueSets.GetEnumerator();
+
+#if !NETSTANDARD2_0
+
+    /// <summary>
+    /// Ensures that the dictionary can hold up to a specified number of key/value set pairs without any further expansion of its backing storage.
+    /// </summary>
+    /// <param name="capacity">The number of key/value set pairs.</param>
+    /// <returns>The currect capacity of the dictionary.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Capacity specified is less than 0.</exception>
+    public int EnsureCapacity(int capacity)
+    {
+        _version++;
+        return _lookup.EnsureCapacity(capacity);
+    }
+
+    /// <summary>
+    /// Sets the key/value set pair capacity of this dictionary to what it would be if it had been originally initialized with all its entries, and
+    /// optionally trims all the value sets in the dictionary as well.
+    /// </summary>
+    /// <param name="trimValueSets"><see langword="true"/> to trim all the value sets as well, or <see langword="false"/> to only trim the
+    /// dictionary.</param>
+    public void TrimExcess(bool trimValueSets = true)
+    {
+        _version++;
+        _lookup.TrimExcess();
+
+        if (trimValueSets)
         {
-            if (_lookup.TryGetValue(key, out var valueSet))
-                return valueSet.Overlaps(collection);
-
-            return false;
-        }
-
-        /// <summary>
-        /// Returns a value indicating whether the dictionary contains the specified key.
-        /// </summary>
-        public bool ContainsKey(TKey key) => _lookup.ContainsKey(key);
-
-        /// <summary>
-        /// Returns a value indicating whether any of the value sets in the dictionary contain the specified value.
-        /// </summary>
-        public bool ContainsValue(TValue value)
-        {
-            foreach (var valueSet in _lookup.Values) {
-                if (valueSet.Contains(value))
-                    return true;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Ensures that the dictionary can hold up to a specified number of key/value set pairs without any further expansion of its backing storage.
-        /// </summary>
-        /// <param name="capacity">The number of key/value set pairs.</param>
-        /// <returns>The currect capacity of the dictionary.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">Capacity specified is less than 0.</exception>
-        public int EnsureCapacity(int capacity) => _lookup.EnsureCapacity(capacity);
-
-        /// <summary>
-        /// Returns an enumerator that iterates through the <see cref="HashSetDictionary{TKey, TValue}"/>.
-        /// </summary>
-        public Enumerator GetEnumerator() => new(this);
-
-        /// <summary>
-        /// Removes all the values associated with the specified key.
-        /// </summary>
-        /// <param name="key">The key to remove.</param>
-        /// <returns>The value set that was removed or <see langword="null"/> if the key was not found.</returns>
-        public ValueSet? Remove(TKey key)
-        {
-            Remove(key, out var valueSet);
-            return valueSet;
-        }
-
-        /// <summary>
-        /// Removes a key and all its associated values from the dictionary.
-        /// </summary>
-        /// <param name="key">The key to remove.</param>
-        /// <param name="removedValueSet">The value set that was removed or <see langword="null"/> if the key was not found.</param>
-        /// <returns>A value indicating whether the key was found and removed.</returns>
-        public bool Remove(TKey key, [NotNullWhen(true)] out ValueSet? removedValueSet)
-        {
-            if (_lookup.Remove(key, out var valueSet)) {
-                _valueCount -= valueSet.Count;
-                _version++;
-
-                removedValueSet = valueSet;
-                return true;
-            }
-
-            removedValueSet = null;
-            return false;
-        }
-
-        /// <summary>
-        /// Removes a value from the set associated with the specified key. If the value is the last value in the set then the key is also removed.
-        /// </summary>
-        /// <param name="key">The key of the value set fom which to remove the value.</param>
-        /// <param name="value">The value to remove.</param>
-        /// <returns>A value indicating whether the value was found and removed.</returns>
-        public bool Remove(TKey key, TValue value) => Remove(key, value, out _);
-
-        /// <summary>
-        /// Removes a value from the set associated with the specified key. If the value is the last value in the set then the key is also removed.
-        /// </summary>
-        /// <param name="key">The key of the value set fom which to remove the value.</param>
-        /// <param name="value">The value to remove.</param>
-        /// <param name="remainingValueSet">The remaining value set associated with the specified key, or <see langword="null"/> if there are no values
-        /// remaining.</param>
-        /// <returns>A value indicating whether the key was found and the value was found and removed.</returns>
-        public bool Remove(TKey key, TValue value, out ValueSet? remainingValueSet)
-        {
-            if (_lookup.TryGetValue(key, out var valueSet)) {
-                var set = valueSet.WrappedSet;
-
-                if (set.Remove(value)) {
-                    if (set.Count == 0) {
-                        _lookup.Remove(key);
-                        remainingValueSet = null;
-                    }
-                    else {
-                        remainingValueSet = valueSet;
-                    }
-
-                    _valueCount--;
-                    _version++;
-
-                    return true;
-                }
-
-                remainingValueSet = valueSet;
-            }
-            else {
-                remainingValueSet = null;
-            }
-
-            return false;
-        }
-
-        /// <summary>
-        /// Removes values from the value set associated with the specified key. If all the values are removed from the value set then the key is also removed.
-        /// </summary>
-        /// <param name="key">The key of the value set to remove the values from.</param>
-        /// <param name="values">The values to remove.</param>
-        /// <returns>The number of values removed.</returns>
-        public int Remove(TKey key, IEnumerable<TValue> values) => Remove(key, values, out _);
-
-        /// <summary>
-        /// Removes values from the value set associated with the specified key. If all the values are removed from the value set then the key is also removed.
-        /// </summary>
-        /// <param name="key">The key of the value set to remove the values from.</param>
-        /// <param name="values">The values to remove.</param>
-        /// <param name="remainingValueSet">The remaining set of values on the specified key, or <see langword="null"/> if there are no values remaining.</param>
-        /// <returns>The number of values removed.</returns>
-        public int Remove(TKey key, IEnumerable<TValue> values, out ValueSet? remainingValueSet)
-        {
-            if (!_lookup.TryGetValue(key, out var valueSet)) {
-                remainingValueSet = null;
-                return 0;
-            }
-
-            var set = valueSet.WrappedSet;
-
-            if (valueSet == values) {
-                _lookup.Remove(key);
-
-                _valueCount -= set.Count;
-                _version++;
-
-                remainingValueSet = null;
-                return set.Count;
-            }
-
-            int removed = 0;
-
-            foreach (var value in values) {
-                if (set.Remove(value)) {
-                    removed++;
-
-                    if (set.Count == 0) {
-                        _lookup.Remove(key);
-
-                        _valueCount -= removed;
-                        _version++;
-
-                        remainingValueSet = null;
-                        return removed;
-                    }
-                }
-            }
-
-            if (removed > 0) {
-                _valueCount -= removed;
-                _version++;
-            }
-
-            remainingValueSet = valueSet;
-            return removed;
-        }
-
-        /// <summary>
-        /// Sets the values associated with the specified key. If the collection provided is empty then the key is removed from the dictionary.
-        /// </summary>
-        /// <returns>The value set associated with the specified key or <see langword="null"/> if the values collection provided was empty.</returns>
-        public ValueSet? Set(TKey key, IEnumerable<TValue> collection)
-        {
-            HashSet<TValue> set;
-
-            if (_lookup.TryGetValue(key, out var valueSet)) {
-                if (collection == valueSet)
-                    return valueSet;
-
-                set = valueSet.WrappedSet;
-                _valueCount -= set.Count;
-                _version++;
-                set.Clear();
-
-                if (collection is not ICollection<TValue> c || c.Count > 0) {
-                    foreach (var value in collection)
-                        set.Add(value);
-                }
-
-                if (set.Count == 0) {
-                    _lookup.Remove(key);
-                    return null;
-                }
-
-                _valueCount += set.Count;
-            }
-            else {
-                if ((collection is ICollection<TValue> c && c.Count == 0) || (set = collection.ToHashSet(_valueComparer)).Count == 0)
-                    return null;
-
-                valueSet = new(this, key, set);
-                _lookup.Add(key, valueSet);
-
-                _valueCount += set.Count;
-                _version++;
-            }
-
-            return valueSet;
-        }
-
-        /// <summary>
-        /// Gets the values for the specified key or <see langword="null"/> if the key was not found.
-        /// </summary>
-        /// <returns>A value indicating whether the key was found.</returns>
-        public bool TryGetValues(TKey key, [NotNullWhen(true)] out ValueSet? valueSet) => _lookup.TryGetValue(key, out valueSet);
-
-        /// <summary>
-        /// Sets the key/value set pair capacity of this dictionary to what it would be if it had been originally initialized with all its entries, and
-        /// optionally trims all the value sets in the dictionary as well.
-        /// </summary>
-        /// <param name="trimValueSets"><see langword="true"/> to trim all the value sets as well, or <see langword="false"/> to only trim the
-        /// dictionary.</param>
-        public void TrimExcess(bool trimValueSets = true)
-        {
-            _lookup.TrimExcess();
-
-            if (trimValueSets) {
-                foreach (var valueSet in _lookup.Values)
-                    valueSet.TrimExcess();
-            }
-        }
-
-        /// <summary>
-        /// Sets the key/value set pair capacity of this dictionary to hold up a specified number of entries without any further expansion of its backing
-        /// storage, and optionally trims all the value sets in the dictionary as well.
-        /// </summary>
-        /// <param name="dictionaryCapacity">The new key/value set pair capacity.</param>
-        /// <param name="trimValueSets"><see langword="true"/> to trim all the value sets as well, or <see langword="false"/> to only trim the
-        /// dictionary.</param>
-        /// <exception cref="ArgumentOutOfRangeException">Capacity specified is less than the number of entries in the dictionary.</exception>
-        public void TrimExcess(int dictionaryCapacity, bool trimValueSets = true)
-        {
-            _lookup.TrimExcess(dictionaryCapacity);
-
-            if (trimValueSets) {
-                foreach (var valueSet in _lookup.Values)
-                    valueSet.TrimExcess();
-            }
-        }
-
-        private void CheckVersion(int enumeratorVersion)
-        {
-            if (enumeratorVersion != _version)
-                throw new InvalidOperationException("Collection was modified; enumeration operation may not execute.");
-        }
-
-        #region Explicit Interface Implementations
-
-        /// <inheritdoc/>
-        ICollection<TKey> IDictionary<TKey, ValueSet>.Keys => Keys;
-
-        /// <inheritdoc/>
-        IEnumerable<TKey> IReadOnlyDictionary<TKey, ValueSet>.Keys => Keys;
-
-        /// <inheritdoc/>
-        ICollection<ValueSet> IDictionary<TKey, ValueSet>.Values => ValueSets;
-
-        /// <inheritdoc/>
-        IEnumerable<ValueSet> IReadOnlyDictionary<TKey, ValueSet>.Values => ValueSets;
-
-        /// <inheritdoc/>
-        bool ICollection<KeyValuePair<TKey, ValueSet>>.IsReadOnly => true;
-
-        /// <summary>
-        /// <inheritdoc/>
-        /// Setter is not supported.
-        /// </summary>
-        /// <inheritdoc/>
-        /// <exception cref="NotSupportedException">Calling the setter is not supported.</exception>
-        ValueSet IDictionary<TKey, ValueSet>.this[TKey key] {
-            get => this[key] ?? throw new KeyNotFoundException();
-            set => throw new NotSupportedException();
-        }
-
-        /// <inheritdoc/>
-        ValueSet IReadOnlyDictionary<TKey, ValueSet>.this[TKey key] => this[key] ?? throw new KeyNotFoundException();
-
-        /// <inheritdoc/>
-        bool IDictionary<TKey, ValueSet>.TryGetValue(TKey key, [MaybeNullWhen(false)] out ValueSet value)
-        {
-            return TryGetValues(key, out value);
-        }
-
-        /// <inheritdoc/>
-        bool IReadOnlyDictionary<TKey, ValueSet>.TryGetValue(TKey key, [MaybeNullWhen(false)] out ValueSet value)
-        {
-            return TryGetValues(key, out value);
-        }
-
-        /// <inheritdoc/>
-        bool ICollection<KeyValuePair<TKey, ValueSet>>.Contains(KeyValuePair<TKey, ValueSet> item)
-        {
-            return _lookup.TryGetValue(item.Key, out var valueSet) && valueSet == item.Value;
-        }
-
-        /// <inheritdoc/>
-        void ICollection<KeyValuePair<TKey, ValueSet>>.CopyTo(KeyValuePair<TKey, ValueSet>[] array, int arrayIndex)
-        {
-            ((ICollection<KeyValuePair<TKey, ValueSet>>)_lookup).CopyTo(array, arrayIndex);
-        }
-
-        /// <inheritdoc/>
-        IEnumerator<KeyValuePair<TKey, ValueSet>> IEnumerable<KeyValuePair<TKey, ValueSet>>.GetEnumerator() => GetEnumerator();
-
-        /// <inheritdoc/>
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-        // Not Supported
-
-        /// <summary>
-        /// Not supported.
-        /// </summary>
-        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
-        void IDictionary<TKey, ValueSet>.Add(TKey key, ValueSet value) => throw new NotSupportedException();
-
-        /// <summary>
-        /// Not supported.
-        /// </summary>
-        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
-        bool IDictionary<TKey, ValueSet>.Remove(TKey key) => throw new NotSupportedException();
-
-        /// <summary>
-        /// Not supported.
-        /// </summary>
-        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
-        void ICollection<KeyValuePair<TKey, ValueSet>>.Add(KeyValuePair<TKey, ValueSet> item) => throw new NotSupportedException();
-
-        /// <summary>
-        /// Not supported.
-        /// </summary>
-        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
-        void ICollection<KeyValuePair<TKey, ValueSet>>.Clear() => throw new NotSupportedException();
-
-        /// <summary>
-        /// Not supported.
-        /// </summary>
-        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
-        bool ICollection<KeyValuePair<TKey, ValueSet>>.Remove(KeyValuePair<TKey, ValueSet> item) => throw new NotSupportedException();
-
-        #endregion
-
-        /// <summary>
-        /// Enumerates the elements of a <see cref="HashSetDictionary{TKey, TValue}"/>.
-        /// </summary>
-        public struct Enumerator : IEnumerator<KeyValuePair<TKey, ValueSet>>
-        {
-            private readonly HashSetDictionary<TKey, TValue> _dictionary;
-            private readonly Dictionary<TKey, ValueSet>.Enumerator _enumerator;
-            private readonly int _version;
-
-            /// <inheritdoc/>
-            public KeyValuePair<TKey, ValueSet> Current => _enumerator.Current;
-
-            /// <inheritdoc/>
-            object IEnumerator.Current => Current;
-
-            internal Enumerator(HashSetDictionary<TKey, TValue> dictionary)
-            {
-                _dictionary = dictionary;
-                _enumerator = dictionary._lookup.GetEnumerator();
-                _version = _dictionary._version;
-            }
-
-            /// <inheritdoc/>
-            public bool MoveNext()
-            {
-                _dictionary.CheckVersion(_version);
-                return _enumerator.MoveNext();
-            }
-
-            /// <inheritdoc/>
-            void IEnumerator.Reset() => ((IEnumerator)_enumerator).Reset();
-
-            /// <inheritdoc/>
-            public void Dispose() => _enumerator.Dispose();
+            foreach (var valueSet in _lookup.Values)
+                valueSet.LastSet.TrimExcess();
         }
     }
+
+    /// <summary>
+    /// Sets the key/value set pair capacity of this dictionary to hold up to a specified number of entries without any further expansion of its backing
+    /// storage, and optionally trims the capacity of each value set to the actual number of values in the list.
+    /// </summary>
+    /// <param name="dictionaryCapacity">The new key/value set pair capacity.</param>
+    /// <param name="trimValueSets"><see langword="true"/> to trim all the value sets as well, or <see langword="false"/> to only trim the
+    /// dictionary.</param>
+    /// <exception cref="ArgumentOutOfRangeException">Capacity specified is less than the number of entries in the dictionary.</exception>
+    public void TrimExcess(int dictionaryCapacity, bool trimValueSets = true)
+    {
+        _version++;
+        _lookup.TrimExcess(dictionaryCapacity);
+
+        if (trimValueSets)
+        {
+            foreach (var valueSet in _lookup.Values)
+                valueSet.LastSet.TrimExcess();
+        }
+    }
+
+#endif
+
+    [Conditional("DEBUG")]
+    private void DebugValid(ValueSet valueSet)
+    {
+        Debug.Assert(valueSet.Count > 0, "empty value set");
+    }
+
+    [Conditional("DEBUG")]
+    private void DebugValueCount()
+    {
+        Debug.Assert(_valueCount == _lookup.Values.Sum(v => v.Count), "incorrect value count");
+    }
+
+    #region Explicit Interface Implementations
+
+    /// <inheritdoc cref="this[TKey]"/>
+    ISet<TValue> ICollectionDictionary<TKey, TValue, ISet<TValue>>.this[TKey key] => this[key];
+
+    /// <inheritdoc cref="this[TKey]"/>
+    ISet<TValue> IReadOnlyDictionary<TKey, ISet<TValue>>.this[TKey key] => this[key];
+
+    /// <summary>
+    /// Gets a value indicating whether this collection is read-only. Although this dictionary is not read-only, this always returns <see langword="true"/> as
+    /// only read operations are supported through the <see cref="ICollection{T}"/> interface.
+    /// </summary>
+    bool ICollection<KeyValuePair<TKey, ISet<TValue>>>.IsReadOnly => true;
+
+    /// <inheritdoc cref="Keys"/>
+    IEnumerable<TKey> IReadOnlyDictionary<TKey, ISet<TValue>>.Keys => Keys;
+
+    /// <inheritdoc cref="Keys"/>
+    IReadOnlyCollection<TKey> ICollectionDictionary<TKey, TValue, ISet<TValue>>.Keys => Keys;
+
+    /// <inheritdoc cref="ValueSets"/>
+    IEnumerable<ISet<TValue>> IReadOnlyDictionary<TKey, ISet<TValue>>.Values => ValueSets;
+
+    /// <inheritdoc cref="ValueSets"/>
+    IReadOnlyCollection<ISet<TValue>> ICollectionDictionary<TKey, TValue, ISet<TValue>>.ValueCollections => ValueSets;
+
+    /// <inheritdoc cref="Values"/>
+    IReadOnlyCollection<TValue> ICollectionDictionary<TKey, TValue, ISet<TValue>>.Values => Values;
+
+    /// <summary>
+    /// Gets a value indicating whether the specified key and value set is present in the dictionary.
+    /// </summary>
+    bool ICollection<KeyValuePair<TKey, ISet<TValue>>>.Contains(KeyValuePair<TKey, ISet<TValue>> item)
+    {
+        return TryGetValues(item.Key, out var valueSet) && valueSet.Equals(item.Value);
+    }
+
+    /// <summary>
+    /// Copies the key and value set pairs to an array starting at the given array index.
+    /// </summary>
+    void ICollection<KeyValuePair<TKey, ISet<TValue>>>.CopyTo(KeyValuePair<TKey, ISet<TValue>>[] array, int arrayIndex)
+    {
+        CollectionCopy.CheckParams(Count, array, arrayIndex);
+
+        foreach (var valueSet in this)
+            array[arrayIndex++] = new(valueSet.Key, valueSet);
+    }
+
+    /// <inheritdoc cref="TryGetValues(TKey, out ValueSet)"/>
+    bool ICollectionDictionary<TKey, TValue, ISet<TValue>>.TryGetValues(TKey key, [MaybeNullWhen(false)] out ISet<TValue> valueCollection)
+    {
+        bool result = TryGetValues(key, out var c);
+        valueCollection = c;
+        return result;
+    }
+
+    /// <inheritdoc cref="TryGetValues(TKey, out ValueSet)"/>
+    bool IReadOnlyDictionary<TKey, ISet<TValue>>.TryGetValue(TKey key, [MaybeNullWhen(false)] out ISet<TValue> value)
+    {
+        bool result = TryGetValues(key, out var v);
+        value = v;
+        return result;
+    }
+
+    /// <inheritdoc cref="GetEnumerator"/>
+    IEnumerator<KeyValuePair<TKey, ISet<TValue>>> IEnumerable<KeyValuePair<TKey, ISet<TValue>>>.GetEnumerator()
+    {
+        foreach (var valueSet in this)
+            yield return new(valueSet.Key, valueSet);
+    }
+
+    /// <inheritdoc cref="GetEnumerator"/>
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    #endregion
+
+    #region Not Supported
+
+    /// <summary>
+    /// Not supported.
+    /// </summary>
+    /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+    void ICollection<KeyValuePair<TKey, ISet<TValue>>>.Add(KeyValuePair<TKey, ISet<TValue>> item) => throw new NotSupportedException();
+
+    /// <summary>
+    /// Not supported.
+    /// </summary>
+    /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+    void ICollection<KeyValuePair<TKey, ISet<TValue>>>.Clear() => throw new NotSupportedException();
+
+    /// <summary>
+    /// Not supported.
+    /// </summary>
+    /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+    bool ICollection<KeyValuePair<TKey, ISet<TValue>>>.Remove(KeyValuePair<TKey, ISet<TValue>> item) => throw new NotSupportedException();
+
+    #endregion
 }

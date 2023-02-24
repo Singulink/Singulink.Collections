@@ -1,29 +1,19 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
 using System.Diagnostics.CodeAnalysis;
-using System.Text;
 
 namespace Singulink.Collections;
-
-#pragma warning disable SA1629 // Documentation text should end with a period
 
 /// <summary>
 /// Provides a read-only wrapper around a <see cref="HashSet{T}"/>.
 /// </summary>
-public class ReadOnlyHashSet<T>
-#if NET
-        : ISet<T>, IReadOnlySet<T>
-#else
-        : ISet<T>, IReadOnlyCollection<T>
-#endif
+public class ReadOnlyHashSet<T> : ISet<T>, IReadOnlySet<T>
 {
     /// <summary>
     /// Gets an empty read-only hash set.
     /// </summary>
     public static ReadOnlyHashSet<T> Empty { get; } = new ReadOnlyHashSet<T>(new HashSet<T>());
 
-    private readonly HashSet<T> _set;
+    private HashSet<T> _set;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ReadOnlyHashSet{T}"/> class.
@@ -35,158 +25,121 @@ public class ReadOnlyHashSet<T>
     }
 
     /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.Count"/>
+    /// Gets the number of items contained in the set.
     /// </summary>
-    /// <inheritdoc cref="HashSet{T}.Count"/>
     public int Count => _set.Count;
 
-    /// <inheritdoc/>
-    bool ICollection<T>.IsReadOnly => true;
-
-    internal HashSet<T> WrappedSet => _set;
-
-    /// <summary>
-    /// Returns an <see cref="IEqualityComparer"/> object that can be used for equality testing of a <see cref="ReadOnlyHashSet{T}"/> object.
-    /// </summary>
-    public static IEqualityComparer<ReadOnlyHashSet<T>> CreateSetComparer() => new ReadOnlySetEqualityComparer(HashSet<T>.CreateSetComparer());
+    internal HashSet<T> WrappedSet
+    {
+        get => _set;
+        set => _set = value;
+    }
 
     /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.Contains(T)"/>
+    /// Determines whether the set contains the specified item.
     /// </summary>
-    /// <inheritdoc cref="HashSet{T}.Contains(T)"/>
     public bool Contains(T item) => _set.Contains(item);
 
     /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.CopyTo(T[])"/>
+    /// Copies the items of the set to an array.
     /// </summary>
-    /// <inheritdoc cref="HashSet{T}.CopyTo(T[])"/>
     public void CopyTo(T[] array) => _set.CopyTo(array);
 
     /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.CopyTo(T[], int)"/>
+    /// Copies the items of the set to an array starting at the specified index.
     /// </summary>
-    /// <inheritdoc cref="HashSet{T}.CopyTo(T[], int)"/>
     public void CopyTo(T[] array, int arrayIndex) => _set.CopyTo(array, arrayIndex);
 
     /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.CopyTo(T[], int, int)"/>
+    /// Determines whether the set is a proper subset of the specified collection.
     /// </summary>
-    /// <inheritdoc cref="HashSet{T}.CopyTo(T[], int, int)"/>
-    public void CopyTo(T[] array, int arrayIndex, int count) => _set.CopyTo(array, arrayIndex, count);
-
-    /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.EnsureCapacity(int)"/>
-    /// </summary>
-    /// <inheritdoc cref="HashSet{T}.EnsureCapacity(int)"/>
-    public int EnsureCapacity(int capacity) => _set.EnsureCapacity(capacity);
-
-    /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.ExceptWith(IEnumerable{T})"/>
-    /// </summary>
-    /// <inheritdoc cref="HashSet{T}.ExceptWith(IEnumerable{T})"/>
-    public void ExceptWith(IEnumerable<T> other) => _set.ExceptWith(other);
-
-    /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.IntersectWith(IEnumerable{T})"/>
-    /// </summary>
-    /// <inheritdoc cref="HashSet{T}.IntersectWith(IEnumerable{T})"/>
-    public void IntersectWith(IEnumerable<T> other) => _set.IntersectWith(other);
-
-    /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.IsProperSubsetOf(IEnumerable{T})"/>
-    /// </summary>
-    /// <inheritdoc cref="HashSet{T}.IsProperSubsetOf(IEnumerable{T})"/>
     public bool IsProperSubsetOf(IEnumerable<T> other) => _set.IsProperSubsetOf(other);
 
     /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.IsProperSupersetOf(IEnumerable{T})"/>
+    /// Determines whether the set is a proper superset of the specified collection.
     /// </summary>
-    /// <inheritdoc cref="HashSet{T}.IsProperSupersetOf(IEnumerable{T})"/>
     public bool IsProperSupersetOf(IEnumerable<T> other) => _set.IsProperSupersetOf(other);
 
     /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.IsSubsetOf(IEnumerable{T})"/>
+    /// Determines whether the set is a subset of the specified collection.
     /// </summary>
-    /// <inheritdoc cref="HashSet{T}.IsSubsetOf(IEnumerable{T})"/>
     public bool IsSubsetOf(IEnumerable<T> other) => _set.IsSubsetOf(other);
 
     /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.IsSupersetOf(IEnumerable{T})"/>
+    /// Determines whether the set is a superset of the specified collection.
     /// </summary>
-    /// <inheritdoc cref="HashSet{T}.IsSupersetOf(IEnumerable{T})"/>
     public bool IsSupersetOf(IEnumerable<T> other) => _set.IsSupersetOf(other);
 
     /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.Overlaps(IEnumerable{T})"/>
+    /// Determines whether this set and the specified set share any common items.
     /// </summary>
-    /// <inheritdoc cref="HashSet{T}.Overlaps(IEnumerable{T})"/>
     public bool Overlaps(IEnumerable<T> other) => _set.Overlaps(other);
 
     /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.SetEquals(IEnumerable{T})"/>
+    /// Determines whether this set and the specified collection contain the same items.
     /// </summary>
-    /// <inheritdoc cref="HashSet{T}.SetEquals(IEnumerable{T})"/>
     public bool SetEquals(IEnumerable<T> other) => _set.SetEquals(other);
 
-    /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.SymmetricExceptWith(IEnumerable{T})"/>
-    /// </summary>
-    /// <inheritdoc cref="HashSet{T}.SymmetricExceptWith(IEnumerable{T})"/>
-    public void SymmetricExceptWith(IEnumerable<T> other) => _set.SymmetricExceptWith(other);
+#if !NETSTANDARD2_0
 
     /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.TrimExcess"/>
+    /// Searches the set for the given value and returns the equal value, if any.
     /// </summary>
-    /// <inheritdoc cref="HashSet{T}.TrimExcess"/>
-    public void TrimExcess() => _set.TrimExcess();
-
-    /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.TryGetValue(T, out T)"/>
-    /// </summary>
-    /// <inheritdoc cref="HashSet{T}.TryGetValue(T, out T)"/>
     public bool TryGetValue(T equalValue, [MaybeNullWhen(false)] out T actualValue) => _set.TryGetValue(equalValue, out actualValue);
 
-    /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.UnionWith(IEnumerable{T})"/>
-    /// </summary>
-    /// <inheritdoc cref="HashSet{T}.UnionWith(IEnumerable{T})"/>
-    public void UnionWith(IEnumerable<T> other) => _set.UnionWith(other);
+#endif
 
     /// <summary>
-    /// (<see cref="HashSet{T}"/> wrapper)
-    /// <inheritdoc cref="HashSet{T}.GetEnumerator"/>
+    /// Returns an enumerator that iterates through the set.
     /// </summary>
-    /// <inheritdoc cref="HashSet{T}.GetEnumerator"/>
     public HashSet<T>.Enumerator GetEnumerator() => _set.GetEnumerator();
 
-    /// <inheritdoc/>
+    #region Explicit Interface Implementations
+
+    /// <summary>
+    /// Gets a value indicating whether this set is read-only. Always returns <see langword="true"/>.
+    /// </summary>
+    bool ICollection<T>.IsReadOnly => true;
+
+    /// <inheritdoc cref="GetEnumerator"/>
     IEnumerator<T> IEnumerable<T>.GetEnumerator() => GetEnumerator();
 
-    /// <inheritdoc/>
+    /// <inheritdoc cref="GetEnumerator"/>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    #endregion
+
+    #region Not Supported
 
     /// <summary>
     /// Not supported.
     /// </summary>
+    /// <exception cref="NotSupportedException">This operation is not supported.</exception>
     bool ISet<T>.Add(T item) => throw new NotSupportedException();
+
+    /// <summary>
+    /// Not supported.
+    /// </summary>
+    /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+    void ISet<T>.ExceptWith(IEnumerable<T> other) => throw new NotSupportedException();
+
+    /// <summary>
+    /// Not supported.
+    /// </summary>
+    /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+    void ISet<T>.IntersectWith(IEnumerable<T> other) => throw new NotSupportedException();
+
+    /// <summary>
+    /// Not supported.
+    /// </summary>
+    /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+    void ISet<T>.SymmetricExceptWith(IEnumerable<T> other) => throw new NotSupportedException();
+
+    /// <summary>
+    /// Not supported.
+    /// </summary>
+    /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+    void ISet<T>.UnionWith(IEnumerable<T> other) => throw new NotSupportedException();
 
     /// <summary>
     /// Not supported.
@@ -206,20 +159,5 @@ public class ReadOnlyHashSet<T>
     /// <exception cref="NotSupportedException">This operation is not supported.</exception>
     bool ICollection<T>.Remove(T item) => throw new NotSupportedException();
 
-    private sealed class ReadOnlySetEqualityComparer : EqualityComparer<ReadOnlyHashSet<T>>
-    {
-        private readonly IEqualityComparer<HashSet<T>> _setComparer;
-
-        public ReadOnlySetEqualityComparer(IEqualityComparer<HashSet<T>> setComparer)
-        {
-            _setComparer = setComparer;
-        }
-
-        public override bool Equals(ReadOnlyHashSet<T>? x, ReadOnlyHashSet<T>? y) => _setComparer.Equals(x?._set, y?._set);
-
-        public override int GetHashCode(ReadOnlyHashSet<T> obj)
-        {
-            return _setComparer.GetHashCode(obj?._set!);
-        }
-    }
+    #endregion
 }

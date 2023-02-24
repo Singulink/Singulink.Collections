@@ -1,146 +1,166 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
+using Singulink.Collections.Utilities;
 
-namespace Singulink.Collections
+namespace Singulink.Collections;
+
+/// <content>
+/// Contains the ValueCollection implementation for ListDictionary.
+/// </content>
+public partial class ListDictionary<TKey, TValue>
 {
-    /// <content>
-    /// Contains the ValueCollection implementation for ListDictionary.
-    /// </content>
-    public partial class ListDictionary<TKey, TValue>
+    /// <summary>
+    /// Represents the collection of values in a <see cref="ListDictionary{TKey, TValue}"/>.
+    /// </summary>
+    public sealed class ValueCollection : ICollection<TValue>, IReadOnlyCollection<TValue>
     {
+        private readonly ListDictionary<TKey, TValue> _dictionary;
+
+        internal ValueCollection(ListDictionary<TKey, TValue> dictionary)
+        {
+            _dictionary = dictionary;
+        }
+
+        /// <inheritdoc cref="ListDictionary{TKey, TValue}.ValueCount"/>
+        public int Count => _dictionary._valueCount;
+
+        /// <inheritdoc cref="ListDictionary{TKey, TValue}.ContainsValue(TValue)"/>
+        public bool Contains(TValue item) => _dictionary.ContainsValue(item);
+
         /// <summary>
-        /// Represents the collection of values in a <see cref="ListDictionary{TKey, TValue}"/>.
+        /// Copies all the values in the dictionary to an array starting at the specified array index.
         /// </summary>
-        public sealed class ValueCollection : ICollection<TValue>, IReadOnlyCollection<TValue>
+        public void CopyTo(TValue[] array, int arrayIndex)
+        {
+            CollectionCopy.CheckParams(Count, array, arrayIndex);
+
+            foreach (var set in _dictionary._lookup.Values)
+            {
+                set.CopyTo(array, arrayIndex);
+                arrayIndex += set.Count;
+            }
+        }
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the <see cref="ValueCollection"/>.
+        /// </summary>
+        public Enumerator GetEnumerator() => new(_dictionary);
+
+        #region Explicit Interface Implementations
+
+        /// <summary>
+        /// Gets a value indicating whether this collection is read-only. Always returns <see langword="true"/>.
+        /// </summary>
+        bool ICollection<TValue>.IsReadOnly => true;
+
+        /// <inheritdoc cref="GetEnumerator"/>
+        IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator() => GetEnumerator();
+
+        /// <inheritdoc cref="GetEnumerator"/>
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        #endregion
+
+        #region Not Supported
+
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+        void ICollection<TValue>.Add(TValue item) => throw new NotSupportedException();
+
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+        void ICollection<TValue>.Clear() => throw new NotSupportedException();
+
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+        bool ICollection<TValue>.Remove(TValue item) => throw new NotSupportedException();
+
+        #endregion
+
+        /// <summary>
+        /// Enumerates the values of a <see cref="ValueCollection"/>.
+        /// </summary>
+        public struct Enumerator : IEnumerator<TValue>
         {
             private readonly ListDictionary<TKey, TValue> _dictionary;
+            private readonly int _version;
 
-            internal ValueCollection(ListDictionary<TKey, TValue> dictionary)
+            private Dictionary<TKey, ValueList>.ValueCollection.Enumerator _valueListsEnumerator;
+            private List<TValue>.Enumerator _currentListEnumerator;
+            private bool _started;
+
+            /// <summary>
+            /// Gets the element at the current position of the enumerator.
+            /// </summary>
+            public TValue Current => _currentListEnumerator.Current;
+
+            /// <inheritdoc cref="Current"/>
+            object? IEnumerator.Current => Current;
+
+            internal Enumerator(ListDictionary<TKey, TValue> dictionary)
             {
                 _dictionary = dictionary;
-            }
+                _version = _dictionary._version;
 
-            /// <inheritdoc/>
-            public int Count => _dictionary.ValueCount;
-
-            /// <inheritdoc/>
-            bool ICollection<TValue>.IsReadOnly => true;
-
-            /// <inheritdoc/>
-            public bool Contains(TValue item) => _dictionary.ContainsValue(item);
-
-            /// <inheritdoc/>
-            public void CopyTo(TValue[] array, int index)
-            {
-                if ((uint)index > array.Length)
-                    throw new IndexOutOfRangeException();
-
-                if (array.Length - index < _dictionary.ValueCount)
-                    throw new ArgumentException("Destination array is not long enough to copy all the items in the collection. Check array index and length.");
-
-                int i = index;
-
-                foreach (var valueList in _dictionary._lookup.Values) {
-                    var list = valueList.WrappedList;
-                    list.CopyTo(array, i);
-                    i += list.Count;
-                }
+                _valueListsEnumerator = dictionary._lookup.Values.GetEnumerator();
+                _currentListEnumerator = default;
+                _started = false;
             }
 
             /// <summary>
-            /// Returns an enumerator that iterates through the <see cref="ValueCollection"/>.
+            /// Releases all the resources used by the enumerator.
             /// </summary>
-            public Enumerator GetEnumerator() => new(_dictionary);
-
-            /// <inheritdoc/>
-            IEnumerator<TValue> IEnumerable<TValue>.GetEnumerator() => GetEnumerator();
-
-            /// <inheritdoc/>
-            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-            /// <summary>
-            /// Not supported.
-            /// </summary>
-            void ICollection<TValue>.Add(TValue item) => throw new NotSupportedException();
-
-            /// <summary>
-            /// Not supported.
-            /// </summary>
-            void ICollection<TValue>.Clear() => throw new NotSupportedException();
-
-            /// <summary>
-            /// Not supported.
-            /// </summary>
-            bool ICollection<TValue>.Remove(TValue item) => throw new NotSupportedException();
-
-            /// <summary>
-            /// Enumerates the values of a <see cref="ValueCollection"/>.
-            /// </summary>
-            public struct Enumerator : IEnumerator<TValue>
+            public void Dispose()
             {
-                private readonly ListDictionary<TKey, TValue> _dictionary;
-                private readonly Dictionary<TKey, ValueList>.ValueCollection.Enumerator _valueListsEnumerator;
-                private List<TValue>.Enumerator _valuesEnumerator;
-                private readonly int _version;
-                private bool _started;
+                _valueListsEnumerator.Dispose();
+                _currentListEnumerator.Dispose();
+            }
 
-                /// <inheritdoc/>
-                public TValue Current => _valuesEnumerator.Current;
+            /// <summary>
+            /// Advances the enumerator to the next element.
+            /// </summary>
+            public bool MoveNext()
+            {
+                Throw.IfEnumeratedCollectionChanged(_version, _dictionary._version);
 
-                /// <inheritdoc/>
-                object? IEnumerator.Current => Current;
-
-                internal Enumerator(ListDictionary<TKey, TValue> dictionary)
+                if (!_started)
                 {
-                    _dictionary = dictionary;
-                    _valueListsEnumerator = dictionary._lookup.Values.GetEnumerator();
-                    _valuesEnumerator = default;
-                    _version = _dictionary._version;
-                    _started = false;
-                }
-
-                /// <inheritdoc/>
-                public void Dispose()
-                {
-                    _valueListsEnumerator.Dispose();
-                    _valuesEnumerator.Dispose();
-                }
-
-                /// <inheritdoc/>
-                public bool MoveNext()
-                {
-                    _dictionary.CheckVersion(_version);
-
-                    if (!_started) {
-                        if (!_valueListsEnumerator.MoveNext())
-                            return false;
-
-                        _valuesEnumerator = _valueListsEnumerator.Current.GetEnumerator();
-                        _valuesEnumerator.MoveNext();
-                        _started = true;
-                        return true;
-                    }
-
-                    if (_valuesEnumerator.MoveNext())
-                        return true;
-
                     if (!_valueListsEnumerator.MoveNext())
                         return false;
 
-                    _valuesEnumerator = _valueListsEnumerator.Current.GetEnumerator();
-                    _valuesEnumerator.MoveNext();
+                    _dictionary.DebugValid(_valueListsEnumerator.Current);
+
+                    _currentListEnumerator = _valueListsEnumerator.Current.LastList.GetEnumerator();
+                    _currentListEnumerator.MoveNext();
+                    _started = true;
+
                     return true;
                 }
 
-                /// <inheritdoc/>
-                void IEnumerator.Reset()
-                {
-                    ((IEnumerator)_valueListsEnumerator).Reset();
-                    _valuesEnumerator = default;
-                    _started = false;
-                }
+                if (_currentListEnumerator.MoveNext())
+                    return true;
+
+                if (!_valueListsEnumerator.MoveNext())
+                    return false;
+
+                _dictionary.DebugValid(_valueListsEnumerator.Current);
+
+                _currentListEnumerator = _valueListsEnumerator.Current.LastList.GetEnumerator();
+                _currentListEnumerator.MoveNext();
+
+                return true;
             }
+
+            /// <summary>
+            /// Not supported.
+            /// </summary>
+            /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+            void IEnumerator.Reset() => throw new NotSupportedException();
         }
     }
 }

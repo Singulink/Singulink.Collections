@@ -1,119 +1,142 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections;
+using Singulink.Collections.Utilities;
 
-namespace Singulink.Collections
+namespace Singulink.Collections;
+
+/// <content>
+/// Contains the ValueSetCollection implementation for HashSetDictionary.
+/// </content>
+public partial class HashSetDictionary<TKey, TValue>
 {
-    /// <content>
-    /// Contains the ValueSetCollection implementation for HashSetDictionary.
-    /// </content>
-    public partial class HashSetDictionary<TKey, TValue>
+    /// <summary>
+    /// Represents the collection of value sets in a <see cref="HashSetDictionary{TKey, TValue}"/>.
+    /// </summary>
+    public sealed class ValueSetCollection : ICollection<ValueSet>, IReadOnlyCollection<ValueSet>
     {
+        private readonly HashSetDictionary<TKey, TValue> _dictionary;
+
+        internal ValueSetCollection(HashSetDictionary<TKey, TValue> dictionary)
+        {
+            _dictionary = dictionary;
+        }
+
         /// <summary>
-        /// Represents the collection of value sets in a <see cref="HashSetDictionary{TKey, TValue}"/>.
+        /// Gets the number of value sets in this collection.
         /// </summary>
-        public sealed class ValueSetCollection : ICollection<ValueSet>, IReadOnlyCollection<ValueSet>
+        public int Count => _dictionary.Count;
+
+        /// <summary>
+        /// Gets the <see cref="HashSetDictionary{TKey, TValue}"/> this collection belongs to.
+        /// </summary>
+        public HashSetDictionary<TKey, TValue> Dictionary => _dictionary;
+
+        /// <summary>
+        /// Returns a value indicating whether this collection contains the given value set.
+        /// </summary>
+        public bool Contains(ValueSet valueSet) => valueSet.Count > 0 && valueSet.Dictionary == _dictionary;
+
+        /// <summary>
+        /// Copies the value sets in this collection to an array starting at the specified index.
+        /// </summary>
+        public void CopyTo(ValueSet[] array, int index) => _dictionary._lookup.Values.CopyTo(array, index);
+
+        /// <summary>
+        /// Returns an enumerator that iterates through the value sets in this collection.
+        /// </summary>
+        public Enumerator GetEnumerator() => new(_dictionary);
+
+        #region Explicit Interface Implementations
+
+        /// <summary>
+        /// Gets a value indicating whether this collection is read-only. Always returns <see langword="true"/>.
+        /// </summary>
+        bool ICollection<ValueSet>.IsReadOnly => true;
+
+        /// <inheritdoc cref="GetEnumerator"/>
+        IEnumerator<ValueSet> IEnumerable<ValueSet>.GetEnumerator() => GetEnumerator();
+
+        /// <inheritdoc cref="GetEnumerator"/>
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        #endregion
+
+        #region Not Supported
+
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+        void ICollection<ValueSet>.Add(ValueSet item) => throw new NotSupportedException();
+
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+        void ICollection<ValueSet>.Clear() => throw new NotSupportedException();
+
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+        bool ICollection<ValueSet>.Remove(ValueSet item) => throw new NotSupportedException();
+
+        #endregion
+
+        /// <summary>
+        /// Enumerates the value sets of a <see cref="ValueSetCollection"/>.
+        /// </summary>
+        public struct Enumerator : IEnumerator<ValueSet>
         {
             private readonly HashSetDictionary<TKey, TValue> _dictionary;
+            private readonly int _version;
 
-            internal ValueSetCollection(HashSetDictionary<TKey, TValue> dictionary)
-            {
-                _dictionary = dictionary;
-            }
-
-            /// <inheritdoc/>
-            public int Count => _dictionary.Count;
+            private Dictionary<TKey, ValueSet>.ValueCollection.Enumerator _valueSetsEnumerator;
 
             /// <summary>
-            /// Returns an enumerator that iterates through the value sets in a <see cref="ValueSetCollection"/>.
+            /// Gets the element at the current position of the enumerator.
             /// </summary>
-            public Enumerator GetEnumerator() => new(_dictionary);
+            public ValueSet Current => _valueSetsEnumerator.Current;
 
-            /// <inheritdoc/>
-            bool ICollection<ValueSet>.IsReadOnly => true;
+            /// <inheritdoc cref="Current"/>
+            object? IEnumerator.Current => Current;
 
-            /// <inheritdoc/>
-            bool ICollection<ValueSet>.Contains(ValueSet item)
+            internal Enumerator(HashSetDictionary<TKey, TValue> dictionary)
             {
-                foreach (var valueSets in _dictionary._lookup.Values) {
-                    if (valueSets == item)
-                        return true;
+                _dictionary = dictionary;
+                _version = _dictionary._version;
+
+                _valueSetsEnumerator = dictionary._lookup.Values.GetEnumerator();
+            }
+
+            /// <summary>
+            /// Releases all the resources used by the enumerator.
+            /// </summary>
+            public void Dispose() => _valueSetsEnumerator.Dispose();
+
+            /// <summary>
+            /// Advances the enumerator to the next element.
+            /// </summary>
+            public bool MoveNext()
+            {
+                Throw.IfEnumeratedCollectionChanged(_version, _dictionary._version);
+#if DEBUG
+                if (_valueSetsEnumerator.MoveNext())
+                {
+                    _dictionary.DebugValid(_valueSetsEnumerator.Current);
+                    return true;
                 }
 
                 return false;
+#else
+                return _valueSetsEnumerator.MoveNext();
+#endif
             }
-
-            /// <inheritdoc/>
-            void ICollection<ValueSet>.CopyTo(ValueSet[] array, int index)
-            {
-                if ((uint)index > array.Length)
-                    throw new IndexOutOfRangeException();
-
-                if (array.Length - index < _dictionary.Count)
-                    throw new ArgumentException("Destination array is not long enough to copy all the items in the collection. Check array index and length.");
-
-                int i = index;
-
-                foreach (var valueSet in _dictionary._lookup.Values)
-                    array[i++] = valueSet;
-            }
-
-            /// <inheritdoc/>
-            IEnumerator<ValueSet> IEnumerable<ValueSet>.GetEnumerator() => GetEnumerator();
-
-            /// <inheritdoc/>
-            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
             /// <summary>
             /// Not supported.
             /// </summary>
-            void ICollection<ValueSet>.Add(ValueSet item) => throw new NotSupportedException();
-
-            /// <summary>
-            /// Not supported.
-            /// </summary>
-            void ICollection<ValueSet>.Clear() => throw new NotSupportedException();
-
-            /// <summary>
-            /// Not supported.
-            /// </summary>
-            bool ICollection<ValueSet>.Remove(ValueSet item) => throw new NotSupportedException();
-
-            /// <summary>
-            /// Enumerates the value sets of a <see cref="ValueSetCollection"/>.
-            /// </summary>
-            public struct Enumerator : IEnumerator<ValueSet>
-            {
-                private readonly HashSetDictionary<TKey, TValue> _dictionary;
-                private readonly Dictionary<TKey, ValueSet>.ValueCollection.Enumerator _valueSetsEnumerator;
-                private readonly int _version;
-
-                /// <inheritdoc/>
-                public ValueSet Current => _valueSetsEnumerator.Current;
-
-                /// <inheritdoc/>
-                object? IEnumerator.Current => Current;
-
-                internal Enumerator(HashSetDictionary<TKey, TValue> dictionary)
-                {
-                    _dictionary = dictionary;
-                    _valueSetsEnumerator = dictionary._lookup.Values.GetEnumerator();
-                    _version = _dictionary._version;
-                }
-
-                /// <inheritdoc/>
-                public void Dispose() => _valueSetsEnumerator.Dispose();
-
-                /// <inheritdoc/>
-                public bool MoveNext()
-                {
-                    _dictionary.CheckVersion(_version);
-                    return _valueSetsEnumerator.MoveNext();
-                }
-
-                /// <inheritdoc/>
-                void IEnumerator.Reset() => ((IEnumerator)_valueSetsEnumerator).Reset();
-            }
+            /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+            void IEnumerator.Reset() => throw new NotSupportedException();
         }
     }
 }
