@@ -53,9 +53,9 @@ public partial class ListDictionary<TKey, TValue> :
     /// key or to monitor when items are added to the key.
     /// </summary>
     /// <remarks>
-    /// Empty value lists, such as new lists returned using this indexer when the key is not found, are not part of the dictionary until items are added to
+    /// <para>Empty value lists, such as new lists returned using this indexer when the key is not found, are not part of the dictionary until items are added to
     /// them. When the value list becomes empty again, it is removed from the dictionary. Value lists stay synchronized with their dictionary to always reflect
-    /// the values associated with their key inside the dictionary.
+    /// the values associated with their key inside the dictionary.</para>
     /// </remarks>
     public ValueList this[TKey key]
     {
@@ -83,12 +83,8 @@ public partial class ListDictionary<TKey, TValue> :
     /// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}.Keys"/>
     public KeyCollection Keys => _keys ??= new KeyCollection(this);
 
-#pragma warning disable CA1721 // Property names should not match get methods
-
     /// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}.ValueCount"/>
     public int ValueCount => _valueCount;
-
-#pragma warning restore CA1721
 
     /// <summary>
     /// Gets a collection containing the value lists in the dictionary.
@@ -258,15 +254,15 @@ public partial class ListDictionary<TKey, TValue> :
 #endif
 
     [Conditional("DEBUG")]
-    private void DebugValid(ValueList valueList)
-    {
-        Debug.Assert(valueList.Count > 0, "empty value list");
-    }
-
-    [Conditional("DEBUG")]
     private void DebugValueCount()
     {
         Debug.Assert(_valueCount == _lookup.Values.Sum(v => v.Count), "incorrect value count");
+    }
+
+    [Conditional("DEBUG")]
+    private static void DebugValid(ValueList valueList)
+    {
+        Debug.Assert(valueList.Count > 0, "empty value list");
     }
 
     #region Explicit Interface Implementations

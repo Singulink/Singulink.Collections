@@ -133,7 +133,7 @@ public partial class ListDictionary<TKey, TValue>
                     if (!_valueListsEnumerator.MoveNext())
                         return false;
 
-                    _dictionary.DebugValid(_valueListsEnumerator.Current);
+                    DebugValid(_valueListsEnumerator.Current);
 
                     _currentListEnumerator = _valueListsEnumerator.Current.LastList.GetEnumerator();
                     _currentListEnumerator.MoveNext();
@@ -148,7 +148,7 @@ public partial class ListDictionary<TKey, TValue>
                 if (!_valueListsEnumerator.MoveNext())
                     return false;
 
-                _dictionary.DebugValid(_valueListsEnumerator.Current);
+                DebugValid(_valueListsEnumerator.Current);
 
                 _currentListEnumerator = _valueListsEnumerator.Current.LastList.GetEnumerator();
                 _currentListEnumerator.MoveNext();

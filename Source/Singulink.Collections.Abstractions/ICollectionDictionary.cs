@@ -21,9 +21,9 @@ public interface ICollectionDictionary<TKey, TValue, TValueCollection> : IReadOn
     /// values to the key or to monitor when items are added to the key.
     /// </summary>
     /// <remarks>
-    /// Empty value collections, such as new collections returned using this indexer when the key is not found, are not part of the dictionary until items are
+    /// <para>Empty value collections, such as new collections returned using this indexer when the key is not found, are not part of the dictionary until items are
     /// added to them. When the value collection becomes empty again, it is removed from the dictionary. Value collections stay synchronized with their
-    /// dictionary to always reflect the values associated with their key inside the dictionary.
+    /// dictionary to always reflect the values associated with their key inside the dictionary.</para>
     /// </remarks>
     TValueCollection this[TKey key] { get; }
 

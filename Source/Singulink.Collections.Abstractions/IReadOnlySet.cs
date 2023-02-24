@@ -15,7 +15,7 @@ namespace System.Collections.Generic;
 /// </summary>
 /// <typeparam name="T">The type of elements in the set.</typeparam>
 /// <remarks>
-/// This is a .NET Standard polyfill from the Singulink.Collections library. On .NET 5.0+ this type is forwarded to the runtime system type.
+/// <para>This is a .NET Standard polyfill from the Singulink.Collections library. On .NET 5.0+ this type is forwarded to the runtime system type.</para>
 /// </remarks>
 public interface IReadOnlySet<T> : IReadOnlyCollection<T>
 {

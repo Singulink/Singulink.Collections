@@ -122,7 +122,7 @@ public partial class HashSetDictionary<TKey, TValue>
 #if DEBUG
                 if (_valueSetsEnumerator.MoveNext())
                 {
-                    _dictionary.DebugValid(_valueSetsEnumerator.Current);
+                    DebugValid(_valueSetsEnumerator.Current);
                     return true;
                 }
 

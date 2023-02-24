@@ -21,7 +21,7 @@ public interface IReadOnlyCollectionDictionary<TKey, TValue, TValueCollection> :
     /// monitor when items are added to the key.
     /// </summary>
     /// <remarks>
-    /// Value collections synchronize with their dictionary to always reflect the values associated with their key inside the dictionary.
+    /// <para>Value collections synchronize with their dictionary to always reflect the values associated with their key inside the dictionary.</para>
     /// </remarks>
     TValueCollection this[TKey key] { get; }
 

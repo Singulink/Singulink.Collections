@@ -6,6 +6,8 @@ namespace Singulink.Collections;
 /// Represents a collection of two types of values that map between each other in a bidirectional one-to-one relationship. Values on each side of the map
 /// must be unique on their respective side.
 /// </summary>
+/// <typeparam name="TLeft">The type of values on the left side of the map.</typeparam>
+/// <typeparam name="TRight">The type of values on the right side of the map.</typeparam>
 public interface IMap<TLeft, TRight> : ICollection<KeyValuePair<TLeft, TRight>>
 {
     /// <summary>

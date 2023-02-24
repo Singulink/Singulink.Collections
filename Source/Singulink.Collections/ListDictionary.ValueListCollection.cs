@@ -122,7 +122,7 @@ public partial class ListDictionary<TKey, TValue>
 #if DEBUG
                 if (_valueListsEnumerator.MoveNext())
                 {
-                    _dictionary.DebugValid(_valueListsEnumerator.Current);
+                    DebugValid(_valueListsEnumerator.Current);
                     return true;
                 }
 

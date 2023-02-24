@@ -133,7 +133,7 @@ public partial class HashSetDictionary<TKey, TValue>
                     if (!_valueSetsEnumerator.MoveNext())
                         return false;
 
-                    _dictionary.DebugValid(_valueSetsEnumerator.Current);
+                    DebugValid(_valueSetsEnumerator.Current);
 
                     _currentSetEnumerator = _valueSetsEnumerator.Current.LastSet.GetEnumerator();
                     _currentSetEnumerator.MoveNext();
@@ -147,7 +147,7 @@ public partial class HashSetDictionary<TKey, TValue>
                 if (!_valueSetsEnumerator.MoveNext())
                     return false;
 
-                _dictionary.DebugValid(_valueSetsEnumerator.Current);
+                DebugValid(_valueSetsEnumerator.Current);
 
                 _currentSetEnumerator = _valueSetsEnumerator.Current.LastSet.GetEnumerator();
                 _currentSetEnumerator.MoveNext();

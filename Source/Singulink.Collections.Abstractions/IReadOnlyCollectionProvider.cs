@@ -8,6 +8,7 @@ namespace Singulink.Collections;
 /// Allows a collection to return a read-only wrapper. This interface should be implemented by the value collections in collection dictionaries to
 /// facilitate full read-only wrapping of not just the dictionary but also the collections it contains.
 /// </summary>
+/// <typeparam name="T">The type of elements in the read-only wrapper.</typeparam>
 public interface IReadOnlyCollectionProvider<T>
 {
     /// <summary>

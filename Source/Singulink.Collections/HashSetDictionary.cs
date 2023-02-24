@@ -55,9 +55,9 @@ public partial class HashSetDictionary<TKey, TValue> :
     /// key or to monitor when items are added to the key.
     /// </summary>
     /// <remarks>
-    /// Empty value sets, such as new sets returned using this indexer when the key is not found, are not part of the dictionary until items are added to them.
+    /// <para>Empty value sets, such as new sets returned using this indexer when the key is not found, are not part of the dictionary until items are added to them.
     /// When the value set becomes empty again, it is removed from the dictionary. Value sets stay synchronized with their dictionary to always reflect the
-    /// values associated with their key inside the dictionary.
+    /// values associated with their key inside the dictionary.</para>
     /// </remarks>
     public ValueSet this[TKey key]
     {
@@ -90,12 +90,8 @@ public partial class HashSetDictionary<TKey, TValue> :
     /// </summary>
     public IEqualityComparer<TValue> ValueComparer => _valueComparer ?? EqualityComparer<TValue>.Default;
 
-#pragma warning disable CA1721 // Property names should not match get methods
-
     /// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}.ValueCount"/>
     public int ValueCount => _valueCount;
-
-#pragma warning restore CA1721
 
     /// <summary>
     /// Gets a collection containing the value sets in the dictionary.
@@ -249,15 +245,15 @@ public partial class HashSetDictionary<TKey, TValue> :
 #endif
 
     [Conditional("DEBUG")]
-    private void DebugValid(ValueSet valueSet)
-    {
-        Debug.Assert(valueSet.Count > 0, "empty value set");
-    }
-
-    [Conditional("DEBUG")]
     private void DebugValueCount()
     {
         Debug.Assert(_valueCount == _lookup.Values.Sum(v => v.Count), "incorrect value count");
+    }
+
+    [Conditional("DEBUG")]
+    private static void DebugValid(ValueSet valueSet)
+    {
+        Debug.Assert(valueSet.Count > 0, "empty value set");
     }
 
     #region Explicit Interface Implementations
