@@ -11,11 +11,11 @@ using System.Runtime.CompilerServices;
 namespace System.Collections.Generic;
 
 /// <summary>
-/// Provides a readonly abstraction of a set.
+/// Provides a read-only abstraction of a set.
 /// </summary>
 /// <typeparam name="T">The type of elements in the set.</typeparam>
 /// <remarks>
-/// <para>This is a .NET Standard polyfill from the Singulink.Collections library. On .NET 5.0+ this type is forwarded to the runtime system type.</para>
+/// <para>This is a .NET Standard polyfill from the Singulink.Collections.Abstractions library. On .NET 5.0+ this type is forwarded to the runtime system type.</para>
 /// </remarks>
 public interface IReadOnlySet<T> : IReadOnlyCollection<T>
 {

@@ -10,7 +10,7 @@ public class AsReadOnlyTests
         d[1].AddRange(new[] { "one", "uno", "1" });
         d[2].AddRange(new[] { "two", "dos", "2" });
 
-        var rod = d.AsReadOnlyListDictionary();
+        var rod = d.AsReadOnly();
 
         rod.Values.ShouldBe(new[] { "one", "uno", "1", "two", "dos", "2" }, ignoreOrder: true);
         rod[1].ShouldBe(new[] { "one", "uno", "1" });
@@ -42,7 +42,7 @@ public class AsReadOnlyTests
         d[1].AddRange(new[] { "one", "uno", "1" });
         d[2].AddRange(new[] { "two", "dos", "2" });
 
-        var rod = d.AsReadOnlyListDictionary().AsReadOnlyCollectionDictionary();
+        var rod = d.AsReadOnly().AsReadOnlyCollectionDictionary();
 
         rod.Values.ShouldBe(new[] { "one", "uno", "1", "two", "dos", "2" }, ignoreOrder: true);
         rod[1].ShouldBe(new[] { "one", "uno", "1" });
