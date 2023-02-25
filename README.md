@@ -11,7 +11,7 @@
 
 **Singulink.Collections** provides generally useful collections that are missing from .NET. They are highly optimized for performance, well documented and follow the same design principles as built-in .NET collections so they should feel instantly familiar.
 
-The following collections are included in the `Singulink.Collections`:
+The following collections are included in **Singulink.Collections**:
 - `Map`: Collection of two types of values that map between each other in a bidirectional one-to-one relationship.
 - `HashSetDictionary`: Collection of keys mapped to a hash set of unique values per key.
 - `ListDictionary`: Collection of keys mapped to a list of values per key.
@@ -22,7 +22,7 @@ The following collections are included in the `Singulink.Collections`:
 
 **Singulink.Collections.Weak** provides a set of collection classes that store weak references to values so that the gargabe collector is free to reclaim the memory they use when they aren't being referenced anymore. The values returned by the collections will never be `null` - if the value was garbage collected then the collection behaves as if the value was removed from the collection.
 
-The following collections are included in the package:
+The following collections are included in **Singulink.Collections.Weak**:
 - `WeakCollection`: Collection of weakly referenced values that keeps items in an undefined order.
 - `WeakList`: Collection of weakly referenced values that maintains relative insertion order.
 - `WeakValueDictionary`: Collection of keys and weakly referenced values.
@@ -35,7 +35,7 @@ This package is part of our **Singulink Libraries** collection. Visit https://gi
 
 ## Installation
 
-The packages are available on NuGet - simply install the `Singulink.Collections`, `Singulink.Collections.Abstractions` and/or `Singulink.Collections.Weak` packages.
+The packages are available on NuGet - simply install the **Singulink.Collections**, **Singulink.Collections.Abstractions** and/or **Singulink.Collections.Weak** packages.
 
 **Supported Runtimes**: Anywhere .NET Standard 2.0+ is supported, including:
 - .NET Core 2.0+
@@ -68,7 +68,7 @@ int one = nameToNumberMap["ONE"]; // 1
 
 ```
 
-### ListDictionary:
+### ListDictionary
 
 Very similar API to `HashSetDictionary`, and both can be exposed as `ICollectionDictionary`:
 
@@ -97,10 +97,10 @@ numberNames.TryGetValues(3, out threeNames); // false
 public class YourClass
 {
     private ListDictionary<int, string> _numberNames;
-_
+
     // Expose as IListDictionary (with IList<string> values)
     public IListDictionary<int, string> NumberNames => _numberNames;
-_
+
     // Expose as IReadOnlyListDictionary (with IReadOnlyList<string> values)
     public IReadOnlyListDictionary<int, string> NumberNames => _numberNames.AsReadOnly();
 
