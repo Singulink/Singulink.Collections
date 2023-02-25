@@ -12,7 +12,7 @@ public static class CollectionDictionaryExtensions
     /// <summary>
     /// Returns an <see cref="IReadOnlyCollectionDictionary{TKey, TValue}"/> wrapper for a collection dictionary.
     /// </summary>
-    public static IReadOnlyCollectionDictionary<TKey, TValue> AsReadOnlyCollectionDictionary<TKey, TValue>(this ICollectionDictionary<TKey, TValue> dictionary)
+    public static IReadOnlyCollectionDictionary<TKey, TValue> AsReadOnly<TKey, TValue>(this ICollectionDictionary<TKey, TValue> dictionary)
     {
         if (dictionary is CollectionDictionary<TKey, TValue, IList<TValue>> ld)
             return new ReadOnlyCollectionDictionary<TKey, TValue, IList<TValue>>(ld.WrappedDictionary);
@@ -65,7 +65,7 @@ public static class CollectionDictionaryExtensions
     /// <summary>
     /// Returns an <see cref="IReadOnlyListDictionary{TKey, TValue}"/> wrapper for a list dictionary.
     /// </summary>
-    public static IReadOnlyListDictionary<TKey, TValue> AsReadOnlyListDictionary<TKey, TValue>(this IListDictionary<TKey, TValue> dictionary)
+    public static IReadOnlyListDictionary<TKey, TValue> AsReadOnly<TKey, TValue>(this IListDictionary<TKey, TValue> dictionary)
     {
         return new ReadOnlyListDictionary<TKey, TValue>(dictionary);
     }
@@ -162,7 +162,7 @@ public static class CollectionDictionaryExtensions
     /// <summary>
     /// Returns an <see cref="IReadOnlySetDictionary{TKey, TValue}"/> wrapper for a set dictionary.
     /// </summary>
-    public static IReadOnlySetDictionary<TKey, TValue> AsReadOnlySetDictionary<TKey, TValue>(this ISetDictionary<TKey, TValue> dictionary)
+    public static IReadOnlySetDictionary<TKey, TValue> AsReadOnly<TKey, TValue>(this ISetDictionary<TKey, TValue> dictionary)
     {
         return new ReadOnlySetDictionary<TKey, TValue>(dictionary);
     }

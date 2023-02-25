@@ -2,7 +2,11 @@
 
 namespace Singulink.Collections;
 
-/// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}"/>
+/// <summary>
+/// Represents a collection of keys mapped to a collection of values per key.
+/// </summary>
+/// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
+/// <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
 public interface ICollectionDictionary<TKey, TValue> : ICollectionDictionary<TKey, TValue, ICollection<TValue>>
 {
 }

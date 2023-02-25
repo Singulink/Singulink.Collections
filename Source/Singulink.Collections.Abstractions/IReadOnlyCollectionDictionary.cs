@@ -2,7 +2,11 @@
 
 namespace Singulink.Collections;
 
-/// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}"/>
+/// <summary>
+/// Represents a read-only collection of keys mapped to a read-only collection of values per key.
+/// </summary>
+/// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
+/// <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
 public interface IReadOnlyCollectionDictionary<TKey, TValue> : IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyCollection<TValue>>
 {
 }

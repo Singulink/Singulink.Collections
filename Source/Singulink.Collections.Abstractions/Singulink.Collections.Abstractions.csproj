@@ -19,6 +19,7 @@ Singulink.Collections.IReadOnlyMap&lt;TLeft, TRight&gt;</Description>
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <ProduceReferenceAssembly>true</ProduceReferenceAssembly>
   </PropertyGroup>
 
   <PropertyGroup Label="Source Link" Condition="'$(Configuration)' == 'Release'">

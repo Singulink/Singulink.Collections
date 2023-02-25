@@ -322,7 +322,7 @@ public partial class ListDictionary<TKey, TValue>
         #endregion
 
         /// <summary>
-        /// Enumerates the elements of a value list.
+        /// Enumerates the elements of a <see cref="ReadOnlyValueList"/> or <see cref="ValueList"/>.
         /// </summary>
         public struct Enumerator : IEnumerator<TValue>
         {

@@ -243,7 +243,7 @@ public partial class HashSetDictionary<TKey, TValue>
         #endregion
 
         /// <summary>
-        /// Enumerates the elements of a value set.
+        /// Enumerates the elements of a <see cref="ReadOnlyValueSet"/> or <see cref="ValueSet"/>.
         /// </summary>
         public struct Enumerator : IEnumerator<TValue>
         {
