@@ -139,6 +139,7 @@ public partial class HashSetDictionary<TKey, TValue> :
             set.Clear();
             _lookup.Remove(key);
 
+            DebugValueCount();
             return true;
         }
 
