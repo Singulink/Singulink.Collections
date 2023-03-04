@@ -77,7 +77,7 @@ public interface ICollectionDictionary<TKey, TValue, TValueCollection> : IReadOn
     bool ContainsValue(TValue value);
 
     /// <summary>
-    /// Gets the number of values in the dictionary associated with the specified key or 0 if the key is not present.
+    /// Gets the number of values in the dictionary associated with the specified key or zero if the key is not present.
     /// </summary>
     int GetValueCount(TKey key);
 
