@@ -66,10 +66,10 @@ namespace Singulink.Collections.Weak.Tests
             Assert.IsTrue(c.Remove(1));
             Assert.IsFalse(c.Remove(4));
 
-            #if NETCOREAPP2_2 // NS2.0 target does not support removing stale entries as items are encountered.
+#if NET48 // NS2.0 target does not support removing stale entries as items are encountered.
             Assert.AreEqual(6, c.AddCountSinceLastClean);
             Assert.AreEqual(4, c.UnsafeCount);
-            #else
+#else
             Assert.AreEqual(0, c.AddCountSinceLastClean);
             Assert.AreEqual(1, c.UnsafeCount);
             #endif
