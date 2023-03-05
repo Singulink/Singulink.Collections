@@ -79,15 +79,16 @@ numberNames[2].AddRange("Two", "Dos");
 
 numberNames.ContainsValue("Two"); // true
 
-ValueList threeNames = numberNames[3];
+// Empty lists are not part of the dictionary until a value is added
 
-// Empty lists are not part of the dictionary until a value is added:
+ValueList threeNames = numberNames[3];
 numberNames.ContainsKey(3); // false
 
 threeNames.Add("Three");
 numberNames.ContainsKey(3); // true
 
-// Lists are automatically removed from the dictionary when they become empty again
+// Lists are automatically removed from the dictionary when they become empty
+
 threeNames.Clear();
 numberNames.TryGetValues(3, out threeNames); // false
 
@@ -108,21 +109,23 @@ public class YourClass
     public ICollectionDictionary<int, string> NumberNames => _numberNames.AsCollectionDictionary();
 
     // Expose as IReadOnlyCollectionDictionary (with IReadOnlyCollection<string> values)
-    public ICollectionDictionary<int, string> NumberNames => _numberNames.AsReadOnlyCollectionDictionary();
+    public IReadOnlyCollectionDictionary<int, string> NumberNames => _numberNames.AsReadOnlyCollectionDictionary();
 
     // Expose as IReadOnlyDictionary<int, IList<string>>
-    // (Note that values can still be added/removed/modified through the value ILists using indexers and 
-    // methods as shown above even though it is an IReadOnlyDictionary)
+    // Note that values can still be added/removed/modified through the value ILists even though it is
+    // an IReadOnlyDictionary. Many of the additional API's present in the IDictionary interface are
+    // not sensible in the context of a collection dictionary so that interface is not supported.
     public IReadOnlyDictionary<int, IList<string>> NumberNames => _numberNames;
-
-    // Expose as IReadOnlyDictionary<int, ICollection<string>>
-    public IReadOnlyDictionary<int, ICollection<string>> NumberNames => _numberNames.AsDictionaryOfCollection();
 
     // Expose as IReadOnlyDictionary<int, IReadOnlyList<string>> (fully read-only)
     public IReadOnlyDictionary<int, IReadOnlyList<string>> NumberNames => _numberNames.AsReadOnlyDictionaryOfList();
 
-}
+    // Expose as IReadOnlyDictionary<int, ICollection<string>>
+    public IReadOnlyDictionary<int, ICollection<string>> NumberNames => _numberNames.AsDictionaryOfCollection();
 
+    // Expose as IReadOnlyDictionary<int, IReadOnlyCollection<string>>
+    public IReadOnlyDictionary<int, IReadOnlyCollection<string>> NumberNames => _numberNames.AsReadOnlyDictionaryOfCollection();
+}
 ```
 
 ## Further Reading
