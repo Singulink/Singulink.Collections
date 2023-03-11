@@ -81,16 +81,16 @@ numberNames.ContainsValue("Two"); // true
 
 // Empty lists are not part of the dictionary until a value is added
 
-ValueList threeNames = numberNames[3];
+var threeNamesList = numberNames[3];
 numberNames.ContainsKey(3); // false
 
-threeNames.Add("Three");
+threeNamesList.Add("Three");
 numberNames.ContainsKey(3); // true
 
 // Lists are automatically removed from the dictionary when they become empty
 
-threeNames.Clear();
-numberNames.TryGetValues(3, out threeNames); // false
+threeNamesList.Clear();
+numberNames.TryGetValues(3, out threeNamesList); // false
 
 // Examples of some of the supported ways to expose the dictionary through interfaces depending on your
 // preferences and needs:
