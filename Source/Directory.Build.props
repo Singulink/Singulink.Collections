@@ -13,7 +13,7 @@
 
   <ItemGroup>
     <!-- Fody -->
-    <PackageReference Include="RuntimeNullables.Fody" Version="1.0.4" PrivateAssets="all" />
+    <PackageReference Include="RuntimeNullables.Fody" Version="1.0.5" PrivateAssets="all" />
 
     <!-- Analyzers -->
     <PackageReference Include="DotNetAnalyzers.DocumentationAnalyzers" Version="1.0.0-beta.59" PrivateAssets="all" />
