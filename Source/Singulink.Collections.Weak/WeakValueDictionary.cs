@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Singulink.Collections
@@ -65,9 +65,6 @@ namespace Singulink.Collections
         /// Gets or sets a value indicating whether to automatically call <see cref="TrimExcess"/> whenever <see cref="Clean"/> is called. Default value is
         /// <see langword="false"/>.
         /// </summary>
-        /// <remarks>
-        /// <para>Setting this property on the .NET Standard 2.0 version of the library (i.e. on .NET Framework or .NET Core 2.2) has no effect.</para>
-        /// </remarks>
         public bool TrimExcessDuringClean { get; set; }
 
         /// <summary>

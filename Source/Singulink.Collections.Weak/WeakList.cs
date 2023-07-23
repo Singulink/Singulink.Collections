@@ -34,7 +34,7 @@ namespace Singulink.Collections
         {
             get => _autoCleanAddCount == 0 ? null : _autoCleanAddCount;
             set {
-                if (_autoCleanAddCount < 1)
+                if (value < 1)
                     throw new ArgumentOutOfRangeException(nameof(value));
 
                 _autoCleanAddCount = value.GetValueOrDefault();
