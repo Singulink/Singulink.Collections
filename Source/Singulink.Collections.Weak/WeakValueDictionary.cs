@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 
 namespace Singulink.Collections
@@ -218,10 +218,8 @@ namespace Singulink.Collections
             foreach (var kvp in staleKvps)
                 _entryLookup.Remove(kvp.Key);
 
-#if !NETSTANDARD2_0
             if (TrimExcessDuringClean)
                 TrimExcess();
-#endif
 
             _addCountSinceLastClean = 0;
         }
