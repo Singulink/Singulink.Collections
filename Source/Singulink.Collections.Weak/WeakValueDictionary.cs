@@ -156,17 +156,54 @@ namespace Singulink.Collections
         /// Removes the value with the specified key from the dictionary.
         /// </summary>
         /// <returns><see langword="true"/> if the item was found and removed, otherwise <see langword="false"/>.</returns>
-        public bool Remove(TKey key) => TryGetValue(key, out _) && _entryLookup.Remove(key);
+        public bool Remove(TKey key)
+        {
+            if (_entryLookup.TryGetValue(key, out var entry))
+            {
+                _entryLookup.Remove(key);
+                return entry.TryGetTarget(out _);
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Removes the value with the specified key from the dictionary.
+        /// </summary>
+        /// <param name="key">The key of the value to remove.</param>
+        /// <param name="value">The value that was removed, otherwise <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the item was found and removed, otherwise <see langword="false"/>.</returns>
+        public bool Remove(TKey key, [MaybeNullWhen(false)] out TValue value)
+        {
+            if (_entryLookup.TryGetValue(key, out var entry))
+            {
+                _entryLookup.Remove(key);
+                return entry.TryGetTarget(out value);
+            }
+
+            value = default;
+            return false;
+        }
 
         /// <summary>
         /// Removes the entry with the given key and value from the dictionary using the specified equality comparer for the value type.
         /// </summary>
         public bool Remove(TKey key, TValue value, IEqualityComparer<TValue>? comparer = null)
         {
-            if (TryGetValue(key, out var current) && (comparer ?? EqualityComparer<TValue>.Default).Equals(value, current))
+            if (_entryLookup.TryGetValue(key, out var entry))
             {
-                _entryLookup.Remove(key);
-                return true;
+                if (entry.TryGetTarget(out var current))
+                {
+                    if ((comparer ?? EqualityComparer<TValue>.Default).Equals(value, current))
+                    {
+                        _entryLookup.Remove(key);
+                        return true;
+                    }
+                }
+                else
+                {
+                    _entryLookup.Remove(key);
+                }
             }
 
             return false;
