@@ -13,7 +13,7 @@
       ],
       "dest": "api",
       "memberLayout": "separatePages",
-      "disableGitFeatures": false,
+      "disableGitFeatures": true,
       "disableDefaultFilter": false
     }
   ],
@@ -62,13 +62,12 @@
       }
     ],
     "dest": "_site",
+    "disableGitFeatures": true,
     "globalMetadataFiles": [],
     "fileMetadataFiles": [],
     "postProcessors": [],
     "markdownEngineName": "markdig",
     "noLangKeyword": false,
-    "keepFileLink": false,
-    "cleanupCacheHistory": false,
-    "disableGitFeatures": false
+    "keepFileLink": false
   }
 }
