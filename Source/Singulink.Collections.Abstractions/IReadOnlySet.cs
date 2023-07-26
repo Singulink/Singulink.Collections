@@ -1,6 +1,6 @@
 ﻿// IReadOnlySet Polyfill for netstandard TFMs
 
-#if !NETSTANDARD
+#if NET
 
 using System.Runtime.CompilerServices;
 

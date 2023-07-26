@@ -1,5 +1,4 @@
-﻿using System;
-using System.Runtime.CompilerServices;
+﻿using System.Runtime.CompilerServices;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Singulink.Collections.Weak.Tests
@@ -11,9 +10,10 @@ namespace Singulink.Collections.Weak.Tests
         public void Clean()
         {
             var c = new WeakValueDictionary<int, object>();
-            object x = new object();
+            object x = new();
 
-            using (NoGCRegion.Enter(1000)) {
+            using (NoGCRegion.Enter(1000))
+            {
                 c.Add(0, x);
                 c.Add(1, x);
                 c.Add(2, x);
@@ -37,9 +37,10 @@ namespace Singulink.Collections.Weak.Tests
         public void EnumerationCleaning()
         {
             var c = new WeakValueDictionary<int, object>();
-            object x = new object();
+            object x = new();
 
-            using (NoGCRegion.Enter(1000)) {
+            using (NoGCRegion.Enter(1000))
+            {
                 c.Add(0, x);
                 c.Add(1, x);
                 c.Add(2, x);
@@ -50,9 +51,9 @@ namespace Singulink.Collections.Weak.Tests
                 Assert.AreEqual(6, c.UnsafeCount);
                 Assert.IsTrue(c.ContainsKey(1));
 
-                #if DEBUG || !NETFRAMEWORK // Causes entry with key 4 not to collection on NETFW release builds
+#if DEBUG || !NETFRAMEWORK // Causes entry with key 4 not to collect on NETFW release builds
                 Assert.IsTrue(c.ContainsKey(4));
-                #endif
+#endif
             }
 
             Helpers.CollectAndWait();
@@ -68,11 +69,11 @@ namespace Singulink.Collections.Weak.Tests
 
 #if NET48 // NS2.0 target does not support removing stale entries as items are encountered.
             Assert.AreEqual(6, c.AddCountSinceLastClean);
-            Assert.AreEqual(4, c.UnsafeCount);
+            Assert.AreEqual(3, c.UnsafeCount);
 #else
             Assert.AreEqual(0, c.AddCountSinceLastClean);
             Assert.AreEqual(1, c.UnsafeCount);
-            #endif
+#endif
 
             GC.KeepAlive(x);
         }

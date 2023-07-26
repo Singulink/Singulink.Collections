@@ -10,8 +10,10 @@ public class FlowTests
         var oneList = d[1];
         var twoList = d[2];
 
-        d[1].AddRange(new[] { "one", "uno", "1" }).ShouldBe(3);
-        d[2].AddRange(new[] { "two", "dos", "2" }).ShouldBe(3);
+        d[1].Add("one");
+        d[1].AddRange(new[] { "uno", "1" }).ShouldBe(2);
+        d[2].AddRange(new[] { "two", "dos", "222" }).ShouldBe(3);
+        d[2][2] = "2";
         d[3].AddRange(new[] { "three", "tres", "3" }).ShouldBe(3);
 
         d.Count.ShouldBe(3);
@@ -34,7 +36,7 @@ public class FlowTests
         // ContainsKey false
 
         d.ContainsKey(4).ShouldBeFalse();
-        d[4].AddRange(new string[] { });
+        d[4].AddRange(new string[0]);
         d.ContainsKey(4).ShouldBeFalse();
 
         // TryGetValues
@@ -45,12 +47,12 @@ public class FlowTests
         twoSetDup.Key.ShouldBe(2);
         twoSetDup.Count.ShouldBe(3);
         twoSetDup.ShouldBe(new[] { "two", "dos", "2" });
-        twoSetDup.AsTransient().ShouldBe(new[] { "two", "dos", "2" });
+        twoSetDup.AsTransientReadOnly().ShouldBe(new[] { "two", "dos", "2" });
         twoSetDup.ShouldBe(twoList);
 
         twoList.Count.ShouldBe(3);
         twoList.ShouldBe(new[] { "two", "dos", "2" });
-        twoList.AsTransient().ShouldBe(new[] { "two", "dos", "2" });
+        twoList.AsTransientReadOnly().ShouldBe(new[] { "two", "dos", "2" });
 
         // Remove
 
@@ -67,13 +69,13 @@ public class FlowTests
 
         twoList.Count.ShouldBe(2);
         twoList.ShouldBe(new[] { "two", "2" });
-        twoList.AsTransient().ShouldBe(new[] { "two", "2" });
+        twoList.AsTransientReadOnly().ShouldBe(new[] { "two", "2" });
 
         twoSetDup.ShouldBe(twoList);
 
         // SetRange
 
-        d[2].SetRange(new string[] { });
+        d[2].SetRange(new string[0]);
 
         d.Count.ShouldBe(2);
         d.Keys.Count.ShouldBe(2);

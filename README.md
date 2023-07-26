@@ -37,12 +37,12 @@ This package is part of our **Singulink Libraries** collection. Visit https://gi
 
 The packages are available on NuGet - simply install the **Singulink.Collections**, **Singulink.Collections.Abstractions** and/or **Singulink.Collections.Weak** packages.
 
-**Supported Runtimes**: Anywhere .NET Standard 2.0+ is supported, including:
-- .NET Core 2.0+
-- .NET Framework 4.6.1+
-- Mono 5.4+
-- Xamarin.iOS 10.14+
-- Xamarin.Android 8.0+
+**Supported Runtimes**: Anywhere .NET Standard 2.0 is supported, including:
+- .NET
+- .NET Framework
+- Mono / Xamarin
+
+End-of-life versions of the runtimes above that are out of support are not tested or supported by this library.
 
 ## Usage
 

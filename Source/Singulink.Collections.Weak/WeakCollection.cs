@@ -13,12 +13,7 @@ namespace Singulink.Collections
     /// </remarks>
     public sealed class WeakCollection<T> : IEnumerable<T> where T : class
     {
-#if NET || NETSTANDARD
         private readonly HashSet<WeakReference<T>> _entries = new();
-#else
-        // Use dictionary instead of HashSet because HashSet can't remove while enumerating before net5.
-        private readonly Dictionary<WeakReference<T>, Void> _entries = new();
-#endif
 
         private int _autoCleanAddCount;
         private int _addCountSinceLastClean;
@@ -74,12 +69,7 @@ namespace Singulink.Collections
         /// </summary>
         public void Add(T item)
         {
-#if NET || NETSTANDARD
             _entries.Add(new WeakReference<T>(item));
-#else
-            _entries.Add(new WeakReference<T>(item), default);
-#endif
-
             _addCountSinceLastClean++;
 
             if (_autoCleanAddCount != 0 && _addCountSinceLastClean >= _autoCleanAddCount)
@@ -94,12 +84,8 @@ namespace Singulink.Collections
         {
             comparer ??= EqualityComparer<T>.Default;
 
-#if NET || NETSTANDARD
             foreach (var entry in _entries)
             {
-#else
-            foreach (var entry in _entries.Keys) {
-#endif
                 if (entry.TryGetTarget(out var value))
                 {
                     if (comparer.Equals(value, item))
@@ -108,8 +94,9 @@ namespace Singulink.Collections
                         return true;
                     }
                 }
-#if NETCOREAPP
-                else {
+#if NET
+                else
+                {
                     _entries.Remove(entry);
                 }
 #endif
@@ -125,18 +112,14 @@ namespace Singulink.Collections
         {
             comparer ??= EqualityComparer<T>.Default;
 
-#if NET || NETSTANDARD
             foreach (var entry in _entries)
             {
-#else
-            foreach (var entry in _entries.Keys) {
-#endif
                 if (entry.TryGetTarget(out var value))
                 {
                     if (comparer.Equals(value, item))
                         return true;
                 }
-#if NETCOREAPP
+#if NET
                 else {
                     _entries.Remove(entry);
                 }
@@ -162,8 +145,6 @@ namespace Singulink.Collections
         {
 #if NET
             var staleEntries = _entries.Where(e => !e.TryGetTarget(out _));
-#elif NETCOREAPP
-            var staleEntries = _entries.Keys.Where(e => !e.TryGetTarget(out _));
 #else
             var staleEntries = _entries.Where(e => !e.TryGetTarget(out _)).ToList();
 #endif
@@ -185,6 +166,9 @@ namespace Singulink.Collections
         /// <summary>
         /// Ensures that this collection can hold the specified number of elements without growing.
         /// </summary>
+        /// <remarks>
+        /// This method has no effect on .NET Framework.
+        /// </remarks>
         public void EnsureCapacity(int capacity)
         {
 #if !NETSTANDARD2_0
@@ -197,21 +181,17 @@ namespace Singulink.Collections
         /// </summary>
         public IEnumerator<T> GetEnumerator()
         {
-#if NET || NETSTANDARD
             foreach (var entry in _entries)
             {
-#else
-            foreach (var entry in _entries.Keys) {
-#endif
                 if (entry.TryGetTarget(out var item))
                     yield return item;
-#if NETCOREAPP
+#if NET
                 else
                     _entries.Remove(entry);
 #endif
             }
 
-#if NETCOREAPP
+#if NET
             _addCountSinceLastClean = 0;
 #endif
         }

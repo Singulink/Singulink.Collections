@@ -8,10 +8,9 @@ namespace Singulink.Collections
     /// manner) then all accesses must be synchronized with a full lock.
     /// </summary>
     /// <remarks>
-    /// <para>On .NET Core 3+, internal entries for garbage collected values are removed as they are encountered (i.e. if a key lookup is performed on a garbage
-    /// collected value or if keys/values are enumerated over). This is not the case on .NET Standard targets like .NET Framework and earlier versions of .NET
-    /// Core. You can perform a full clean by calling the <see cref="Clean"/> method or configure automatic cleaning after a set number of add operations by
-    /// setting the <see cref="AutoCleanAddCount"/> property.</para>
+    /// On .NET, internal entries for garbage collected values are cleaned as they are encountered (i.e. when a key lookup is performed on a garbage collected
+    /// value or key/value pairs are enumerated over). This is not the case on .NET Framework. You can perform a full clean by calling the <see cref="Clean"/>
+    /// method or configure automatic cleaning after a set number of add operations by setting the <see cref="AutoCleanAddCount"/> property.
     /// </remarks>
     public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
         where TKey : notnull
@@ -119,7 +118,7 @@ namespace Singulink.Collections
             {
                 if (entry.TryGetTarget(out value))
                     return true;
-#if NETCOREAPP
+#if NET
                 else
                     _entryLookup.Remove(key);
 #endif
@@ -134,10 +133,18 @@ namespace Singulink.Collections
         /// </summary>
         public bool TryAdd(TKey key, TValue value)
         {
-            if (_entryLookup.TryGetValue(key, out var entry) && entry.TryGetTarget(out _))
-                return false;
+            if (_entryLookup.TryGetValue(key, out var entry))
+            {
+                if (entry.TryGetTarget(out var _))
+                    return false;
 
-            _entryLookup[key] = new WeakReference<TValue>(value);
+                entry.SetTarget(value);
+            }
+            else
+            {
+                _entryLookup.Add(key, new WeakReference<TValue>(value));
+            }
+
             OnAdded();
             return true;
         }
@@ -210,12 +217,12 @@ namespace Singulink.Collections
         }
 
         /// <summary>
-        /// Indictes whether the dictionary contains the specified key/value pair using the specified value comparer.
+        /// Indictes whether the dictionary contains the specified key/value pair using the optionally specified value comparer.
         /// </summary>
         public bool Contains(KeyValuePair<TKey, TValue> kvp, IEqualityComparer<TValue>? comparer = null) => Contains(kvp.Key, kvp.Value, comparer);
 
         /// <summary>
-        /// Indictes whether the dictionary contains the key and value using the specified value comparer.
+        /// Indictes whether the dictionary contains the key and value using the optionally specified value comparer.
         /// </summary>
         public bool Contains(TKey key, TValue value, IEqualityComparer<TValue>? comparer = null)
         {
@@ -246,10 +253,10 @@ namespace Singulink.Collections
         /// </summary>
         public void Clean()
         {
-#if NETSTANDARD
-            var staleKvps = _entryLookup.Where(kvp => !kvp.Value.TryGetTarget(out _)).ToList();
-#else
+#if NET
             var staleKvps = _entryLookup.Where(kvp => !kvp.Value.TryGetTarget(out _));
+#else
+            var staleKvps = _entryLookup.Where(kvp => !kvp.Value.TryGetTarget(out _)).ToList();
 #endif
 
             foreach (var kvp in staleKvps)
@@ -280,6 +287,9 @@ namespace Singulink.Collections
         /// <summary>
         /// Ensures that this dictionary can hold the specified number of elements without growing.
         /// </summary>
+        /// <remarks>
+        /// This method has no effect on .NET Framework.
+        /// </remarks>
         public void EnsureCapacity(int capacity)
         {
 #if !NETSTANDARD2_0
@@ -296,13 +306,12 @@ namespace Singulink.Collections
             {
                 if (kvp.Value.TryGetTarget(out var value))
                     yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
-#if NETCOREAPP
+#if NET
                 else
                     _entryLookup.Remove(kvp.Key);
 #endif
             }
-
-#if NETCOREAPP
+#if NET
             _addCountSinceLastClean = 0;
 #endif
         }

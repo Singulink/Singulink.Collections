@@ -17,11 +17,8 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: |
-          3.0.103
-          3.1.426
-          5.0.408
-          6.0.406
-          7.0.200
+          6.0.x
+          7.0.x
     - name: Clean
       run: dotnet clean --configuration Debug && dotnet nuget locals all --clear
       working-directory: Source
@@ -45,11 +42,8 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: |
-          3.0.103
-          3.1.426
-          5.0.408
-          6.0.406
-          7.0.200
+          6.0.x
+          7.0.x
     - name: Clean
       run: dotnet clean --configuration Release && dotnet nuget locals all --clear
       working-directory: Source

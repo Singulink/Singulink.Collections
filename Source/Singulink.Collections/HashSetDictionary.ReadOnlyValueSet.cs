@@ -54,15 +54,15 @@ public partial class HashSetDictionary<TKey, TValue>
         /// <see cref="Key"/> in <see cref="Dictionary"/> are modified.
         /// </summary>
         /// <remarks>
-        /// <para>References to transient sets should only be held for as long as a series of multiple consequtive read-only operations need to be performed on
+        /// <para>References to transient sets should only be held for as long as a series of multiple consecutive read-only operations need to be performed on
         /// them. Once the values associated with <see cref="Key"/> are modified, the transient set's behavior is undefined and it may contain stale
         /// values.</para>
-        /// <para>It is not beneficial to use a transient set for a single read operation, but when multipe read operations need to be done consequtively,
-        /// slight performance gains may be seen from performing them on a transient read-only set instead of directly on a <see cref="ValueSet"/> or <see
-        /// cref="ReadOnlyValueSet"/>, since the transient set does not check if it needs to synchronize with a newly attached value set in the
-        /// dictionary.</para>
+        /// <para>It is not beneficial to use a transient set for a single read operation, but when multiple read operations need to be done consecutively
+        /// (including enumerating over multiple values), slight performance gains may be seen from performing them on the transient read-only set instead of
+        /// directly on the <see cref="ValueSet"/> or <see cref="ReadOnlyValueSet"/>, since the transient set does not check if it needs to re-synchronize with
+        /// the dictionary.</para>
         /// </remarks>
-        public ReadOnlyHashSet<TValue> AsTransient()
+        public ReadOnlyHashSet<TValue> AsTransientReadOnly()
         {
             var set = GetSet();
 
@@ -130,7 +130,18 @@ public partial class HashSetDictionary<TKey, TValue>
             return _lastSet.Count > 0 ? _lastSet : UpdateAndGetValues();
 
             [MethodImpl(MethodImplOptions.NoInlining)]
-            HashSet<TValue> UpdateAndGetValues() => _dictionary.TryGetValues(_key, out var valueSet) ? _lastSet = valueSet._lastSet : _lastSet;
+            HashSet<TValue> UpdateAndGetValues()
+            {
+                if (_dictionary.TryGetValues(_key, out var valueSet))
+                {
+                    _lastSet = valueSet._lastSet;
+
+                    if (_transientReadOnlySet != null)
+                        _transientReadOnlySet.WrappedSet = _lastSet;
+                }
+
+                return _lastSet;
+            }
         }
 
         #region Equality and Hash Code

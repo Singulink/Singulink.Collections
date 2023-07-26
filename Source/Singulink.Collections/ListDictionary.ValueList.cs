@@ -26,13 +26,8 @@ public partial class ListDictionary<TKey, TValue>
             get => base[index];
             set {
                 var list = GetList();
-
                 list[index] = value;
-
-                if (index == list.Count)
-                    FinishAdding(list, 1);
-                else
-                    _dictionary._version++;
+                _dictionary._version++;
             }
         }
 
@@ -94,8 +89,7 @@ public partial class ListDictionary<TKey, TValue>
             FinishRemoving(list, removed);
         }
 
-#if NET6_0_OR_GREATER
-
+#if NET
         /// <summary>
         /// Ensures that the capacity of this list is at least the specified capacity.
         /// </summary>
@@ -104,7 +98,7 @@ public partial class ListDictionary<TKey, TValue>
         {
             // EnsureCapacity causes list version to increment up to net7: https://github.com/dotnet/runtime/issues/82455
 
-            if (!Runtime.NET8_OR_HIGHER)
+            if (!Runtime.IsNet8OrHigher)
                 _dictionary._version++;
 
             return GetList().EnsureCapacity(capacity);

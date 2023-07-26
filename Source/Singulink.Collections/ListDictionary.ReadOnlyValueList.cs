@@ -52,22 +52,20 @@ public partial class ListDictionary<TKey, TValue>
         /// </summary>
         public int Count => GetList().Count;
 
-        internal List<TValue> LastList => _lastList;
-
         /// <summary>
-        /// Returns a fast read-only wrapper around the underlying <see cref="List{T}"/> that is only guaranteed to be valid until the values associated with
-        /// <see cref="Key"/> in <see cref="Dictionary"/> are modified.
+        /// Returns a fast read-only view into the underlying list that is only guaranteed to be valid until the values associated with the <see cref="Key"/> in
+        /// <see cref="Dictionary"/> are modified.
         /// </summary>
         /// <remarks>
-        /// <para>References to transient lists should only be held for as long as a series of multiple consequtive read-only operations need to be performed on
-        /// them. Once the values associated with <see cref="Key"/> are modified, the transient list's behavior is undefined and it may contain stale
+        /// <para>References to transient lists should only be held for as long as a series of multiple consecutive read-only operations need to be performed on
+        /// them. Once the values associated with the <see cref="Key"/> are modified, the transient list's behavior is undefined and it may contain stale
         /// values.</para>
-        /// <para>It is not beneficial to use a transient list for a single read operation, but when multipe read operations need to be done consequtively,
-        /// slight performance gains may be seen from performing them on a transient read-only list instead of directly on a <see cref="ValueList"/> or <see
-        /// cref="ReadOnlyValueList"/>, since the transient list does not check if it needs to synchronize with a newly attached value list in the
-        /// dictionary.</para>
+        /// <para>It is not beneficial to use a transient list for a single read operation, but when multiple read operations need to be done consecutively
+        /// (including enumerating over multiple values), slight performance gains may be seen from performing them on the transient read-only list instead of
+        /// directly on the <see cref="ValueList"/> or <see cref="ReadOnlyValueList"/>, since the transient list does not check if it needs to re-synchronize
+        /// with the dictionary.</para>
         /// </remarks>
-        public ReadOnlyList<TValue> AsTransient()
+        public ReadOnlyList<TValue> AsTransientReadOnly()
         {
             var list = GetList();
 
@@ -214,13 +212,26 @@ public partial class ListDictionary<TKey, TValue>
         /// </summary>
         public Enumerator GetEnumerator() => new(this);
 
+        internal List<TValue> LastList => _lastList;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private protected List<TValue> GetList()
         {
             return _lastList.Count > 0 ? _lastList : UpdateAndGetValues();
 
             [MethodImpl(MethodImplOptions.NoInlining)]
-            List<TValue> UpdateAndGetValues() => _dictionary.TryGetValues(_key, out var valueList) ? _lastList = valueList._lastList : _lastList;
+            List<TValue> UpdateAndGetValues()
+            {
+                if (_dictionary.TryGetValues(_key, out var valueList))
+                {
+                    _lastList = valueList._lastList;
+
+                    if (_transientReadOnlyList != null)
+                        _transientReadOnlyList.WrappedList = _lastList;
+                }
+
+                return _lastList;
+            }
         }
 
         #region Equality and Hash Code

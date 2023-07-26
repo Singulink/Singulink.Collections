@@ -1,4 +1,3 @@
-using System;
 using System.Runtime.CompilerServices;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -13,7 +12,8 @@ namespace Singulink.Collections.Weak.Tests
             var c = new WeakCollection<object>();
             object x = new object();
 
-            using (NoGCRegion.Enter(1000)) {
+            using (NoGCRegion.Enter(1000))
+            {
                 c.Add(x);
                 c.Add(x);
                 c.Add(x);
@@ -39,7 +39,8 @@ namespace Singulink.Collections.Weak.Tests
             var c = new WeakCollection<object>();
             object x = new object();
 
-            using (NoGCRegion.Enter(1000)) {
+            using (NoGCRegion.Enter(1000))
+            {
                 c.Add(x);
                 c.Add(x);
                 c.Add(x);
@@ -52,7 +53,8 @@ namespace Singulink.Collections.Weak.Tests
 
             Helpers.CollectAndWait();
 
-            foreach (object o in c) { }
+            foreach (object o in c)
+            { }
 
             Assert.IsTrue(c.Remove(x));
             Assert.IsTrue(c.Remove(x));
@@ -63,7 +65,7 @@ namespace Singulink.Collections.Weak.Tests
 #else
             Assert.AreEqual(0, c.AddCountSinceLastClean);
             Assert.AreEqual(1, c.UnsafeCount);
-            #endif
+#endif
 
             GC.KeepAlive(x);
         }

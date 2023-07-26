@@ -63,12 +63,12 @@ public class FlowTests
         twoSetDup.Key.ShouldBe(2);
         twoSetDup.Count.ShouldBe(3);
         twoSetDup.ShouldBe(new[] { "two", "dos", "2" }, ignoreOrder: true);
-        twoSetDup.AsTransient().ShouldBe(new[] { "two", "dos", "2" }, ignoreOrder: true);
+        twoSetDup.AsTransientReadOnly().ShouldBe(new[] { "two", "dos", "2" }, ignoreOrder: true);
         twoSetDup.ShouldBe(twoSet);
 
         twoSet.Count.ShouldBe(3);
         twoSet.ShouldBe(new[] { "two", "dos", "2" }, ignoreOrder: true);
-        twoSet.AsTransient().ShouldBe(new[] { "two", "dos", "2" }, ignoreOrder: true);
+        twoSet.AsTransientReadOnly().ShouldBe(new[] { "two", "dos", "2" }, ignoreOrder: true);
 
         // Remove
 
@@ -84,7 +84,7 @@ public class FlowTests
 
         twoSet.Count.ShouldBe(2);
         twoSet.ShouldBe(new[] { "two", "2" }, ignoreOrder: true);
-        twoSet.AsTransient().ShouldBe(new[] { "two", "2" }, ignoreOrder: true);
+        twoSet.AsTransientReadOnly().ShouldBe(new[] { "two", "2" }, ignoreOrder: true);
 
         twoSetDup.ShouldBe(twoSet);
 
