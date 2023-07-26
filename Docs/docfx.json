@@ -4,14 +4,15 @@
       "src": [
         {
           "files": [
-            "Singulink.Collections/bin/Release/net6.0/Singulink.Collections.dll",
-            "Singulink.Collections/bin/Release/netstandard2.0/Singulink.Collections.Abstractions.dll",
-            "Singulink.Collections.Weak/bin/Release/net5/Singulink.Collections.Weak.dll"
+            "Singulink.Collections/bin/release/net6.0/Singulink.Collections.dll",
+            "Singulink.Collections/bin/release/net6.0/Singulink.Collections.Abstractions.dll",
+            "Singulink.Collections.Weak/bin/release/net6.0/Singulink.Collections.Weak.dll"
           ],
           "src": "../Source"
         }
       ],
       "dest": "api",
+      "memberLayout": "separatePages",
       "disableGitFeatures": false,
       "disableDefaultFilter": false
     }
@@ -26,7 +27,7 @@
       "_enableSearch": true,
       "_enableNewTab": true
     },
-    "template": ["default", "templates/singulinkfx", "memberpage"],
+    "template": ["default", "templates/singulinkfx"],
     "xrefService": [ "https://xref.docs.microsoft.com/query?uid={uid}" ],
     "content": [
       {
