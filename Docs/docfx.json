@@ -1,18 +1,22 @@
 {
   "metadata": [
     {
+      "properties": {
+          "TargetFramework": "net6.0"
+      },
       "src": [
         {
           "files": [
-            "Singulink.Collections/bin/release/net6.0/Singulink.Collections.dll",
-            "Singulink.Collections/bin/release/net6.0/Singulink.Collections.Abstractions.dll",
-            "Singulink.Collections.Weak/bin/release/net6.0/Singulink.Collections.Weak.dll"
+            "Singulink.Collections/Singulink.Collections.csproj",
+            "Singulink.Collections/Singulink.Collections.Abstractions.csproj",
+            "Singulink.Collections.Weak/Singulink.Collections.Weak.csproj"
           ],
           "src": "../Source"
         }
       ],
       "dest": "api",
       "memberLayout": "separatePages",
+      "includeExplicitInterfaceImplementations": true,
       "disableGitFeatures": true,
       "disableDefaultFilter": false
     }
