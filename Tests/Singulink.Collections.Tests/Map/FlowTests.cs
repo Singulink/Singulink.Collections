@@ -1,6 +1,6 @@
 namespace Singulink.Collections.Tests.Map;
 
-[TestClass]
+[PrefixTestClass]
 public class FlowTests
 {
     [TestMethod]

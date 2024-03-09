@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace Singulink.Collections.Utilities;
+﻿namespace Singulink.Collections.Utilities;
 
 internal static class CollectionCopy
 {

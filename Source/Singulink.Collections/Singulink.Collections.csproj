@@ -1,13 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1;net6.0</TargetFrameworks>
-    <NoWarn>CA1034</NoWarn>
+    <NoWarn>$(NoWarn);CA1034</NoWarn>
+
     <Version>2.0</Version>
-    <Authors>Singulink</Authors>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Copyright>© Singulink. All rights reserved.</Copyright>
-    <PackageProjectUrl>https://github.com/Singulink/Singulink.Collections</PackageProjectUrl>
-    <PackageIcon>Singulink Icon 128x128.png</PackageIcon>
+    <PackageTags>List; Dictionary; HashSet; Set</PackageTags>
     <Description>
       Widely useful highly optimized collections that are missing from the .NET BCL.
 
@@ -18,32 +15,14 @@
       Singulink.Collections.ReadOnlyList&lt;T&gt;
       Singulink.Collections.ReadOnlyHashSet&lt;T&gt;
     </Description>
+    <PackageProjectUrl>https://github.com/Singulink/Singulink.Collections</PackageProjectUrl>
+
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <PackageTags>List; Dictionary; HashSet; Set</PackageTags>
-    <UserSecretsId>e9d5dddc-d4fb-4a06-84bd-190ee6180360</UserSecretsId>
   </PropertyGroup>
 
-  <PropertyGroup Label="Source Link" Condition="'$(Configuration)' == 'Release'">
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <IncludeSymbols>true</IncludeSymbols>
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-  </PropertyGroup>
-
-  <ItemGroup Label="Source Link" Condition="'$(Configuration)' == 'Release'">
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="all" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="..\..\Resources\Singulink Icon 128x128.png">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Singulink.Collections.Abstractions\Singulink.Collections.Abstractions.csproj" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'netstandard2.1'">
+    <PackageReference Include="PolySharp" Version="1.14.1" PrivateAssets="All" />
   </ItemGroup>
 </Project>

@@ -1,40 +1,19 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;netstandard2.1;net6.0</TargetFrameworks>
     <RootNamespace>Singulink.Collections</RootNamespace>
-    <Authors>Singulink</Authors>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageIcon>Singulink Icon 128x128.png</PackageIcon>
-    <PackageProjectUrl>https://github.com/Singulink/Singulink.Collections.Weak</PackageProjectUrl>
+
+    <Version>2.0</Version>
     <PackageTags>weak, dictionary, value, collection, list</PackageTags>
     <Description>Collection classes that store weak references to values so that they can be garbage collected when they are no longer needed.</Description>
-    <Copyright>© Singulink. All rights reserved.</Copyright>
+    <PackageProjectUrl>https://github.com/Singulink/Singulink.Collections.Weak</PackageProjectUrl>
+
     <SignAssembly>true</SignAssembly>
     <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>2.0</Version>
   </PropertyGroup>
 
-  <PropertyGroup Label="Source Link" Condition="'$(Configuration)' == 'Release'">
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-    <EmbedUntrackedSources>true</EmbedUntrackedSources>
-    <IncludeSymbols>true</IncludeSymbols>
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
-  </PropertyGroup>
-
-  <ItemGroup Label="Source Link" Condition="'$(Configuration)' == 'Release'">
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="all" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="stylecop.json" />
-    <None Include="..\..\Resources\Singulink Icon 128x128.png">
-      <Pack>True</Pack>
-      <PackagePath></PackagePath>
-    </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <AdditionalFiles Include="stylecop.json" />
+  <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0' Or '$(TargetFramework)' == 'netstandard2.1'">
+    <PackageReference Include="PolySharp" Version="1.14.1" PrivateAssets="All" />
   </ItemGroup>
 </Project>

@@ -1,19 +1,19 @@
-﻿namespace Singulink.Collections.Tests.HashSetDictionary;
+﻿namespace Singulink.Collections.Tests.ListDictionary;
 
-[TestClass]
+[PrefixTestClass]
 public class AsReadOnlyTests
 {
     [TestMethod]
-    public void AsReadOnlySetDictionary()
+    public void AsReadOnlyListDictionary()
     {
-        var d = new HashSetDictionary<int, string>();
+        var d = new ListDictionary<int, string>();
         d[1].AddRange(new[] { "one", "uno", "1" });
         d[2].AddRange(new[] { "two", "dos", "2" });
 
         var rod = d.AsReadOnly();
 
         rod.Values.ShouldBe(new[] { "one", "uno", "1", "two", "dos", "2" }, ignoreOrder: true);
-        rod[1].ShouldBe(new[] { "one", "uno", "1" }, ignoreOrder: true);
+        rod[1].ShouldBe(new[] { "one", "uno", "1" });
         rod.ValueCollections.ShouldBe(new[] { d[1], d[2] }, ignoreOrder: true);
         rod.Values.Contains("uno").ShouldBeTrue();
         rod.ContainsValue("dos").ShouldBeTrue();
@@ -22,30 +22,30 @@ public class AsReadOnlyTests
     [TestMethod]
     public void AsReadOnlyCollectionDictionary()
     {
-        var d = new HashSetDictionary<int, string>();
+        var d = new ListDictionary<int, string>();
         d[1].AddRange(new[] { "one", "uno", "1" });
         d[2].AddRange(new[] { "two", "dos", "2" });
 
         var rod = d.AsReadOnlyCollectionDictionary();
 
         rod.Values.ShouldBe(new[] { "one", "uno", "1", "two", "dos", "2" }, ignoreOrder: true);
-        rod[1].ShouldBe(new[] { "one", "uno", "1" }, ignoreOrder: true);
+        rod[1].ShouldBe(new[] { "one", "uno", "1" });
         rod.ValueCollections.ShouldBe(new[] { d[1], d[2] }, ignoreOrder: true);
         rod.Values.Contains("uno").ShouldBeTrue();
         rod.ContainsValue("dos").ShouldBeTrue();
     }
 
     [TestMethod]
-    public void AsReadOnlySetDictionaryToReadOnlyCollectionDictionary()
+    public void AsReadOnlyListDictionaryToReadOnlyCollectionDictionary()
     {
-        var d = new HashSetDictionary<int, string>();
+        var d = new ListDictionary<int, string>();
         d[1].AddRange(new[] { "one", "uno", "1" });
         d[2].AddRange(new[] { "two", "dos", "2" });
 
         var rod = d.AsReadOnly().AsReadOnlyCollectionDictionary();
 
         rod.Values.ShouldBe(new[] { "one", "uno", "1", "two", "dos", "2" }, ignoreOrder: true);
-        rod[1].ShouldBe(new[] { "one", "uno", "1" }, ignoreOrder: true);
+        rod[1].ShouldBe(new[] { "one", "uno", "1" });
         rod.ValueCollections.ShouldBe(new[] { d[1], d[2] }, ignoreOrder: true);
         rod.Values.Contains("uno").ShouldBeTrue();
         rod.ContainsValue("dos").ShouldBeTrue();
@@ -54,13 +54,14 @@ public class AsReadOnlyTests
     [TestMethod]
     public void AsReadOnlyDictionaryOfList()
     {
-        var d = new HashSetDictionary<int, string>();
+        var d = new ListDictionary<int, string>();
         d[1].AddRange(new[] { "one", "uno", "1" });
         d[2].AddRange(new[] { "two", "dos", "2" });
 
-        var rod = d.AsReadOnlyDictionaryOfSet();
+        var rod = d.AsReadOnlyDictionaryOfList();
 
-        rod[1].ShouldBe(new[] { "one", "uno", "1" }, ignoreOrder: true);
+        rod[1].ShouldBe(new[] { "one", "uno", "1" });
+        rod[1][2].ShouldBe("1");
         rod.Values.ShouldBe(new[] { d[1], d[2] }, ignoreOrder: true);
         rod.Count.ShouldBe(2);
         rod[1].Contains("uno").ShouldBe(true);
@@ -72,13 +73,13 @@ public class AsReadOnlyTests
     [TestMethod]
     public void AsReadOnlyDictionaryOfCollection()
     {
-        var d = new HashSetDictionary<int, string>();
+        var d = new ListDictionary<int, string>();
         d[1].AddRange(new[] { "one", "uno", "1" });
         d[2].AddRange(new[] { "two", "dos", "2" });
 
         var rod = d.AsReadOnlyDictionaryOfCollection();
 
-        rod[1].ShouldBe(new[] { "one", "uno", "1" }, ignoreOrder: true);
+        rod[1].ShouldBe(new[] { "one", "uno", "1" });
         rod.Values.ShouldBe(new[] { d[1], d[2] }, ignoreOrder: true);
         rod.Count.ShouldBe(2);
         rod[1].Contains("uno").ShouldBe(true);

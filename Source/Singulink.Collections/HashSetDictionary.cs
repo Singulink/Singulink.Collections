@@ -197,7 +197,7 @@ public partial class HashSetDictionary<TKey, TValue> :
     /// Ensures that the dictionary can hold up to a specified number of key/value set pairs without any further expansion of its backing storage.
     /// </summary>
     /// <param name="capacity">The number of key/value set pairs.</param>
-    /// <returns>The currect capacity of the dictionary.</returns>
+    /// <returns>The current capacity of the dictionary.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Capacity specified is less than 0.</exception>
     public int EnsureCapacity(int capacity)
     {

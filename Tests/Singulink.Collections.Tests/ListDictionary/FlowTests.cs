@@ -1,6 +1,6 @@
 ﻿namespace Singulink.Collections.Tests.ListDictionary;
 
-[TestClass]
+[PrefixTestClass]
 public class FlowTests
 {
     [TestMethod]
