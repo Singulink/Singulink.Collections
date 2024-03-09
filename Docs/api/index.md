@@ -1,3 +1,3 @@
-# Singulink.Collections.Weak
+# Singulink.Collections
 
-Use the table of contents to browse API documentation for the **Singulink.Collections.Weak** library.
+Use the table of contents to browse API documentation for the **Singulink.Collections** and **Singulink.Collections.Weak** libraries.
