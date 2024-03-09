@@ -14,7 +14,7 @@ public class WeakValueDictionaryTests
         int noGcAddCountSinceLastClean;
         int noGcUnsafeCount;
 
-        using (NoGCRegion.Enter(10000))
+        using (NoGCRegion.Enter(1000))
         {
             c.Add(0, x);
             c.Add(1, x);
@@ -48,7 +48,7 @@ public class WeakValueDictionaryTests
         int noGcUnsafeCount;
         bool noGcContainsKey4;
 
-        using (NoGCRegion.Enter(10000))
+        using (NoGCRegion.Enter(1000))
         {
             c.Add(0, x);
             c.Add(1, x);

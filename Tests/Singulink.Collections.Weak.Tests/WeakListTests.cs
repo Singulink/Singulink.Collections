@@ -14,7 +14,7 @@ public class WeakListTests
         int noGcAddCountSinceLastClean;
         int noGcUnsafeCount;
 
-        using (NoGCRegion.Enter(10000))
+        using (NoGCRegion.Enter(1000))
         {
             AddCollectableItems(c, 3);
 

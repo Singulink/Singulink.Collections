@@ -14,7 +14,7 @@ public class WeakCollectionTests
         int noGcAddCountSinceLastClean;
         int noGcUnsafeCount;
 
-        using (NoGCRegion.Enter(10000))
+        using (NoGCRegion.Enter(1000))
         {
             c.Add(x);
             c.Add(x);
@@ -47,7 +47,7 @@ public class WeakCollectionTests
         int noGcAddCountSinceLastClean;
         int noGcUnsafeCount;
 
-        using (NoGCRegion.Enter(10000))
+        using (NoGCRegion.Enter(1000))
         {
             c.Add(x);
             c.Add(x);
