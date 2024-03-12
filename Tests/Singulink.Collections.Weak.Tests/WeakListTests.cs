@@ -2,6 +2,8 @@ using System.Runtime.CompilerServices;
 
 namespace Singulink.Collections.Weak.Tests;
 
+#if NET || RELEASE
+
 [PrefixTestClass]
 public class WeakListTests
 {
@@ -50,3 +52,5 @@ public class WeakListTests
             c.Add(new object());
     }
 }
+
+#endif

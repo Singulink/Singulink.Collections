@@ -2,6 +2,8 @@
 
 namespace Singulink.Collections.Weak.Tests;
 
+#if NET || RELEASE
+
 [PrefixTestClass]
 public class WeakValueDictionaryTests
 {
@@ -97,3 +99,5 @@ public class WeakValueDictionaryTests
             c.Add(startKey++, new object());
     }
 }
+
+#endif

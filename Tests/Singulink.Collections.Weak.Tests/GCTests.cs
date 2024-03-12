@@ -1,5 +1,7 @@
 ﻿namespace Singulink.Collections.Weak.Tests;
 
+#if NET || RELEASE
+
 [PrefixTestClass]
 public class GCTests
 {
@@ -14,3 +16,5 @@ public class GCTests
         weakRef.TryGetTarget(out _).ShouldBeFalse();
     }
 }
+
+#endif
