@@ -7,7 +7,7 @@ namespace Singulink.Collections;
 /// threads (even in a read-only manner) then all accesses must be synchronized with a full lock.
 /// </summary>
 /// <remarks>
-/// <para>On .NET Core 3+, internal entries for garbage collected values are removed as they are encountered (i.e. as they are enumerated over). This is not
+/// <para>On .NET, internal entries for garbage collected values are removed as they are encountered (i.e. as they are enumerated over). This is not
 /// the case on .NET Standard targets like .NET Framework. You can perform a full clean by calling the <see cref="Clean"/> method or configure automatic
 /// cleaning after a set number of add operations by setting the <see cref="AutoCleanAddCount"/> property.</para>
 /// </remarks>

@@ -11,7 +11,7 @@ public class ReadOnlyHashSet<T> : ISet<T>, IReadOnlySet<T>
     /// <summary>
     /// Gets an empty read-only hash set.
     /// </summary>
-    public static ReadOnlyHashSet<T> Empty { get; } = new ReadOnlyHashSet<T>(new HashSet<T>());
+    public static ReadOnlyHashSet<T> Empty { get; } = new ReadOnlyHashSet<T>([]);
 
     private HashSet<T> _set;
 

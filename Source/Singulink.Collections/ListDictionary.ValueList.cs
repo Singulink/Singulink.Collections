@@ -10,13 +10,13 @@ namespace Singulink.Collections;
 public partial class ListDictionary<TKey, TValue>
 {
     /// <summary>
-    /// Represents a dictionary synchronized list of values associcated with a key in a <see cref="ListDictionary{TKey, TValue}"/>.
+    /// Represents a dictionary synchronized list of values associated with a key in a <see cref="ListDictionary{TKey, TValue}"/>.
     /// </summary>
     public sealed class ValueList : ReadOnlyValueList, IList<TValue>, IReadOnlyCollectionProvider<TValue>
     {
         private ReadOnlyValueList? _readOnlyValueList;
 
-        internal ValueList(ListDictionary<TKey, TValue> dictionary, TKey key) : base(dictionary, key, new()) { }
+        internal ValueList(ListDictionary<TKey, TValue> dictionary, TKey key) : base(dictionary, key, []) { }
 
         /// <summary>
         /// Gets or sets the item at the specified index.

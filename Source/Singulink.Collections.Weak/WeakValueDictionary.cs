@@ -4,13 +4,13 @@ using System.Diagnostics.CodeAnalysis;
 namespace Singulink.Collections;
 
 /// <summary>
-/// Represents a collection of keys and weakly referenced values. If this collection is accessed concurrently from multiple threads (even in a read-only
-/// manner) then all accesses must be synchronized with a full lock.
+/// Represents a collection of keys and weakly referenced values. If this collection is accessed concurrently from multiple threads (even in a read-only manner)
+/// then all accesses must be synchronized with a full lock.
 /// </summary>
 /// <remarks>
-/// On .NET, internal entries for garbage collected values are cleaned as they are encountered (i.e. when a key lookup is performed on a garbage collected
-/// value or key/value pairs are enumerated over). This is not the case on .NET Framework. You can perform a full clean by calling the <see cref="Clean"/>
-/// method or configure automatic cleaning after a set number of add operations by setting the <see cref="AutoCleanAddCount"/> property.
+/// On .NET, internal entries for garbage collected values are cleaned as they are encountered (i.e. when a key lookup is performed on a garbage collected value
+/// or key/value pairs are enumerated over). This is not the case on .NET Standard targets like .NET Framework. You can perform a full clean by calling the <see
+/// cref="Clean"/> method or configure automatic cleaning after a set number of add operations by setting the <see cref="AutoCleanAddCount"/> property.
 /// </remarks>
 public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
     where TKey : notnull

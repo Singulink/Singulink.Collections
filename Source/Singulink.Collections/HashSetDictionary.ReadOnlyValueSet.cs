@@ -10,7 +10,7 @@ namespace Singulink.Collections;
 public partial class HashSetDictionary<TKey, TValue>
 {
     /// <summary>
-    /// Represents a synchronized read-only set of values associcated with a key in a <see cref="HashSetDictionary{TKey, TValue}"/>.
+    /// Represents a synchronized read-only set of values associated with a key in a <see cref="HashSetDictionary{TKey, TValue}"/>.
     /// </summary>
     public class ReadOnlyValueSet : ISet<TValue>, IReadOnlySet<TValue>, IEquatable<ReadOnlyValueSet>
     {
@@ -133,12 +133,7 @@ public partial class HashSetDictionary<TKey, TValue>
             HashSet<TValue> UpdateAndGetValues()
             {
                 if (_dictionary.TryGetValues(_key, out var valueSet))
-                {
                     _lastSet = valueSet._lastSet;
-
-                    if (_transientReadOnlySet != null)
-                        _transientReadOnlySet.WrappedSet = _lastSet;
-                }
 
                 return _lastSet;
             }

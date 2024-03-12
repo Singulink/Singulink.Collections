@@ -10,7 +10,7 @@ public class ReadOnlyList<T> : IList<T>, IReadOnlyList<T>
     /// <summary>
     /// Gets an empty read-only list.
     /// </summary>
-    public static ReadOnlyList<T> Empty { get; } = new ReadOnlyList<T>(new List<T>());
+    public static ReadOnlyList<T> Empty { get; } = new ReadOnlyList<T>([]);
 
     private List<T> _list;
 

@@ -10,7 +10,7 @@ namespace Singulink.Collections;
 public partial class ListDictionary<TKey, TValue>
 {
     /// <summary>
-    /// Represents a synchronized read-only list of values associcated with a key in a <see cref="ListDictionary{TKey, TValue}"/>.
+    /// Represents a synchronized read-only list of values associated with a key in a <see cref="ListDictionary{TKey, TValue}"/>.
     /// </summary>
     public class ReadOnlyValueList : IList<TValue>, IReadOnlyList<TValue>, IEquatable<ReadOnlyValueList>
     {
@@ -219,16 +219,10 @@ public partial class ListDictionary<TKey, TValue>
         {
             return _lastList.Count > 0 ? _lastList : UpdateAndGetValues();
 
-            [MethodImpl(MethodImplOptions.NoInlining)]
             List<TValue> UpdateAndGetValues()
             {
                 if (_dictionary.TryGetValues(_key, out var valueList))
-                {
                     _lastList = valueList._lastList;
-
-                    if (_transientReadOnlyList != null)
-                        _transientReadOnlyList.WrappedList = _lastList;
-                }
 
                 return _lastList;
             }

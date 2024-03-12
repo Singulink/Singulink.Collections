@@ -1,7 +1,5 @@
 ﻿#pragma warning disable CA1815 // Override equals and operator equals on value types
 
-using System.Security.Cryptography;
-
 namespace Singulink.Collections.Weak.Tests;
 
 public struct NoGCRegion : IDisposable

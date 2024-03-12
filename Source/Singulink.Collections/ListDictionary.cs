@@ -199,7 +199,7 @@ public partial class ListDictionary<TKey, TValue> :
     /// Ensures that the dictionary can hold up to a specified number of key/value list pairs without any further expansion of its backing storage.
     /// </summary>
     /// <param name="capacity">The number of key/value list pairs.</param>
-    /// <returns>The currect capacity of the dictionary.</returns>
+    /// <returns>The current capacity of the dictionary.</returns>
     /// <exception cref="ArgumentOutOfRangeException">Capacity specified is less than 0.</exception>
     public int EnsureCapacity(int capacity)
     {
@@ -299,7 +299,7 @@ public partial class ListDictionary<TKey, TValue> :
     /// </summary>
     bool ICollection<KeyValuePair<TKey, IList<TValue>>>.Contains(KeyValuePair<TKey, IList<TValue>> item)
     {
-        return item.Value is ValueList valueList && TryGetValues(item.Key, out var exisingValueList) && valueList == exisingValueList;
+        return TryGetValues(item.Key, out var valueList) && valueList.Equals(item.Value);
     }
 
     /// <summary>
