@@ -8,7 +8,6 @@
         {
           "files": [
             "Singulink.Collections/Singulink.Collections.csproj",
-            "Singulink.Collections/Singulink.Collections.Abstractions.csproj",
             "Singulink.Collections.Weak/Singulink.Collections.Weak.csproj"
           ],
           "src": "../Source"
