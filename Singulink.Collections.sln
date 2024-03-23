@@ -45,6 +45,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source Items", "Source Item
 	ProjectSection(SolutionItems) = preProject
 		Source\Directory.Build.props = Source\Directory.Build.props
 		Source\Directory.Build.targets = Source\Directory.Build.targets
+		Source\key.snk = Source\key.snk
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test Items", "Test Items", "{3C98511D-3E04-4D16-B96C-8EFC5216CF4E}"
