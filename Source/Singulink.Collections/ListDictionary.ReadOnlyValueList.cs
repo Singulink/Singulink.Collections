@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Singulink.Collections.Utilities;
 
 namespace Singulink.Collections;
@@ -12,7 +13,7 @@ public partial class ListDictionary<TKey, TValue>
     /// <summary>
     /// Represents a synchronized read-only list of values associated with a key in a <see cref="ListDictionary{TKey, TValue}"/>.
     /// </summary>
-    public class ReadOnlyValueList : IList<TValue>, IReadOnlyList<TValue>, IEquatable<ReadOnlyValueList>
+    public partial class ReadOnlyValueList : IList<TValue>, IReadOnlyList<TValue>, IEquatable<ReadOnlyValueList>
     {
 #pragma warning disable SA1401 // Fields should be private
 

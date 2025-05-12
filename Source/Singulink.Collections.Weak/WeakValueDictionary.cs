@@ -12,15 +12,15 @@ namespace Singulink.Collections;
 /// or key/value pairs are enumerated over). This is not the case on .NET Standard targets like .NET Framework. You can perform a full clean by calling the <see
 /// cref="Clean"/> method or configure automatic cleaning after a set number of add operations by setting the <see cref="AutoCleanAddCount"/> property.
 /// </remarks>
-public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
+public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
     where TKey : notnull
     where TValue : class
 {
 #if NETSTANDARD2_0
-    private Dictionary<TKey, WeakReference<TValue>> _entryLookup;
+    private Dictionary<TKey, WeakReference<TValue>> _lookup;
     private int _capacity;
 #else
-    private readonly Dictionary<TKey, WeakReference<TValue>> _entryLookup;
+    private readonly Dictionary<TKey, WeakReference<TValue>> _lookup;
 #endif
     private int _autoCleanAddCount;
     private int _addCountSinceLastClean;
@@ -37,7 +37,7 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
     /// </summary>
     public WeakValueDictionary(IEqualityComparer<TKey>? comparer)
     {
-        _entryLookup = new(comparer);
+        _lookup = new(comparer);
     }
 
     /// <summary>
@@ -59,6 +59,11 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
     /// Gets the number of add (or indexer set) operations that have been performed since the last cleaning.
     /// </summary>
     public int AddCountSinceLastClean => _addCountSinceLastClean;
+
+    /// <summary>
+    /// Gets the equality comparer used to compare keys in the dictionary.
+    /// </summary>
+    public IEqualityComparer<TKey> Comparer => _lookup.Comparer;
 
     /// <summary>
     /// Gets or sets a value indicating whether to automatically call <see cref="TrimExcess"/> whenever <see cref="Clean"/> is called. Default value is
@@ -87,7 +92,7 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
     /// temporarily copy the values into a strongly referenced collection (like a <see cref="List{T}"/> or <see cref="Dictionary{TKey, TValue}"/>) so that
     /// they can't be garbage collected and use that to get the count and access the values.</para>
     /// </remarks>
-    public int UnsafeCount => _entryLookup.Count;
+    public int UnsafeCount => _lookup.Count;
 
     /// <summary>
     /// Gets or sets the value associated with the specified key.
@@ -101,7 +106,7 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
             return value;
         }
         set {
-            _entryLookup[key] = new WeakReference<TValue>(value);
+            _lookup[key] = new WeakReference<TValue>(value);
             OnAdded();
         }
     }
@@ -114,13 +119,13 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
     /// <returns><see langword="true"/> if the dictionary contains a value with the specified key, otherwise <see langword="false"/>.</returns>
     public bool TryGetValue(TKey key, [NotNullWhen(true)] out TValue? value)
     {
-        if (_entryLookup.TryGetValue(key, out var entry))
+        if (_lookup.TryGetValue(key, out var entry))
         {
             if (entry.TryGetTarget(out value))
                 return true;
 #if NET
             else
-                _entryLookup.Remove(key);
+                _lookup.Remove(key);
 #endif
         }
 
@@ -133,7 +138,7 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
     /// </summary>
     public bool TryAdd(TKey key, TValue value)
     {
-        if (_entryLookup.TryGetValue(key, out var entry))
+        if (_lookup.TryGetValue(key, out var entry))
         {
             if (entry.TryGetTarget(out var _))
                 return false;
@@ -142,7 +147,7 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
         }
         else
         {
-            _entryLookup.Add(key, new WeakReference<TValue>(value));
+            _lookup.Add(key, new WeakReference<TValue>(value));
         }
 
         OnAdded();
@@ -165,9 +170,9 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
     /// <returns><see langword="true"/> if the item was found and removed, otherwise <see langword="false"/>.</returns>
     public bool Remove(TKey key)
     {
-        if (_entryLookup.TryGetValue(key, out var entry))
+        if (_lookup.TryGetValue(key, out var entry))
         {
-            _entryLookup.Remove(key);
+            _lookup.Remove(key);
             return entry.TryGetTarget(out _);
         }
 
@@ -182,9 +187,9 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
     /// <returns><see langword="true"/> if the item was found and removed, otherwise <see langword="false"/>.</returns>
     public bool Remove(TKey key, [MaybeNullWhen(false)] out TValue value)
     {
-        if (_entryLookup.TryGetValue(key, out var entry))
+        if (_lookup.TryGetValue(key, out var entry))
         {
-            _entryLookup.Remove(key);
+            _lookup.Remove(key);
             return entry.TryGetTarget(out value);
         }
 
@@ -197,19 +202,19 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
     /// </summary>
     public bool Remove(TKey key, TValue value, IEqualityComparer<TValue>? comparer = null)
     {
-        if (_entryLookup.TryGetValue(key, out var entry))
+        if (_lookup.TryGetValue(key, out var entry))
         {
             if (entry.TryGetTarget(out var current))
             {
                 if ((comparer ?? EqualityComparer<TValue>.Default).Equals(value, current))
                 {
-                    _entryLookup.Remove(key);
+                    _lookup.Remove(key);
                     return true;
                 }
             }
             else
             {
-                _entryLookup.Remove(key);
+                _lookup.Remove(key);
             }
         }
 
@@ -217,12 +222,12 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
     }
 
     /// <summary>
-    /// Indictes whether the dictionary contains the specified key/value pair using the optionally specified value comparer.
+    /// Indicates whether the dictionary contains the specified key/value pair using the optionally specified value comparer.
     /// </summary>
     public bool Contains(KeyValuePair<TKey, TValue> kvp, IEqualityComparer<TValue>? comparer = null) => Contains(kvp.Key, kvp.Value, comparer);
 
     /// <summary>
-    /// Indictes whether the dictionary contains the key and value using the optionally specified value comparer.
+    /// Indicates whether the dictionary contains the key and value using the optionally specified value comparer.
     /// </summary>
     public bool Contains(TKey key, TValue value, IEqualityComparer<TValue>? comparer = null)
     {
@@ -244,7 +249,7 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
     /// </summary>
     public void Clear()
     {
-        _entryLookup.Clear();
+        _lookup.Clear();
         _addCountSinceLastClean = 0;
     }
 
@@ -254,13 +259,13 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
     public void Clean()
     {
 #if NET
-        var staleKvps = _entryLookup.Where(kvp => !kvp.Value.TryGetTarget(out _));
+        var staleKvps = _lookup.Where(kvp => !kvp.Value.TryGetTarget(out _));
 #else
-        var staleKvps = _entryLookup.Where(kvp => !kvp.Value.TryGetTarget(out _)).ToList();
+        var staleKvps = _lookup.Where(kvp => !kvp.Value.TryGetTarget(out _)).ToList();
 #endif
 
         foreach (var kvp in staleKvps)
-            _entryLookup.Remove(kvp.Key);
+            _lookup.Remove(kvp.Key);
 
         if (TrimExcessDuringClean)
             TrimExcess();
@@ -274,13 +279,13 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
     public void TrimExcess()
     {
 #if NETSTANDARD2_0
-        if (_capacity > _entryLookup.Count * 2)
+        if (_capacity > _lookup.Count * 2)
         {
-            _entryLookup = new Dictionary<TKey, WeakReference<TValue>>(_entryLookup, _entryLookup.Comparer);
-            _capacity = _entryLookup.Count;
+            _lookup = new Dictionary<TKey, WeakReference<TValue>>(_lookup, _lookup.Comparer);
+            _capacity = _lookup.Count;
         }
 #else
-        _entryLookup.TrimExcess();
+        _lookup.TrimExcess();
 #endif
     }
 
@@ -293,7 +298,7 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
     public void EnsureCapacity(int capacity)
     {
 #if !NETSTANDARD2_0
-        _entryLookup.EnsureCapacity(capacity);
+        _lookup.EnsureCapacity(capacity);
 #endif
     }
 
@@ -302,13 +307,13 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
     /// </summary>
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
     {
-        foreach (var kvp in _entryLookup)
+        foreach (var kvp in _lookup)
         {
             if (kvp.Value.TryGetTarget(out var value))
                 yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
 #if NET
             else
-                _entryLookup.Remove(kvp.Key);
+                _lookup.Remove(kvp.Key);
 #endif
         }
 #if NET
@@ -319,8 +324,8 @@ public class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, 
     private void OnAdded()
     {
 #if NETSTANDARD2_0
-        if (_entryLookup.Count > _capacity)
-            _capacity = _entryLookup.Count;
+        if (_lookup.Count > _capacity)
+            _capacity = _lookup.Count;
 #endif
 
         _addCountSinceLastClean++;

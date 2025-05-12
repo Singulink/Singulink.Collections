@@ -10,8 +10,9 @@ The following collections are included in the package:
 - `HashSetDictionary`: Collection of keys mapped to a hash set of unique values per key.
 - `ListDictionary`: Collection of keys mapped to a list of values per key.
 - `Map`: Collection of two types of values that map between each other in a bidirectional one-to-one relationship.
-- `ReadOnlyHashSet`: Fast read-only wrapper around a HashSet (instead of going through `ISet<>`).
-- `ReadOnlyList`: Fast read-only wrapper around a List (instead of going through `IList<>`).
+- `AlternateLookup` nested types for each of the above collections that allow looking up values by alternate keys.
+- `ReadOnlyHashSet`: Fast direct read-only wrapper for HashSets (instead of going through `ISet<>` like `ReadOnlySet` does).
+- `ReadOnlyList`: Fast direct read-only wrapper for Lists (instead of going through `IList<>` like `ReadOnlyCollection` does).
 - A full set of interfaces for the new collections as well as an `IReadOnlySet<>` polyfill for .NET Standard.
 
 **Singulink.Collections.Weak** provides a set of collection classes that store weak references to values so that the garbage collector is free to reclaim the memory they use when they aren't being referenced anymore. The values returned by the collections will never be `null` - if the value was garbage collected then the collection behaves as if the value was removed from the collection.
@@ -19,7 +20,7 @@ The following collections are included in the package:
 The following collections are included in the package:
 - `WeakCollection`: Collection of weakly referenced values that keeps items in an undefined order.
 - `WeakList`: Collection of weakly referenced values that maintains relative insertion order.
-- `WeakValueDictionary`: Collection of keys and weakly referenced values.
+- `WeakValueDictionary`: Collection of keys and weakly referenced values with `AlternateLookup` support.
 
 ### About Singulink
 

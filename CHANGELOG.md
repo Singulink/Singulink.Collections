@@ -2,6 +2,10 @@
 
 ## Singulink.Collections
 
+### V3.2
+- `AlternateLookup` support for keyed collections
+- WinRT compatibility
+
 ### V3.1
 - Full support for AOT and trimming
 
@@ -16,6 +20,10 @@
 - Minor memory usage/GC pressure/performance optimizations
 
 ## Singulink.Collections.Weak
+
+### V2.2
+- `AlternateLookup` support for `WeakDictionary`
+- WinRT compatibility
 
 ### V2.1
 - Full support for AOT and trimming

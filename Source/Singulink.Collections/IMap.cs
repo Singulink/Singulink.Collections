@@ -13,8 +13,8 @@ public interface IMap<TLeft, TRight> : ICollection<KeyValuePair<TLeft, TRight>>
     /// <summary>
     /// Gets or sets the right value associated with the specified left value.
     /// </summary>
-    /// <exception cref="KeyNotFoundException">The left value was not found (when getting a right value).</exception>
-    /// <exception cref="ArgumentException">The right value being set is a duplicate value on another mapping.</exception>
+    /// <exception cref="KeyNotFoundException">The property is being retrieved and the left value was not found.</exception>
+    /// <exception cref="ArgumentException">The property is being set and the right value provided is already assigned to a different left value.</exception>
     TRight this[TLeft leftValue] { get; set; }
 
     /// <summary>
@@ -38,7 +38,7 @@ public interface IMap<TLeft, TRight> : ICollection<KeyValuePair<TLeft, TRight>>
     void Add(TLeft leftValue, TRight rightValue);
 
     /// <summary>
-    /// Gets a value indicating if the map contains an association between the specified left and right value.
+    /// Determines whether this map contains an association between the specified left and right value.
     /// </summary>
     bool Contains(TLeft leftValue, TRight rightValue);
 
@@ -57,9 +57,12 @@ public interface IMap<TLeft, TRight> : ICollection<KeyValuePair<TLeft, TRight>>
     bool ContainsRight(TRight rightValue);
 
     /// <summary>
-    /// Removes an association from the map between the specified left and right value if they currently map to each other and returns true if removal was
-    /// successful. If the left and right values do not map to each other then no changes are made and <see langword="false"/> is returned.
+    /// Removes an association from the map between the specified left and right value if they currently map to each other.
     /// </summary>
+    /// <returns><see langword="true"/> if removal was successful, otherwise <see langword="false"/>.</returns>
+    /// <remarks>
+    /// If the left and right values do not map to each other then no changes are made to the map and the removal does not succeed.
+    /// </remarks>
     bool Remove(TLeft leftValue, TRight rightValue);
 
     /// <summary>
@@ -77,9 +80,22 @@ public interface IMap<TLeft, TRight> : ICollection<KeyValuePair<TLeft, TRight>>
     bool RemoveRight(TRight rightValue);
 
     /// <summary>
-    /// Sets an association on the map between the specified left and right value, overriding any previous associations these values had.
+    /// Sets an association in the map between the specified left and right value, overriding any existing associations these values had.
     /// </summary>
+    /// <remarks>
+    /// This method is functionally equivalent to removing any existing associations for the left and right values and then adding the new association, so it is
+    /// guaranteed to succeed.
+    /// </remarks>
+#pragma warning disable CA1716 // Identifiers should not match keywords
     void Set(TLeft leftValue, TRight rightValue);
+#pragma warning restore CA1716 // Identifiers should not match keywords
+
+    /// <summary>
+    /// Attempts to add an association to map between the specified left and right value.
+    /// </summary>
+    /// <returns><see langword="true"/> if the association was added, otherwise <see langword="false"/> if the left or right value was already present in the
+    /// map.</returns>
+    bool TryAdd(TLeft leftValue, TRight rightValue);
 
     /// <summary>
     /// Gets the right value associated with the specified left value.

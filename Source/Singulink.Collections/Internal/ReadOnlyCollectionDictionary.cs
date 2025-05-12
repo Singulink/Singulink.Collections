@@ -16,7 +16,7 @@ internal sealed class ReadOnlyCollectionDictionary<TKey, TValue, TValueCollectio
     }
 }
 
-internal abstract class ReadOnlyCollectionDictionary<TKey, TValue, TValueCollectionIn, TValueCollectionOut> :
+internal abstract partial class ReadOnlyCollectionDictionary<TKey, TValue, TValueCollectionIn, TValueCollectionOut> :
     IReadOnlyCollectionDictionary<TKey, TValue, TValueCollectionOut>,
     IReadOnlyDictionary<TKey, TValueCollectionOut>,
     ICollection<KeyValuePair<TKey, TValueCollectionOut>>
@@ -129,7 +129,7 @@ internal abstract class ReadOnlyCollectionDictionary<TKey, TValue, TValueCollect
 
     #endregion
 
-    internal sealed class ValueCollectionCollection : ICollection<TValueCollectionOut>, IReadOnlyCollection<TValueCollectionOut>
+    internal sealed partial class ValueCollectionCollection : ICollection<TValueCollectionOut>, IReadOnlyCollection<TValueCollectionOut>
     {
         private readonly ICollectionDictionary<TKey, TValue, TValueCollectionIn> _dictionary;
 

@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Singulink.Collections;
 
 /// <inheritdoc cref="IReadOnlyMap{TLeft, TRight}"/>
-public class ReadOnlyMap<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLeft, TRight>
+public partial class ReadOnlyMap<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLeft, TRight>
     where TLeft : notnull
     where TRight : notnull
 {
@@ -131,6 +131,12 @@ public class ReadOnlyMap<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLef
     /// </summary>
     /// <exception cref="NotSupportedException">This operation is not supported.</exception>
     void IMap<TLeft, TRight>.Set(TLeft leftValue, TRight rightValue) => throw new NotSupportedException();
+
+    /// <summary>
+    /// Not supported.
+    /// </summary>
+    /// <exception cref="NotSupportedException">This operation is not supported.</exception>
+    bool IMap<TLeft, TRight>.TryAdd(TLeft leftValue, TRight rightValue) => throw new NotSupportedException();
 
     #endregion
 }

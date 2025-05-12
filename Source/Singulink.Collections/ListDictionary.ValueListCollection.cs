@@ -11,7 +11,7 @@ public partial class ListDictionary<TKey, TValue>
     /// <summary>
     /// Represents the collection of value lists in a <see cref="ListDictionary{TKey, TValue}"/>.
     /// </summary>
-    public sealed class ValueListCollection : ICollection<ValueList>, IReadOnlyCollection<ValueList>
+    public sealed partial class ValueListCollection : ICollection<ValueList>, IReadOnlyCollection<ValueList>
     {
         private readonly ListDictionary<TKey, TValue> _dictionary;
 
@@ -38,7 +38,7 @@ public partial class ListDictionary<TKey, TValue>
         /// <summary>
         /// Copies the value lists in this collection to an array starting at the specified index.
         /// </summary>
-        public void CopyTo(ValueList[] array, int index) => _dictionary._lookup.Values.CopyTo(array, index);
+        public void CopyTo(ValueList[] array, int arrayIndex) => _dictionary._lookup.Values.CopyTo(array, arrayIndex);
 
         /// <summary>
         /// Returns an enumerator that iterates through the value lists in this collection.

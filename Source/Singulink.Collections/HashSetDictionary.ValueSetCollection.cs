@@ -11,7 +11,7 @@ public partial class HashSetDictionary<TKey, TValue>
     /// <summary>
     /// Represents the collection of value sets in a <see cref="HashSetDictionary{TKey, TValue}"/>.
     /// </summary>
-    public sealed class ValueSetCollection : ICollection<ValueSet>, IReadOnlyCollection<ValueSet>
+    public sealed partial class ValueSetCollection : ICollection<ValueSet>, IReadOnlyCollection<ValueSet>
     {
         private readonly HashSetDictionary<TKey, TValue> _dictionary;
 
@@ -38,7 +38,7 @@ public partial class HashSetDictionary<TKey, TValue>
         /// <summary>
         /// Copies the value sets in this collection to an array starting at the specified index.
         /// </summary>
-        public void CopyTo(ValueSet[] array, int index) => _dictionary._lookup.Values.CopyTo(array, index);
+        public void CopyTo(ValueSet[] array, int arrayIndex) => _dictionary._lookup.Values.CopyTo(array, arrayIndex);
 
         /// <summary>
         /// Returns an enumerator that iterates through the value sets in this collection.

@@ -12,7 +12,7 @@ public partial class ListDictionary<TKey, TValue>
     /// <summary>
     /// Represents a dictionary synchronized list of values associated with a key in a <see cref="ListDictionary{TKey, TValue}"/>.
     /// </summary>
-    public sealed class ValueList : ReadOnlyValueList, IList<TValue>, IReadOnlyCollectionProvider<TValue>
+    public sealed partial class ValueList : ReadOnlyValueList, IList<TValue>, IReadOnlyCollectionProvider<TValue>
     {
         private ReadOnlyValueList? _readOnlyValueList;
 

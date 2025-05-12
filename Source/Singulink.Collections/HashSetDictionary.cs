@@ -55,9 +55,9 @@ public partial class HashSetDictionary<TKey, TValue> :
     /// key or to monitor when items are added to the key.
     /// </summary>
     /// <remarks>
-    /// <para>Empty value sets, such as new sets returned using this indexer when the key is not found, are not part of the dictionary until items are added to them.
-    /// When the value set becomes empty again, it is removed from the dictionary. Value sets stay synchronized with their dictionary to always reflect the
-    /// values associated with their key inside the dictionary.</para>
+    /// <para>Empty value sets, such as new sets returned using this indexer when the key is not found, are not part of the dictionary until items are added to
+    /// them. When the value set becomes empty again, it is removed from the dictionary. Value sets stay synchronized with their dictionary to always reflect
+    /// the values associated with their key inside the dictionary.</para>
     /// </remarks>
     public ValueSet this[TKey key]
     {

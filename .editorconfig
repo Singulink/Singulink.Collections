@@ -281,6 +281,9 @@ dotnet_diagnostic.SA1200.severity = none
 # SA1618: Generic type parameters should be documented
 dotnet_diagnostic.SA1618.severity = suggestion
 
+# SA1619: Generic type parameters should be documented partial class
+dotnet_diagnostic.SA1619.severity = suggestion
+
 # CA1303: Do not pass literals as localized parameters
 dotnet_diagnostic.CA1303.severity = none
 

@@ -11,7 +11,7 @@ public partial class ListDictionary<TKey, TValue>
     /// <summary>
     /// Represents the collection of values in a <see cref="ListDictionary{TKey, TValue}"/>.
     /// </summary>
-    public sealed class ValueCollection : ICollection<TValue>, IReadOnlyCollection<TValue>
+    public sealed partial class ValueCollection : ICollection<TValue>, IReadOnlyCollection<TValue>
     {
         private readonly ListDictionary<TKey, TValue> _dictionary;
 

@@ -6,7 +6,7 @@ using Singulink.Collections.Utilities;
 namespace Singulink.Collections;
 
 /// <inheritdoc cref="IMap{TLeft, TRight}"/>
-public class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLeft, TRight>, IDictionary<TLeft, TRight>, IReadOnlyDictionary<TLeft, TRight>
+public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLeft, TRight>, IDictionary<TLeft, TRight>, IReadOnlyDictionary<TLeft, TRight>
     where TLeft : notnull
     where TRight : notnull
 {
@@ -75,11 +75,21 @@ public class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLeft, TRigh
     /// </summary>
     public int Count => _leftSide.Count;
 
+    /// <summary>
+    /// Gets the equality comparer used to compare left values in the map.
+    /// </summary>
+    public IEqualityComparer<TLeft> LeftComparer => _leftSide.Comparer;
+
     /// <inheritdoc cref="IMap{TLeft, TRight}.LeftValues"/>
     public Dictionary<TLeft, TRight>.KeyCollection LeftValues => _leftSide.Keys;
 
     /// <inheritdoc cref="IMap{TLeft, TRight}.Reverse"/>
     public Map<TRight, TLeft> Reverse => _reverse ??= new Map<TRight, TLeft>(this, _rightSide, _leftSide);
+
+    /// <summary>
+    /// Gets the equality comparer used to compare right values in the map.
+    /// </summary>
+    public IEqualityComparer<TRight> RightComparer => _rightSide.Comparer;
 
     /// <inheritdoc cref="IMap{TLeft, TRight}.RightValues"/>
     public Dictionary<TRight, TLeft>.KeyCollection RightValues => _rightSide.Keys;
@@ -130,10 +140,19 @@ public class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLeft, TRigh
         return true;
     }
 
+    /// <summary>
+    /// Gets the left value associated with the specified right value.
+    /// </summary>
+    /// <exception cref="KeyNotFoundException">The right value was not found.</exception>
+    public TLeft GetLeftValue(TRight rightValue) => _rightSide[rightValue];
+
     /// <inheritdoc cref="IMap{TLeft, TRight}.RemoveLeft(TLeft)"/>
-    public bool RemoveLeft(TLeft leftValue)
+    public bool RemoveLeft(TLeft leftValue) => RemoveLeft(leftValue, out _);
+
+    /// <inheritdoc cref="IMap{TLeft, TRight}.RemoveLeft(TLeft)"/>
+    public bool RemoveLeft(TLeft leftValue, [MaybeNullWhen(false)] out TRight rightValue)
     {
-        if (_leftSide.Remove(leftValue, out var rightValue))
+        if (_leftSide.Remove(leftValue, out rightValue))
         {
             bool result = _rightSide.Remove(rightValue);
             Debug.Assert(result, "right map side remove failure");
@@ -145,9 +164,12 @@ public class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLeft, TRigh
     }
 
     /// <inheritdoc cref="IMap{TLeft, TRight}.RemoveRight(TRight)"/>
-    public bool RemoveRight(TRight rightValue)
+    public bool RemoveRight(TRight rightValue) => RemoveRight(rightValue, out _);
+
+    /// <inheritdoc cref="IMap{TLeft, TRight}.RemoveRight(TRight)"/>
+    public bool RemoveRight(TRight rightValue, [MaybeNullWhen(false)] out TLeft leftValue)
     {
-        if (_rightSide.Remove(rightValue, out var leftValue))
+        if (_rightSide.Remove(rightValue, out leftValue))
         {
             bool result = _leftSide.Remove(leftValue);
             Debug.Assert(result, "left map side remove failure");
@@ -169,6 +191,16 @@ public class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLeft, TRigh
 
         _leftSide.Add(leftValue, rightValue);
         _rightSide.Add(rightValue, leftValue);
+    }
+
+    /// <inheritdoc cref="IMap{TLeft, TRight}.TryAdd(TLeft, TRight)"/>
+    public bool TryAdd(TLeft leftValue, TRight rightValue)
+    {
+        if (_leftSide.ContainsKey(leftValue) || !_rightSide.TryAdd(rightValue, leftValue))
+            return false;
+
+        _leftSide.Add(leftValue, rightValue);
+        return true;
     }
 
     /// <inheritdoc cref="IMap{TLeft, TRight}.TryGetLeftValue(TRight, out TLeft)"/>

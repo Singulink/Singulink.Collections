@@ -2,7 +2,7 @@
   "metadata": [
     {
       "properties": {
-          "TargetFramework": "net6.0"
+          "TargetFramework": "net9.0"
       },
       "src": [
         {

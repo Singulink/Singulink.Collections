@@ -18,8 +18,8 @@ jobs:
       with:
         dotnet-version: |
           6.0.x
-          7.0.x
           8.0.x
+          9.0.x
     - name: Clean
       run: dotnet clean --configuration Debug && dotnet nuget locals all --clear
     - name: Install dependencies
@@ -40,8 +40,8 @@ jobs:
       with:
         dotnet-version: |
           6.0.x
-          7.0.x
           8.0.x
+          9.0.x
     - name: Clean
       run: dotnet clean --configuration Release && dotnet nuget locals all --clear
     - name: Install dependencies

@@ -11,7 +11,7 @@ public partial class HashSetDictionary<TKey, TValue>
     /// <summary>
     /// Represents the collection of values in a <see cref="HashSetDictionary{TKey, TValue}"/>.
     /// </summary>
-    public sealed class ValueCollection : ICollection<TValue>, IReadOnlyCollection<TValue>
+    public sealed partial class ValueCollection : ICollection<TValue>, IReadOnlyCollection<TValue>
     {
         private readonly HashSetDictionary<TKey, TValue> _dictionary;
 

@@ -11,7 +11,7 @@ public partial class HashSetDictionary<TKey, TValue>
     /// <summary>
     /// Represents a dictionary synchronized set of values associated with a key in a <see cref="HashSetDictionary{TKey, TValue}"/>.
     /// </summary>
-    public sealed class ValueSet : ReadOnlyValueSet, ISet<TValue>, IReadOnlyCollectionProvider<TValue>
+    public sealed partial class ValueSet : ReadOnlyValueSet, ISet<TValue>, IReadOnlyCollectionProvider<TValue>
     {
         private ReadOnlyValueSet? _readOnlyValueSet;
 

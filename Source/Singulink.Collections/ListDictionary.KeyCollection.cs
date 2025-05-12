@@ -11,7 +11,7 @@ public partial class ListDictionary<TKey, TValue>
     /// <summary>
     /// Represents the collection of keys in a <see cref="ListDictionary{TKey, TValue}"/>.
     /// </summary>
-    public sealed class KeyCollection : ICollection<TKey>, IReadOnlyCollection<TKey>
+    public sealed partial class KeyCollection : ICollection<TKey>, IReadOnlyCollection<TKey>
     {
         private readonly ListDictionary<TKey, TValue> _dictionary;
 
@@ -31,7 +31,7 @@ public partial class ListDictionary<TKey, TValue>
         /// <summary>
         /// Copies all the keys in the dictionary to an array starting at the specified array index.
         /// </summary>
-        public void CopyTo(TKey[] array, int index) => _dictionary._lookup.Keys.CopyTo(array, index);
+        public void CopyTo(TKey[] array, int arrayIndex) => _dictionary._lookup.Keys.CopyTo(array, arrayIndex);
 
         /// <summary>
         /// Returns an enumerator that iterates through the keys in this collection.
