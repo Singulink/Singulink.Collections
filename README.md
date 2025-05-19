@@ -42,7 +42,7 @@ The packages are available on NuGet - simply install the `Singulink.Collections`
 
 End-of-life runtime versions that are no longer officially supported are not tested or supported by this library.
 
-## Usage
+## Example Usages
 
 ### Map
 

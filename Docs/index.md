@@ -6,11 +6,10 @@
 
 **Singulink.Collections** provides generally useful collections that are missing from .NET. They are highly optimized for performance, well documented and follow the same design principles as built-in .NET collections so they should feel instantly familiar.
 
-The following collections are included in the package:
-- `HashSetDictionary`: Collection of keys mapped to a hash set of unique values per key.
-- `ListDictionary`: Collection of keys mapped to a list of values per key.
-- `Map`: Collection of two types of values that map between each other in a bidirectional one-to-one relationship.
-- `AlternateLookup` nested types for each of the above collections that allow looking up values by alternate keys.
+The following is included in the package:
+- `HashSetDictionary`: Collection of keys mapped to a hash set of unique values per key (with `AlternateLookup` support).
+- `ListDictionary`: Collection of keys mapped to a list of values per key (with `AlternateLookup` support).
+- `Map`: Collection of two types of values that map between each other in a bidirectional one-to-one relationship (with `AlternateLookup` support).
 - `ReadOnlyHashSet`: Fast direct read-only wrapper for HashSets (instead of going through `ISet<>` like `ReadOnlySet` does).
 - `ReadOnlyList`: Fast direct read-only wrapper for Lists (instead of going through `IList<>` like `ReadOnlyCollection` does).
 - A full set of interfaces for the new collections as well as an `IReadOnlySet<>` polyfill for .NET Standard.
@@ -20,7 +19,7 @@ The following collections are included in the package:
 The following collections are included in the package:
 - `WeakCollection`: Collection of weakly referenced values that keeps items in an undefined order.
 - `WeakList`: Collection of weakly referenced values that maintains relative insertion order.
-- `WeakValueDictionary`: Collection of keys and weakly referenced values with `AlternateLookup` support.
+- `WeakValueDictionary`: Collection of keys and weakly referenced values (with `AlternateLookup` support).
 
 ### About Singulink
 
@@ -39,7 +38,7 @@ The packages are available on NuGet - simply install the `Singulink.Collections`
 
 End-of-life runtime versions that are no longer officially supported are not tested or supported by this library.
 
-## Usage
+## Example Usages
 
 ### Map
 
@@ -64,8 +63,6 @@ int one = nameToNumberMap["ONE"]; // 1
 ```
 
 ### ListDictionary
-
-Very similar API to `HashSetDictionary`, and both can be exposed as `ICollectionDictionary`:
 
 ```c#
 var numberNames = new ListDictionary<int, string>();
