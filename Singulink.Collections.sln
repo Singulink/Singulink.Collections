@@ -15,32 +15,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source", "Source", "{3F3E66
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{D641285C-EB50-4B2E-9FCB-6650DAA65342}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{77D5520C-C625-44CF-9D13-94563173C295}"
-	ProjectSection(SolutionItems) = preProject
-		.editorconfig = .editorconfig
-		CHANGELOG.md = CHANGELOG.md
-		Directory.Build.props = Directory.Build.props
-		LICENSE.md = LICENSE.md
-		README.md = README.md
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{13264A11-5846-4A14-8E15-0A54AA04BEAB}"
-	ProjectSection(SolutionItems) = preProject
-		Docs\docfx.json = Docs\docfx.json
-		Docs\index.md = Docs\index.md
-		Docs\toc.yml = Docs\toc.yml
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "api", "api", "{85134FD9-55CA-477B-A8E9-E3F8A6B323F1}"
-	ProjectSection(SolutionItems) = preProject
-		Docs\api\index.md = Docs\api\index.md
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{4C819D2C-90B2-4490-B5B0-53F1DD9D9EE1}"
-	ProjectSection(SolutionItems) = preProject
-		.github\dependabot.yml = .github\dependabot.yml
-	EndProjectSection
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Source Items", "Source Items", "{E264B84B-C48C-4D27-8FD2-8C2DE0BAB9B2}"
 	ProjectSection(SolutionItems) = preProject
 		Source\Directory.Build.props = Source\Directory.Build.props
@@ -53,11 +27,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Test Items", "Test Items", 
 		Tests\.editorconfig = Tests\.editorconfig
 		Tests\BannedSymbols.txt = Tests\BannedSymbols.txt
 		Tests\Directory.Build.props = Tests\Directory.Build.props
-	EndProjectSection
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "workflows", "workflows", "{6371A96E-144C-47C4-BB04-8BC4E6ADA28F}"
-	ProjectSection(SolutionItems) = preProject
-		.github\workflows\build-and-test.yml = .github\workflows\build-and-test.yml
 	EndProjectSection
 EndProject
 Global
@@ -91,10 +60,8 @@ Global
 		{D13CB713-78B9-422B-9BAF-2A35B434FA42} = {3F3E66F3-E5F4-4243-AB36-583AC6BDDB22}
 		{221DC5F0-312A-4FB8-B2FC-D171C921CED6} = {D641285C-EB50-4B2E-9FCB-6650DAA65342}
 		{2F4F3F7C-86C3-473D-90D1-9EFC7147B8D8} = {D641285C-EB50-4B2E-9FCB-6650DAA65342}
-		{85134FD9-55CA-477B-A8E9-E3F8A6B323F1} = {13264A11-5846-4A14-8E15-0A54AA04BEAB}
 		{E264B84B-C48C-4D27-8FD2-8C2DE0BAB9B2} = {3F3E66F3-E5F4-4243-AB36-583AC6BDDB22}
 		{3C98511D-3E04-4D16-B96C-8EFC5216CF4E} = {D641285C-EB50-4B2E-9FCB-6650DAA65342}
-		{6371A96E-144C-47C4-BB04-8BC4E6ADA28F} = {4C819D2C-90B2-4490-B5B0-53F1DD9D9EE1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {A726AC5A-8E85-4678-ABD0-6746252A4C38}
