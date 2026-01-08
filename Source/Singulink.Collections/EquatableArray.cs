@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Immutable;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -31,12 +32,16 @@ public static class EquatableArray
         // Optimize for common simple cases:
 
         if (items is ImmutableArray<T> immutableArray)
-            return immutableArray == default || immutableArray.Length == 0 ? EquatableArray<T>.Empty : new EquatableArray<T>(immutableArray);
+            return Create(immutableArray);
 
         if (items is EquatableArray<T> equatableArray)
             return equatableArray;
 
-        if (!items.Any())
+#if NET
+        if (items.TryGetNonEnumeratedCount(out int count) && count == 0)
+#else
+        if (items is ICollection<T> { Count: 0 } or ICollection { Count: 0 })
+#endif
             return EquatableArray<T>.Empty;
 
         // Otherwise, just create from the full collection:
@@ -50,7 +55,7 @@ public static class EquatableArray
         if (items.Length == 0)
             return EquatableArray<T>.Empty;
 
-#if NET5_0_OR_GREATER
+#if NET
         var array = GC.AllocateUninitializedArray<T>(items.Length);
 #else
         var array = new T[items.Length];

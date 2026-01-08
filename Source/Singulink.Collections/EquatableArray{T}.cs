@@ -213,7 +213,7 @@ public sealed class EquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<E
     {
         StringBuilder sb = new();
 
-#if NET6_0_OR_GREATER
+#if NET
         sb.Append(formatProvider, $"EquatableArray<{typeof(T).Name}>[{_array.Length}] {{ ");
 #else
         sb.Append("EquatableArray<");
@@ -334,7 +334,7 @@ public sealed class EquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<E
     /// </summary>
     public void CopyTo(Span<T> destination)
     {
-#if NET7_0_OR_GREATER || NETSTANDARD || NETFRAMEWORK
+#if NET8_0_OR_GREATER || NETSTANDARD || NETFRAMEWORK
         UnderlyingArray.CopyTo(destination);
 #else
         new ReadOnlySpan<T>(_array).CopyTo(destination);
@@ -401,7 +401,7 @@ public sealed class EquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<E
     /// </summary>
     public EquatableArray<T> Slice(int start, int length)
     {
-#if NET7_0_OR_GREATER || NETSTANDARD || NETFRAMEWORK
+#if NET8_0_OR_GREATER || NETSTANDARD || NETFRAMEWORK
         return EquatableArray.Create(UnderlyingArray.Slice(start, length));
 #else
         // Do the bounds check:
