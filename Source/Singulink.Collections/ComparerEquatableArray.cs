@@ -113,15 +113,6 @@ public static class ComparerEquatableArray
 
     /// <inheritdoc cref="Create{T}(IEqualityComparer{T}?, ImmutableArray{T})" />
     public static ComparerEquatableArray<T> Create<T>(IEqualityComparer<T>? comparer, params T[] items) => Create(comparer, (ReadOnlySpan<T>)items);
-
-    /// <inheritdoc cref="Create{T}(IEqualityComparer{T}?, ImmutableArray{T})" />
-    public static ComparerEquatableArray<T> ToComparerEquatableArray<T>(this ImmutableArray<T> value, IEqualityComparer<T>? comparer = null) => Create(comparer, value);
-
-    /// <inheritdoc cref="Create{T}(IEqualityComparer{T}?, ImmutableArray{T})" />
-    public static ComparerEquatableArray<T> ToEquatableArray<T>(this IEnumerable<T> value, IEqualityComparer<T>? comparer = null) => Create(comparer, value);
-
-    /// <inheritdoc cref="Create{T}(IEqualityComparer{T}?, ImmutableArray{T})" />
-    public static ComparerEquatableArray<T> ToEquatableArray<T>(this ReadOnlySpan<T> value, IEqualityComparer<T>? comparer = null) => Create(comparer, value);
 }
 
 /// <summary>
