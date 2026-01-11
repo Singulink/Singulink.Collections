@@ -14,6 +14,7 @@ The following is included in the package:
 - `HashSetDictionary`: Collection of keys mapped to a hash set of unique values per key (with `AlternateLookup` support).
 - `ListDictionary`: Collection of keys mapped to a list of values per key (with `AlternateLookup` support).
 - `Map`: Collection of two types of values that map between each other in a bidirectional one-to-one relationship (with `AlternateLookup` support).
+- `EquatableArray`: Array wrapper that implements value equality semantics based on the contents of the array.
 - `ReadOnlyHashSet`: Fast direct read-only wrapper for HashSets (instead of going through `ISet<>` like `ReadOnlySet` does).
 - `ReadOnlyList`: Fast direct read-only wrapper for Lists (instead of going through `IList<>` like `ReadOnlyCollection` does).
 - A full set of interfaces for the new collections as well as an `IReadOnlySet<>` polyfill for .NET Standard.
