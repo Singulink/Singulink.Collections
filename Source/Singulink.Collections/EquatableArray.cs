@@ -41,6 +41,9 @@ public static class EquatableArray
         if (items is EquatableArray<T> equatableArray)
             return equatableArray;
 
+        if (items is ComparerEquatableArray<T> comparerEquatableArray)
+            return Create(comparerEquatableArray.UnderlyingArray);
+
 #if NET
         if (items.TryGetNonEnumeratedCount(out int count) && count == 0)
 #else

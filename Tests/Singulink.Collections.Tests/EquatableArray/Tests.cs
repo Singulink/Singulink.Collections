@@ -917,4 +917,37 @@ public class Tests
         str.ShouldContain("2");
         str.ShouldContain("3");
     }
+
+    [TestMethod]
+    public void ComparerEquatableArray_CollectionBuilder_EmptyArray_ReturnsEmptyArray()
+    {
+        ComparerEquatableArray<int> result = [];
+
+        ShouldBeSequenceEqual(result, EqualityComparer<int>.Default, []);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_CollectionBuilder_SingleItem_CreatesCorrectArray()
+    {
+        ComparerEquatableArray<int> result = [42];
+
+        ShouldBeSequenceEqual(result, EqualityComparer<int>.Default, [42]);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_CollectionBuilder_MultipleItems_CreatesCorrectArray()
+    {
+        ComparerEquatableArray<int> result = [1, 2, 3, 4, 5];
+
+        ShouldBeSequenceEqual(result, EqualityComparer<int>.Default, [1, 2, 3, 4, 5]);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_CollectionBuilder_String_CreatesCorrectArray()
+    {
+        ComparerEquatableArray<string> result = ["a", "b", "c"];
+
+        // Collection builder uses default comparer
+        ShouldBeSequenceEqual(result, EqualityComparer<string>.Default, ["a", "b", "c"]);
+    }
 }

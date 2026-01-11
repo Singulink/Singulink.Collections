@@ -132,7 +132,7 @@ public static class ComparerEquatableArray
 /// must be consistent indefinitely, and the value you read out of the array is only guaranteed to be equal to the one passed in, not necessarily the same
 /// instance or bits).
 /// </remarks>
-[CollectionBuilder(typeof(EquatableArray), "Create")]
+[CollectionBuilder(typeof(ComparerEquatableArray), "Create")]
 public sealed class ComparerEquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<ComparerEquatableArray<T>>, IFormattable
 {
     // See EquatableArrayImpl for explanation.
@@ -152,8 +152,8 @@ public sealed class ComparerEquatableArray<T> : IReadOnlyList<T>, IList<T>, IEqu
     /// Note: values of the array are assumed to be immutable and interchangeable (that is, the standard equality and hash code contracts must be held, but also
     /// must be consistent indefinitely, and the value you read out of the array is only guaranteed to be equal to the one passed in, not necessarily the same
     /// instance or bits). Note: this constructor does not de-duplicate against existing instances when created (however, it can still later) - it is a quick
-    /// constructor that just copies the provided value directly, other than ensuring non-<see langword="null" /> - use methods on <see cref="EquatableArray" />
-    /// to get de-duplication.</para>
+    /// constructor that just copies the provided value directly, other than ensuring non-<see langword="null" /> - use methods on
+    /// <see cref="ComparerEquatableArray" /> to get de-duplication.</para>
     /// <para>
     /// Note: the values for the comparer are compared by reference equality, but with <see langword="null" /> considered equivalent to
     /// <see cref="EqualityComparer{T}.Default" />.</para>
