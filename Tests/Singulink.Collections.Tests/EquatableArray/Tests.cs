@@ -621,4 +621,333 @@ public class Tests
         public override bool Equals(object? obj) => Equals(obj as TestObject);
         public override int GetHashCode() => Value.GetHashCode();
     }
+
+    // Note: we rely on the fact that EquatableArray<T> and ComparerEquatableArray<T> have the same implementing type to allow us to just test
+    // EquatableArray<T> here plus ComparerEquatableArray<T>-specific features.
+
+    private static void ShouldBeSequenceEqual<T>(ComparerEquatableArray<T> array, IEqualityComparer<T> expectedComparer, ReadOnlySpan<T> expected)
+    {
+        array.Comparer.ShouldBeSameAs(expectedComparer);
+        array.Length.ShouldBe(expected.Length);
+        array.IsEmpty.ShouldBe(expected.Length == 0);
+
+        for (int i = 0; i < expected.Length; i++)
+            array[i].ShouldBe(expected[i], expectedComparer);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Create_WithDefaultComparer_UsesDefaultComparer()
+    {
+        var array = ComparerEquatableArray.Create(ImmutableArray.Create(1, 2, 3));
+
+        ShouldBeSequenceEqual(array, EqualityComparer<int>.Default, [1, 2, 3]);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Create_WithCustomComparer_UsesCustomComparer()
+    {
+        var array = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("a", "b", "c"));
+
+        // Use equivalent but not identical values to verify comparer is used
+        ShouldBeSequenceEqual(array, StringComparer.OrdinalIgnoreCase, ["A", "B", "C"]);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Empty_HasDefaultComparer()
+    {
+        ComparerEquatableArray<string> empty = ComparerEquatableArray<string>.Empty;
+
+        ShouldBeSequenceEqual(empty, EqualityComparer<string>.Default, []);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Constructor_WithComparer_StoresComparer()
+    {
+        var array = new ComparerEquatableArray<string>(ImmutableArray.Create("A", "B"), StringComparer.OrdinalIgnoreCase);
+
+        ShouldBeSequenceEqual(array, StringComparer.OrdinalIgnoreCase, ["A", "B"]);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Equals_DifferentComparers_ReturnsFalse()
+    {
+        var array1 = ComparerEquatableArray.Create(StringComparer.InvariantCultureIgnoreCase, ImmutableArray.Create("A", "B"));
+        var array2 = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("A", "B"));
+
+        array1.Equals(array2).ShouldBeFalse();
+        (array1 == array2).ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Equals_SameComparerSameValues_ReturnsTrue()
+    {
+        var array1 = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("A", "B"));
+        var array2 = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("A", "B"));
+
+        array1.Equals(array2).ShouldBeTrue();
+        (array1 == array2).ShouldBeTrue();
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Equals_WithCustomComparer_UsesComparer()
+    {
+        var array1 = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("abc", "DEF"));
+        var array2 = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("ABC", "def"));
+
+        array1.Equals(array2).ShouldBeTrue();
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_GetHashCode_WithCustomComparer_UsesComparer()
+    {
+        var array1 = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("abc", "def"));
+        var array2 = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("ABC", "DEF"));
+
+        // Same hash code because case-insensitive comparer treats them as equal
+        array1.GetHashCode().ShouldBe(array2.GetHashCode());
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_WithComparer_ChangesComparer()
+    {
+        var array1 = ComparerEquatableArray.Create(StringComparer.InvariantCultureIgnoreCase, ImmutableArray.Create("a", "b"));
+        ComparerEquatableArray<string> array2 = array1.WithComparer(StringComparer.OrdinalIgnoreCase);
+
+        ShouldBeSequenceEqual(array1, StringComparer.InvariantCultureIgnoreCase, ["A", "B"]);
+        ShouldBeSequenceEqual(array2, StringComparer.OrdinalIgnoreCase, ["A", "B"]);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_WithComparer_SameComparer_ReturnsEqualArray()
+    {
+        var array1 = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("A", "B"));
+        ComparerEquatableArray<string> array2 = array1.WithComparer(StringComparer.OrdinalIgnoreCase);
+
+        ShouldBeSequenceEqual(array2, StringComparer.OrdinalIgnoreCase, ["A", "B"]);
+        array1.Equals(array2).ShouldBeTrue();
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_WithComparer_ToDefault_ReturnsWithDefaultComparer()
+    {
+        var array1 = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("A", "B"));
+        ComparerEquatableArray<string> array2 = array1.WithComparer(null);
+
+        ShouldBeSequenceEqual(array2, EqualityComparer<string>.Default, ["A", "B"]);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Contains_WithCustomComparer_UsesComparer()
+    {
+        var array = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("abc", "def", "ghi"));
+
+        array.Contains("ABC").ShouldBeTrue();
+        array.Contains("DEF").ShouldBeTrue();
+        array.Contains("xyz").ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Contains_WithOverrideComparer_UsesOverride()
+    {
+        var array = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("abc", "def"));
+
+        // Array comparer is OrdinalIgnoreCase, but we override with InvariantCultureIgnoreCase
+        array.Contains("ABC", StringComparer.InvariantCultureIgnoreCase).ShouldBeTrue();
+        array.Contains("ABC\0", StringComparer.InvariantCultureIgnoreCase).ShouldBeTrue();
+        array.Contains("xyz", StringComparer.InvariantCultureIgnoreCase).ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_IndexOf_WithCustomComparer_UsesComparer()
+    {
+        var array = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("abc", "def", "ghi"));
+
+        array.IndexOf("DEF").ShouldBe(1);
+        array.IndexOf("GHI").ShouldBe(2);
+        array.IndexOf("xyz").ShouldBe(-1);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_IndexOf_WithOverrideComparer_UsesOverride()
+    {
+        var array = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("abc", "def"));
+
+        // Array comparer is OrdinalIgnoreCase, but we override with InvariantCultureIgnoreCase
+        array.IndexOf("ABC", StringComparer.InvariantCultureIgnoreCase).ShouldBe(0);
+        array.IndexOf("DEF", StringComparer.InvariantCultureIgnoreCase).ShouldBe(1);
+        array.IndexOf("DEF\0", StringComparer.InvariantCultureIgnoreCase).ShouldBe(1);
+        array.IndexOf("xyz", StringComparer.InvariantCultureIgnoreCase).ShouldBe(-1);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_LastIndexOf_WithCustomComparer_UsesComparer()
+    {
+        var array = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("abc", "def", "ABC"));
+
+        array.LastIndexOf("abc").ShouldBe(2);
+        array.LastIndexOf("DEF").ShouldBe(1);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_ToComparerEquatableArray_FromImmutableArray_WithComparer()
+    {
+        var immutable = ImmutableArray.Create("A", "B", "C");
+        var array = immutable.ToComparerEquatableArray(StringComparer.OrdinalIgnoreCase);
+
+        ShouldBeSequenceEqual(array, StringComparer.OrdinalIgnoreCase, ["A", "B", "C"]);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Create_FromEnumerable_WithComparer()
+    {
+        IEnumerable<string> enumerable = new[] { "A", "B", "C" }.AsEnumerable();
+        var array = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, enumerable);
+
+        ShouldBeSequenceEqual(array, StringComparer.OrdinalIgnoreCase, ["A", "B", "C"]);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Create_FromReadOnlySpan_WithComparer()
+    {
+        ReadOnlySpan<string> span = ["A", "B", "C"];
+        var array = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, span);
+
+        ShouldBeSequenceEqual(array, StringComparer.OrdinalIgnoreCase, ["A", "B", "C"]);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Create_FromComparerEquatableArray_SameComparer_ReturnsEqualArray()
+    {
+        var original = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("A", "B"));
+        var result = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, (IEnumerable<string>)original);
+
+        ShouldBeSequenceEqual(result, StringComparer.OrdinalIgnoreCase, ["A", "B"]);
+        original.Equals(result).ShouldBeTrue();
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Create_FromComparerEquatableArray_DifferentComparer_ReturnsArrayWithNewComparer()
+    {
+        var original = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("a", "b"));
+        var result = ComparerEquatableArray.Create(StringComparer.InvariantCultureIgnoreCase, (IEnumerable<string>)original);
+
+        ShouldBeSequenceEqual(result, StringComparer.InvariantCultureIgnoreCase, ["A", "B"]);
+        original.Equals(result).ShouldBeFalse(); // Different comparers means not equal
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Create_FromEquatableArray_WithComparer()
+    {
+        var equatableArray = EquatableArray.Create(ImmutableArray.Create("A", "B"));
+        var result = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, (IEnumerable<string>)equatableArray);
+
+        ShouldBeSequenceEqual(result, StringComparer.OrdinalIgnoreCase, ["A", "B"]);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Slice_MaintainsComparer()
+    {
+        var array = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("A", "B", "C", "D"));
+        ComparerEquatableArray<string> sliced = array.Slice(1, 2);
+
+        ShouldBeSequenceEqual(sliced, StringComparer.OrdinalIgnoreCase, ["B", "C"]);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_Slice_FullRange_ReturnsEqualArray()
+    {
+        var array = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("A", "B", "C"));
+        ComparerEquatableArray<string> sliced = array[..];
+
+        ShouldBeSequenceEqual(sliced, StringComparer.OrdinalIgnoreCase, ["A", "B", "C"]);
+        array.Equals(sliced).ShouldBeTrue();
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_CanBeUsedAsDictionaryKey_WithCustomComparer()
+    {
+        var dict = new Dictionary<ComparerEquatableArray<string>, int>();
+
+        var key1 = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("abc", "def"));
+        var key2 = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("ABC", "DEF"));
+
+        dict[key1] = 42;
+        dict[key2] = 99;
+
+        // Because key1 and key2 are equal (case-insensitive), key2 overwrites key1
+        dict.Count.ShouldBe(1);
+        dict[key1].ShouldBe(99);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_EqualityOperator_BothNull_ReturnsTrue()
+    {
+        ComparerEquatableArray<string>? array1 = null;
+        ComparerEquatableArray<string>? array2 = null;
+
+        (array1 == array2).ShouldBeTrue();
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_EqualityOperator_OneNull_ReturnsFalse()
+    {
+        var array1 = ComparerEquatableArray.Create(ImmutableArray.Create("A", "B"));
+        ComparerEquatableArray<string>? array2 = null;
+
+        (array1 == array2).ShouldBeFalse();
+        (array2 == array1).ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_InequalityOperator_DifferentComparers_ReturnsTrue()
+    {
+        var array1 = ComparerEquatableArray.Create(StringComparer.InvariantCultureIgnoreCase, ImmutableArray.Create("A", "B"));
+        var array2 = ComparerEquatableArray.Create(StringComparer.OrdinalIgnoreCase, ImmutableArray.Create("A", "B"));
+
+        (array1 != array2).ShouldBeTrue();
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_ToString_WorksCorrectly()
+    {
+        var array = ComparerEquatableArray.Create(ImmutableArray.Create(1, 2, 3));
+        string str = array.ToString();
+
+        str.ShouldContain("1");
+        str.ShouldContain("2");
+        str.ShouldContain("3");
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_CollectionBuilder_EmptyArray_ReturnsEmptyArray()
+    {
+        ComparerEquatableArray<int> result = [];
+
+        ShouldBeSequenceEqual(result, EqualityComparer<int>.Default, []);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_CollectionBuilder_SingleItem_CreatesCorrectArray()
+    {
+        ComparerEquatableArray<int> result = [42];
+
+        ShouldBeSequenceEqual(result, EqualityComparer<int>.Default, [42]);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_CollectionBuilder_MultipleItems_CreatesCorrectArray()
+    {
+        ComparerEquatableArray<int> result = [1, 2, 3, 4, 5];
+
+        ShouldBeSequenceEqual(result, EqualityComparer<int>.Default, [1, 2, 3, 4, 5]);
+    }
+
+    [TestMethod]
+    public void ComparerEquatableArray_CollectionBuilder_String_CreatesCorrectArray()
+    {
+        ComparerEquatableArray<string> result = ["a", "b", "c"];
+
+        // Collection builder uses default comparer
+        ShouldBeSequenceEqual(result, EqualityComparer<string>.Default, ["a", "b", "c"]);
+    }
 }
