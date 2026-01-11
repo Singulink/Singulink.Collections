@@ -313,17 +313,9 @@ internal struct EquatableArrayImpl<T>
 #else
         // Do the bounds check:
         var items = _array;
-        items.AsSpan(start, length);
+        var sp = items.AsSpan(start, length);
 
-        // Create the new result array:
-
-        var array = length == 0 ? Array.Empty<T>() : new T[length];
-        for (int i = 0; i < array.Length; i++)
-        {
-            array[i] = items[start + i];
-        }
-
-        return ImmutableCollectionsMarshal.AsImmutableArray(array);
+        return sp.Length is 0 ? ImmutableArray<T>.Empty : ImmutableCollectionsMarshal.AsImmutableArray(sp.ToArray());
 #endif
     }
 }
