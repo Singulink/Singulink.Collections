@@ -81,18 +81,6 @@ public static class EquatableArray
 
     /// <inheritdoc cref="Create{T}(ImmutableArray{T})" />
     public static EquatableArray<T> Create<T>(params T[] items) => Create((ReadOnlySpan<T>)items);
-
-    /// <inheritdoc cref="Create{T}(ImmutableArray{T})" />
-    public static EquatableArray<T> ToEquatableArray<T>(this ImmutableArray<T> value) => Create(value);
-
-    /// <inheritdoc cref="Create{T}(ImmutableArray{T})" />
-    public static EquatableArray<T> ToEquatableArray<T>(this IEnumerable<T> value) => Create(value);
-
-    /// <inheritdoc cref="Create{T}(ImmutableArray{T})" />
-    public static EquatableArray<T> ToEquatableArray<T>(this ReadOnlySpan<T> value) => Create(value);
-
-    /// <inheritdoc cref="Create{T}(ImmutableArray{T})" />
-    public static EquatableArray<T> ToEquatableArray<T>(this T[] value) => Create(value);
 }
 
 /// <summary>

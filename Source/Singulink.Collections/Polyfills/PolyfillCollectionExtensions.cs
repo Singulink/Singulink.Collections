@@ -2,7 +2,7 @@
 
 #if NETSTANDARD2_0
 
-internal static class CollectionExtensions
+internal static class PolyfillCollectionExtensions
 {
     public static bool Remove<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, out TValue value) where TKey : notnull
     {
