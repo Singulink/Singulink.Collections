@@ -10,6 +10,8 @@ namespace Singulink.Collections;
 /// <para>Internal entries for garbage collected values are not removed automatically by default. You can perform a full clean by calling the <see
 /// cref="Clean"/> method or configure automatic cleaning after a set number of <see cref="Add(T)"/> operations by setting the <see
 /// cref="AutoCleanAddCount"/> property.</para>
+/// <para>Note: while this type is suitable for small collections, it does not scale well, so if you need a potentially large collection, or one that the size
+/// is directly or indirectly controlled by users, you should consider using <see cref="ConcurrentWeakList{T}"/> instead.</para>
 /// </remarks>
 public sealed class WeakList<T> : IEnumerable<T> where T : class
 {
