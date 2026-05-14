@@ -1,6 +1,5 @@
-#if !NET8_0_OR_GREATER
+#if !NET
 using System.Collections.Immutable;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Microsoft.CodeAnalysis;
 

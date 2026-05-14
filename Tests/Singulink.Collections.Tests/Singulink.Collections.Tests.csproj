@@ -1,10 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>net48;net6.0</TargetFrameworks>
+    <TargetFrameworks>net48;net6.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <LangVersion>14</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Ensure we test all major variants of the implementations / tfms / runtimes: .NET Framework (ns2.0), .NET 6 (ns2.1), .NET 8+ -->
     <ProjectReference Include="..\..\Source\Singulink.Collections\Singulink.Collections.csproj" />
   </ItemGroup>
 </Project>

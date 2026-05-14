@@ -1,7 +1,5 @@
-﻿using System.Collections;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using Singulink.Collections.Utilities;
 
 namespace Singulink.Collections;
 
@@ -11,9 +9,7 @@ namespace Singulink.Collections;
 /// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
 /// <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
 public partial class HashSetDictionary<TKey, TValue> :
-    ISetDictionary<TKey, TValue>,
-    IReadOnlyDictionary<TKey, ISet<TValue>>,
-    ICollection<KeyValuePair<TKey, ISet<TValue>>>
+    ISetDictionary<TKey, TValue>
     where TKey : notnull
 {
     private readonly Dictionary<TKey, ValueSet> _lookup;
@@ -82,7 +78,7 @@ public partial class HashSetDictionary<TKey, TValue> :
     /// </summary>
     public IEqualityComparer<TKey> KeyComparer => _lookup.Comparer;
 
-    /// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}.Keys"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.Keys"/>
     public KeyCollection Keys => _keys ??= new KeyCollection(this);
 
     /// <summary>
@@ -90,7 +86,7 @@ public partial class HashSetDictionary<TKey, TValue> :
     /// </summary>
     public IEqualityComparer<TValue> ValueComparer => _valueComparer ?? EqualityComparer<TValue>.Default;
 
-    /// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}.ValueCount"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.ValueCount"/>
     public int ValueCount => _valueCount;
 
     /// <summary>
@@ -98,7 +94,7 @@ public partial class HashSetDictionary<TKey, TValue> :
     /// </summary>
     public ValueSetCollection ValueSets => _valueSets ??= new ValueSetCollection(this);
 
-    /// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}.Values"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.Values"/>
     public ValueCollection Values => _values ??= new ValueCollection(this);
 
     /// <summary>
@@ -146,7 +142,7 @@ public partial class HashSetDictionary<TKey, TValue> :
         return false;
     }
 
-    /// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}.Contains(TKey, TValue)"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.Contains(TKey, TValue)"/>
     public bool Contains(TKey key, TValue value)
     {
         if (_lookup.TryGetValue(key, out var valueSet))
@@ -158,7 +154,7 @@ public partial class HashSetDictionary<TKey, TValue> :
         return false;
     }
 
-    /// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}.ContainsKey(TKey)"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.ContainsKey(TKey)"/>
     public bool ContainsKey(TKey key) => _lookup.ContainsKey(key);
 
     /// <summary>
@@ -177,7 +173,7 @@ public partial class HashSetDictionary<TKey, TValue> :
         return false;
     }
 
-    /// <inheritdoc cref="ICollectionDictionary{TKey, TValue, TValueCollection}.GetValueCount(TKey)"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.GetValueCount(TKey)"/>
     public int GetValueCount(TKey key) => _lookup.TryGetValue(key, out var valueSet) ? valueSet.Count : 0;
 
     /// <summary>
@@ -190,6 +186,12 @@ public partial class HashSetDictionary<TKey, TValue> :
     /// Returns an enumerator that iterates through the value sets in the dictionary.
     /// </summary>
     public ValueSetCollection.Enumerator GetEnumerator() => ValueSets.GetEnumerator();
+
+    /// <summary>
+    /// Creates a snapshot <see cref="ILookup{TKey, TElement}"/> by copying the current contents of the dictionary using its <see cref="KeyComparer"/>.
+    /// Subsequent changes to the dictionary are not reflected in the returned lookup.
+    /// </summary>
+    public ILookup<TKey, TValue> ToLookup() => new Internal.SnapshotLookup<TKey, TValue>(ValueSets, KeyComparer);
 
 #if !NETSTANDARD2_0
 
@@ -245,113 +247,76 @@ public partial class HashSetDictionary<TKey, TValue> :
 
 #endif
 
-    [Conditional("DEBUG")]
-    private void DebugValueCount()
-    {
-        Debug.Assert(_valueCount == _lookup.Values.Sum(v => v.Count), "incorrect value count");
-    }
+    partial void DebugValueCount();
 
-    [Conditional("DEBUG")]
-    private static void DebugValid(ValueSet valueSet)
-    {
-        Debug.Assert(valueSet.Count > 0, "empty value set");
-    }
+    static partial void DebugValid(ValueSet valueSet);
+
+#if DEBUG
+
+    partial void DebugValueCount() => Debug.Assert(_valueCount == _lookup.Values.Sum(v => v.Count), "incorrect value count");
+
+    static partial void DebugValid(ValueSet valueSet) => Debug.Assert(valueSet.Count > 0, "empty value set");
+
+#endif
 
     #region Explicit Interface Implementations
 
     /// <inheritdoc cref="this[TKey]"/>
-    ISet<TValue> ICollectionDictionary<TKey, TValue, ISet<TValue>>.this[TKey key] => this[key];
+    IKeyedSet<TKey, TValue> ISetDictionary<TKey, TValue>.this[TKey key] => this[key];
 
     /// <inheritdoc cref="this[TKey]"/>
-    ISet<TValue> IReadOnlyDictionary<TKey, ISet<TValue>>.this[TKey key] => this[key];
+    IKeyedSet<TKey, TValue> ICollectionDictionary<TKey, TValue, IKeyedSet<TKey, TValue>>.this[TKey key] => this[key];
 
-    /// <summary>
-    /// Gets a value indicating whether this collection is read-only. Although this dictionary is not read-only, this always returns <see langword="true"/> as
-    /// only read operations are supported through the <see cref="ICollection{T}"/> interface.
-    /// </summary>
-    bool ICollection<KeyValuePair<TKey, ISet<TValue>>>.IsReadOnly => true;
+    /// <inheritdoc cref="this[TKey]"/>
+    IKeyedSet<TKey, TValue> IReadOnlyCollectionDictionary<TKey, TValue, IKeyedSet<TKey, TValue>>.this[TKey key] => this[key];
 
-    /// <inheritdoc cref="Keys"/>
-    IEnumerable<TKey> IReadOnlyDictionary<TKey, ISet<TValue>>.Keys => Keys;
+    /// <inheritdoc cref="this[TKey]"/>
+    IReadOnlyKeyedSet<TKey, TValue> IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyKeyedSet<TKey, TValue>>.this[TKey key] => this[key];
 
     /// <inheritdoc cref="Keys"/>
-    IReadOnlyCollection<TKey> ICollectionDictionary<TKey, TValue, ISet<TValue>>.Keys => Keys;
+    IReadOnlyCollection<TKey> IReadOnlyCollectionDictionary<TKey, TValue, IKeyedSet<TKey, TValue>>.Keys => Keys;
 
-    /// <inheritdoc cref="ValueSets"/>
-    IEnumerable<ISet<TValue>> IReadOnlyDictionary<TKey, ISet<TValue>>.Values => ValueSets;
-
-    /// <inheritdoc cref="ValueSets"/>
-    IReadOnlyCollection<ISet<TValue>> ICollectionDictionary<TKey, TValue, ISet<TValue>>.ValueCollections => ValueSets;
+    /// <inheritdoc cref="Keys"/>
+    IReadOnlyCollection<TKey> IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyKeyedSet<TKey, TValue>>.Keys => Keys;
 
     /// <inheritdoc cref="Values"/>
-    IReadOnlyCollection<TValue> ICollectionDictionary<TKey, TValue, ISet<TValue>>.Values => Values;
+    IReadOnlyCollection<TValue> IReadOnlyCollectionDictionary<TKey, TValue, IKeyedSet<TKey, TValue>>.Values => Values;
 
-    /// <summary>
-    /// Gets a value indicating whether the specified key and value set is present in the dictionary.
-    /// </summary>
-    bool ICollection<KeyValuePair<TKey, ISet<TValue>>>.Contains(KeyValuePair<TKey, ISet<TValue>> item)
-    {
-        return TryGetValues(item.Key, out var valueSet) && valueSet.Equals(item.Value);
-    }
+    /// <inheritdoc cref="Values"/>
+    IReadOnlyCollection<TValue> IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyKeyedSet<TKey, TValue>>.Values => Values;
 
-    /// <summary>
-    /// Copies the key and value set pairs to an array starting at the given array index.
-    /// </summary>
-    void ICollection<KeyValuePair<TKey, ISet<TValue>>>.CopyTo(KeyValuePair<TKey, ISet<TValue>>[] array, int arrayIndex)
-    {
-        CollectionCopy.CheckParams(Count, array, arrayIndex);
+    /// <inheritdoc cref="ValueSets"/>
+    IReadOnlyCollection<IKeyedSet<TKey, TValue>> ISetDictionary<TKey, TValue>.ValueCollections => ValueSets;
 
-        foreach (var valueSet in this)
-            array[arrayIndex++] = new(valueSet.Key, valueSet);
-    }
+    /// <inheritdoc />
+    IReadOnlyCollection<IKeyedSet<TKey, TValue>> IReadOnlyCollectionDictionary<TKey, TValue, IKeyedSet<TKey, TValue>>.ValueCollections => ValueSets;
 
-    /// <inheritdoc cref="TryGetValues(TKey, out ValueSet)"/>
-    bool ICollectionDictionary<TKey, TValue, ISet<TValue>>.TryGetValues(TKey key, [MaybeNullWhen(false)] out ISet<TValue> valueCollection)
-    {
-        bool result = TryGetValues(key, out var c);
-        valueCollection = c;
-        return result;
-    }
+    /// <inheritdoc />
+    IReadOnlyCollection<IReadOnlyKeyedSet<TKey, TValue>> IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyKeyedSet<TKey, TValue>>.ValueCollections => ValueSets;
 
-    /// <inheritdoc cref="TryGetValues(TKey, out ValueSet)"/>
-    bool IReadOnlyDictionary<TKey, ISet<TValue>>.TryGetValue(TKey key, [MaybeNullWhen(false)] out ISet<TValue> value)
+    /// <inheritdoc />
+    bool ISetDictionary<TKey, TValue>.TryGetValues(TKey key, [MaybeNullWhen(false)] out IKeyedSet<TKey, TValue> valueCollection)
     {
         bool result = TryGetValues(key, out var v);
-        value = v;
+        valueCollection = v;
         return result;
     }
 
-    /// <inheritdoc cref="GetEnumerator"/>
-    IEnumerator<KeyValuePair<TKey, ISet<TValue>>> IEnumerable<KeyValuePair<TKey, ISet<TValue>>>.GetEnumerator()
+    /// <inheritdoc />
+    bool IReadOnlyCollectionDictionary<TKey, TValue, IKeyedSet<TKey, TValue>>.TryGetValues(TKey key, [MaybeNullWhen(false)] out IKeyedSet<TKey, TValue> valueCollection)
     {
-        foreach (var valueSet in this)
-            yield return new(valueSet.Key, valueSet);
+        bool result = TryGetValues(key, out var v);
+        valueCollection = v;
+        return result;
     }
 
-    /// <inheritdoc cref="GetEnumerator"/>
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
-    #endregion
-
-    #region Not Supported
-
-    /// <summary>
-    /// Not supported.
-    /// </summary>
-    /// <exception cref="NotSupportedException">This operation is not supported.</exception>
-    void ICollection<KeyValuePair<TKey, ISet<TValue>>>.Add(KeyValuePair<TKey, ISet<TValue>> item) => throw new NotSupportedException();
-
-    /// <summary>
-    /// Not supported.
-    /// </summary>
-    /// <exception cref="NotSupportedException">This operation is not supported.</exception>
-    void ICollection<KeyValuePair<TKey, ISet<TValue>>>.Clear() => throw new NotSupportedException();
-
-    /// <summary>
-    /// Not supported.
-    /// </summary>
-    /// <exception cref="NotSupportedException">This operation is not supported.</exception>
-    bool ICollection<KeyValuePair<TKey, ISet<TValue>>>.Remove(KeyValuePair<TKey, ISet<TValue>> item) => throw new NotSupportedException();
+    /// <inheritdoc />
+    bool IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyKeyedSet<TKey, TValue>>.TryGetValues(TKey key, [MaybeNullWhen(false)] out IReadOnlyKeyedSet<TKey, TValue> valueCollection)
+    {
+        bool result = TryGetValues(key, out var v);
+        valueCollection = v;
+        return result;
+    }
 
     #endregion
 }

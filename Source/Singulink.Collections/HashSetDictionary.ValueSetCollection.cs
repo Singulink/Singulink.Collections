@@ -118,18 +118,13 @@ public partial class HashSetDictionary<TKey, TValue>
             /// </summary>
             public bool MoveNext()
             {
-                Throw.IfEnumeratedCollectionChanged(_version, _dictionary._version);
+                Throw.IfEnumerationCollectionChanged(_version, _dictionary._version);
+                bool result = _valueSetsEnumerator.MoveNext();
 #if DEBUG
-                if (_valueSetsEnumerator.MoveNext())
-                {
+                if (result)
                     DebugValid(_valueSetsEnumerator.Current);
-                    return true;
-                }
-
-                return false;
-#else
-                return _valueSetsEnumerator.MoveNext();
 #endif
+                return result;
             }
 
             /// <summary>

@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net6.0;net6.0-windows10.0.19041;net8.0;net8.0-windows10.0.19041;net9.0;net9.0-windows10.0.19041;net10.0;net10.0-windows10.0.19041;</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net8.0-windows10.0.19041;net9.0;net9.0-windows10.0.19041;net10.0;net10.0-windows10.0.19041;</TargetFrameworks>
     <RootNamespace>Singulink.Collections</RootNamespace>
 
-    <Version>2.2.0</Version>
+    <Version>3.0.0</Version>
     <PackageTags>weak, dictionary, value, collection, list</PackageTags>
     <Description>Collection classes that store weak references to values so that they can be garbage collected when they are no longer needed.</Description>
     <PackageProjectUrl>https://github.com/Singulink/Singulink.Collections.Weak</PackageProjectUrl>
@@ -14,8 +14,15 @@
     <None Include="..\..\README.md" Link="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
+  <PropertyGroup>
+    <PolySharpIncludeRuntimeSupportedAttributes>true</PolySharpIncludeRuntimeSupportedAttributes>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="PolySharp" Version="1.15.0" PrivateAssets="All" />
+  </ItemGroup>
+
   <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('netstandard2.1', '$(TargetFramework)'))">
-    <PackageReference Include="PolySharp" Version="1.14.1" PrivateAssets="All" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="4.7.1" />
   </ItemGroup>
 </Project>

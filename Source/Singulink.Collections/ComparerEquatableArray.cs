@@ -55,11 +55,6 @@ public static class ComparerEquatableArray
     /// <inheritdoc cref="Create{T}(IEqualityComparer{T}?, ImmutableArray{T})" />
     public static ComparerEquatableArray<T> Create<T>(IEqualityComparer<T>? comparer, IEnumerable<T> items)
     {
-        // Optimize for common simple cases:
-
-        if (items is ImmutableArray<T> immutableArray)
-            return Create(comparer, immutableArray);
-
         if (items is ComparerEquatableArray<T> comparerEquatableArray)
         {
             if (comparerEquatableArray.Comparer == (comparer ?? EqualityComparer<T>.Default))
@@ -69,23 +64,14 @@ public static class ComparerEquatableArray
         }
 
         if (items is EquatableArray<T> equatableArray)
-        {
             return Create(comparer, equatableArray.UnderlyingArray);
-        }
 
-        if (
-            (comparer == null || comparer == EqualityComparer<T>.Default) &&
-#if NET
-            items.TryGetNonEnumeratedCount(out int count) && count == 0)
-#else
-            items is ICollection<T> { Count: 0 } or ICollection { Count: 0 })
-#endif
-        {
+        var array = ImmutableArray.CreateRange(items);
+
+        if (array.Length is 0 && (comparer == null || comparer == EqualityComparer<T>.Default))
             return ComparerEquatableArray<T>.Empty;
-        }
 
-        // Otherwise, just create from the full collection:
-        return new ComparerEquatableArray<T>(ImmutableArray.CreateRange(items), comparer);
+        return new ComparerEquatableArray<T>(array, comparer);
     }
 
     /// <inheritdoc cref="Create{T}(IEqualityComparer{T}?, ImmutableArray{T})" />
@@ -94,21 +80,7 @@ public static class ComparerEquatableArray
         if (items.Length == 0 && (comparer == null || comparer == EqualityComparer<T>.Default))
             return ComparerEquatableArray<T>.Empty;
 
-#if NET
-        var array = GC.AllocateUninitializedArray<T>(items.Length);
-#else
-        var array = new T[items.Length];
-#endif
-
-        items.CopyTo(array);
-
-#if NET8_0_OR_GREATER
-        var immutableArray = ImmutableCollectionsMarshal.AsImmutableArray(array);
-#else
-        var immutableArray = Unsafe.As<T[], ImmutableArray<T>>(ref array);
-#endif
-
-        return new ComparerEquatableArray<T>(immutableArray, comparer);
+        return new ComparerEquatableArray<T>(ImmutableArray.Create(items), comparer);
     }
 
     /// <inheritdoc cref="Create{T}(IEqualityComparer{T}?, ImmutableArray{T})" />

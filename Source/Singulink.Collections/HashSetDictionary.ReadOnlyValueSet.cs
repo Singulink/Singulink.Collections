@@ -12,7 +12,7 @@ public partial class HashSetDictionary<TKey, TValue>
     /// <summary>
     /// Represents a synchronized read-only set of values associated with a key in a <see cref="HashSetDictionary{TKey, TValue}"/>.
     /// </summary>
-    public partial class ReadOnlyValueSet : ISet<TValue>, IReadOnlySet<TValue>, IEquatable<ReadOnlyValueSet>
+    public partial class ReadOnlyValueSet : IReadOnlyKeyedSet<TKey, TValue>, ISet<TValue>, IEquatable<ReadOnlyValueSet>
     {
 #pragma warning disable SA1401 // Fields should be private
 

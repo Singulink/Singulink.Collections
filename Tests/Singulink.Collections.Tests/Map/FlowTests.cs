@@ -29,10 +29,10 @@ public class FlowTests
         map.Count.ShouldBe(2);
         reverse.Count.ShouldBe(2);
 
-        map.ShouldBe(new KeyValuePair<int, string>[] { new(3, "three"), new(4, "four") }, ignoreOrder: true);
-        map.Reverse.ShouldBe(new KeyValuePair<string, int>[] { new("three", 3), new("four", 4) }, ignoreOrder: true);
-        map.LeftValues.ShouldBe(new[] { 3, 4 }, ignoreOrder: true);
-        map.RightValues.ShouldBe(new[] { "three", "four" }, ignoreOrder: true);
+        map.ShouldBe([new(3, "three"), new(4, "four")], ignoreOrder: true);
+        map.Reverse.ShouldBe([new("three", 3), new("four", 4)], ignoreOrder: true);
+        map.LeftValues.ShouldBe([3, 4], ignoreOrder: true);
+        map.RightValues.ShouldBe(["three", "four"], ignoreOrder: true);
 
         Should.Throw<ArgumentException>(() => map[3] = "FOUR");
         Should.Throw<ArgumentException>(() => map[4] = "Three");
@@ -43,10 +43,10 @@ public class FlowTests
         map.Count.ShouldBe(2);
         reverse.Count.ShouldBe(2);
 
-        map.LeftValues.ShouldBe(new[] { 3, 4 }, ignoreOrder: true);
-        map.RightValues.ShouldBe(new[] { "3", "4" }, ignoreOrder: true);
-        map.ShouldBe(new KeyValuePair<int, string>[] { new(3, "3"), new(4, "4") }, ignoreOrder: true);
-        map.Reverse.ShouldBe(new KeyValuePair<string, int>[] { new("3", 3), new("4", 4) }, ignoreOrder: true);
+        map.LeftValues.ShouldBe([3, 4], ignoreOrder: true);
+        map.RightValues.ShouldBe(["3", "4"], ignoreOrder: true);
+        map.ShouldBe([new(3, "3"), new(4, "4")], ignoreOrder: true);
+        map.Reverse.ShouldBe([new("3", 3), new("4", 4)], ignoreOrder: true);
 
         map.Clear();
 

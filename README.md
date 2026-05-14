@@ -8,22 +8,27 @@
 | **Singulink.Collections** | [![View nuget packages](https://img.shields.io/nuget/v/Singulink.Collections.svg)](https://www.nuget.org/packages/Singulink.Collections/) |
 | **Singulink.Collections.Weak** | [![View nuget packages](https://img.shields.io/nuget/v/Singulink.Collections.Weak.svg)](https://www.nuget.org/packages/Singulink.Collections.Weak/) |
 
+> [!IMPORTANT]
+> **`Singulink.Collections` v4 contains breaking changes.** The interface hierarchies have been restructured, value collections now implement `IGrouping<TKey, TValue>` for free LINQ interop, and the BCL projection extension methods (e.g. `AsReadOnlyDictionaryOfList`, `AsDictionaryOfCollection`) have been removed in favor of a smaller, cleaner surface. Impact is minimal for code that uses the concrete types or Singulink dictionary interfaces. See the [**v4 changes and migration guide**](V4-COLLECTIONS-CHANGES.md) if you were relying on the BCL adapters/shims.
+>
+> `Singulink.Collections.Weak` v3 also dropped .NET 6 support and adds `ConcurrentWeakList`.
+
 **Singulink.Collections** provides generally useful collections that are missing from .NET. They are highly optimized for performance, well documented and follow the same design principles as built-in .NET collections so they should feel instantly familiar.
 
 The following is included in the package:
 - `HashSetDictionary`: Collection of keys mapped to a hash set of unique values per key (with `AlternateLookup` support).
 - `ListDictionary`: Collection of keys mapped to a list of values per key (with `AlternateLookup` support).
 - `Map`: Collection of two types of values that map between each other in a bidirectional one-to-one relationship (with `AlternateLookup` support).
-- `EquatableArray`: Array wrapper that implements value equality semantics based on the contents of the array.
+- `EquatableArray` / `ComparerEquatableArray`: Array wrappers that implement value equality semantics based on the contents of the array.
 - `ReadOnlyHashSet`: Fast direct read-only wrapper for HashSets (instead of going through `ISet<>` like `ReadOnlySet` does).
 - `ReadOnlyList`: Fast direct read-only wrapper for Lists (instead of going through `IList<>` like `ReadOnlyCollection` does).
-- A full set of interfaces for the new collections as well as an `IReadOnlySet<>` polyfill for .NET Standard.
+- A full set of interfaces for the new collections, including the keyed-collection family (`IKeyedList`, `IKeyedSet`, ...) that implements `IGrouping<TKey, TValue>` for natural LINQ interop, plus an `IReadOnlySet<>` polyfill for .NET Standard.
 
 **Singulink.Collections.Weak** provides a set of collection classes that store weak references to values so that the garbage collector is free to reclaim the memory they use when they aren't being referenced anymore. The values returned by the collections will never be `null` - if the value was garbage collected then the collection behaves as if the value was removed from the collection.
 
 The following collections are included in the package:
 - `WeakCollection`: Collection of weakly referenced values that keeps items in an undefined order.
-- `WeakList`: Collection of weakly referenced values that maintains relative insertion order.
+- `WeakList` / `ConcurrentWeakList`: Collection of weakly referenced values that maintains relative insertion order.
 - `WeakValueDictionary`: Collection of keys and weakly referenced values (with `AlternateLookup` support).
 
 ### About Singulink
@@ -96,33 +101,60 @@ public class YourClass
 {
     private ListDictionary<int, string> _numberNames;
 
-    // Expose as Singulink IListDictionary (with .NET IList<string> values)
+    // Expose as Singulink IListDictionary (value collections are IKeyedList<int, string>,
+    // which implements IList<string> and IGrouping<int, string>).
     public IListDictionary<int, string> NumberNames => _numberNames;
 
-    // Expose as Singulink IReadOnlyListDictionary (with .NET IReadOnlyList<string> values)
+    // Expose as Singulink IReadOnlyListDictionary (value collections are IReadOnlyKeyedList<int, string>,
+    // which implements IReadOnlyList<string> and IGrouping<int, string>). True read-only — cannot be
+    // downcast back to a mutable dictionary.
     public IReadOnlyListDictionary<int, string> NumberNames => _numberNames.AsReadOnly();
 
-    // Expose as Singulink ICollectionDictionary (with .NET ICollection<string> values)
+    // Expose as Singulink ICollectionDictionary if the consumer doesn't need list semantics
+    // (value collections are IKeyedCollection<int, string> : ICollection<string>).
     public ICollectionDictionary<int, string> NumberNames => _numberNames.AsCollectionDictionary();
 
-    // Expose as Singulink IReadOnlyCollectionDictionary (with .NET IReadOnlyCollection<string> values)
+    // Expose as Singulink IReadOnlyCollectionDictionary.
     public IReadOnlyCollectionDictionary<int, string> NumberNames => _numberNames.AsReadOnlyCollectionDictionary();
 
-    // Expose as .NET IReadOnlyDictionary<int, IList<string>>
-    // Note that values can still be added/removed/modified through the value ILists even though it is
-    // an IReadOnlyDictionary. Many of the additional API's present in the IDictionary interface are
-    // not sensible in the context of a collection dictionary so that interface is not supported.
-    public IReadOnlyDictionary<int, IList<string>> NumberNames => _numberNames;
-
-    // Expose as .NET IReadOnlyDictionary<int, IReadOnlyList<string>> (fully read-only)
-    public IReadOnlyDictionary<int, IReadOnlyList<string>> NumberNames => _numberNames.AsReadOnlyDictionaryOfList();
-
-    // Expose as .NET IReadOnlyDictionary<int, ICollection<string>>
-    public IReadOnlyDictionary<int, ICollection<string>> NumberNames => _numberNames.AsDictionaryOfCollection();
-
-    // Expose as .NET IReadOnlyDictionary<int, IReadOnlyCollection<string>>
-    public IReadOnlyDictionary<int, IReadOnlyCollection<string>> NumberNames => _numberNames.AsReadOnlyDictionaryOfCollection();
+    // Expose as an ILookup<int, string> for LINQ-style consumption.
+    // AsLookup() is a live view; ToLookup() returns an optimized snapshot using the dictionary's key comparer.
+    public ILookup<int, string> NumberNames => _numberNames.AsLookup();
 }
+```
+
+> [!TIP]
+> Coming from v3? See the [v4 changes and migration guide](V4-COLLECTIONS-CHANGES.md) for the rationale and replacements for the removed BCL projection extensions (`AsReadOnlyDictionaryOfList`, `AsDictionaryOfCollection`, ...).
+
+### WeakList / WeakCollection
+
+```c#
+var subscribers = new WeakList<EventSubscriber>();
+subscribers.Add(subscriber1);
+subscribers.Add(subscriber2);
+
+// Iteration silently skips any items that have been garbage collected.
+foreach (var s in subscribers)
+    s.Notify();
+
+// Optionally clean out collected entries on demand:
+subscribers.Clean();
+```
+
+`ConcurrentWeakList<T>` has the same surface and is safe for concurrent use; prefer it when you have a large collection or many concurrent readers/writers.
+
+### WeakValueDictionary
+
+```c#
+var cache = new WeakValueDictionary<string, Image>();
+cache["logo"] = LoadImage("logo.png");
+
+// Returns true only if the value is still alive (not GC'd):
+if (cache.TryGetValue("logo", out var logo))
+    Render(logo);
+
+// Entries whose values have been collected behave as if they were removed:
+cache.ContainsKey("logo"); // false once the Image has been GC'd
 ```
 
 ## Further Reading

@@ -10,8 +10,8 @@ public class FlowTests
         var oneSet = d[1];
         var twoSet = d[2];
 
-        d[1].AddRange(new[] { "one", "uno", "1" }).ShouldBe(3);
-        d[2].AddRange(new[] { "two", "dos", "2" }).ShouldBe(3);
+        d[1].AddRange(["one", "uno", "1"]).ShouldBe(3);
+        d[2].AddRange(["two", "dos", "2"]).ShouldBe(3);
 
         d.Count.ShouldBe(2);
         d.Keys.Count.ShouldBe(2);
@@ -20,8 +20,8 @@ public class FlowTests
 
         // Duplicates
 
-        d[1].AddRange(new[] { "ONE", "One" });
-        d[2].AddRange(new[] { "TWO", "Two" });
+        d[1].AddRange(["ONE", "One"]);
+        d[2].AddRange(["TWO", "Two"]);
 
         d.Count.ShouldBe(2);
         d.Keys.Count.ShouldBe(2);
@@ -38,7 +38,7 @@ public class FlowTests
 
         // Add new key with duplicates
 
-        d[3].AddRange(new[] { "three", "tres", "3", "THREE", "Three" });
+        d[3].AddRange(["three", "tres", "3", "THREE", "Three"]);
 
         d.Count.ShouldBe(3);
         d.Keys.Count.ShouldBe(3);
@@ -52,7 +52,7 @@ public class FlowTests
         // ContainsKey false
 
         d.ContainsKey(4).ShouldBeFalse();
-        d[4].AddRange(new string[] { });
+        d[4].AddRange([]);
         d.ContainsKey(4).ShouldBeFalse();
 
         // TryGetValues
@@ -62,13 +62,13 @@ public class FlowTests
         twoSetDup.ShouldNotBeNull();
         twoSetDup.Key.ShouldBe(2);
         twoSetDup.Count.ShouldBe(3);
-        twoSetDup.ShouldBe(new[] { "two", "dos", "2" }, ignoreOrder: true);
-        twoSetDup.AsTransientReadOnly().ShouldBe(new[] { "two", "dos", "2" }, ignoreOrder: true);
+        twoSetDup.ShouldBe(["two", "dos", "2"], ignoreOrder: true);
+        twoSetDup.AsTransientReadOnly().ShouldBe(["two", "dos", "2"], ignoreOrder: true);
         twoSetDup.ShouldBe(twoSet);
 
         twoSet.Count.ShouldBe(3);
-        twoSet.ShouldBe(new[] { "two", "dos", "2" }, ignoreOrder: true);
-        twoSet.AsTransientReadOnly().ShouldBe(new[] { "two", "dos", "2" }, ignoreOrder: true);
+        twoSet.ShouldBe(["two", "dos", "2"], ignoreOrder: true);
+        twoSet.AsTransientReadOnly().ShouldBe(["two", "dos", "2"], ignoreOrder: true);
 
         // Remove
 
@@ -79,26 +79,26 @@ public class FlowTests
         d.ValueCount.ShouldBe(8);
         d.Values.Count.ShouldBe(8);
 
-        d.Keys.ShouldBe(new[] { 1, 2, 3 }, ignoreOrder: true);
-        d.Values.ShouldBe(new[] { "one", "uno", "1", "two", "2", "three", "tres", "3" }, ignoreOrder: true);
+        d.Keys.ShouldBe([1, 2, 3], ignoreOrder: true);
+        d.Values.ShouldBe(["one", "uno", "1", "two", "2", "three", "tres", "3"], ignoreOrder: true);
 
         twoSet.Count.ShouldBe(2);
-        twoSet.ShouldBe(new[] { "two", "2" }, ignoreOrder: true);
-        twoSet.AsTransientReadOnly().ShouldBe(new[] { "two", "2" }, ignoreOrder: true);
+        twoSet.ShouldBe(["two", "2"], ignoreOrder: true);
+        twoSet.AsTransientReadOnly().ShouldBe(["two", "2"], ignoreOrder: true);
 
         twoSetDup.ShouldBe(twoSet);
 
         // ExceptWith
 
-        d[2].ExceptWith(new[] { "Two", "2", "NotInThere" });
+        d[2].ExceptWith(["Two", "2", "NotInThere"]);
 
         d.Count.ShouldBe(2);
         d.Keys.Count.ShouldBe(2);
         d.ValueCount.ShouldBe(6);
         d.Values.Count.ShouldBe(6);
 
-        d.Keys.ShouldBe(new[] { 1, 3 }, ignoreOrder: true);
-        d.Values.ShouldBe(new[] { "one", "uno", "1", "three", "tres", "3" }, ignoreOrder: true);
+        d.Keys.ShouldBe([1, 3], ignoreOrder: true);
+        d.Values.ShouldBe(["one", "uno", "1", "three", "tres", "3"], ignoreOrder: true);
 
         d.ContainsKey(2).ShouldBeFalse();
         twoSet.Count.ShouldBe(0);

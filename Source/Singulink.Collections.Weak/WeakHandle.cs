@@ -82,7 +82,7 @@ internal struct WeakHandle(IntPtr handle)
         {
             IntPtr handleValue;
             var shared = _sharedCache;
-#if NET7_0_OR_GREATER
+#if NET
             ReadOnlySpan<IntPtr> values = MemoryMarshal.CreateReadOnlySpan(ref shared.Handle0, SharedWeakHandleHolder.NumHandles);
             int potentialIndex = values.IndexOfAnyExcept(IntPtr.Zero);
             if (potentialIndex >= 0)

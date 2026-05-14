@@ -4,17 +4,17 @@ using System.Diagnostics.CodeAnalysis;
 namespace Singulink.Collections;
 
 /// <inheritdoc cref="IReadOnlyMap{TLeft, TRight}"/>
-public partial class ReadOnlyMap<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLeft, TRight>
+public partial class ReadOnlyMap<TLeft, TRight> : IMap<TLeft, TRight>
     where TLeft : notnull
     where TRight : notnull
 {
-    private readonly IMap<TLeft, TRight> _map;
+    private readonly Map<TLeft, TRight> _map;
     private ReadOnlyMap<TRight, TLeft>? _reverseMap;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ReadOnlyMap{TLeft, TRight}"/> class.
     /// </summary>
-    public ReadOnlyMap(IMap<TLeft, TRight> map)
+    public ReadOnlyMap(Map<TLeft, TRight> map)
     {
         _map = map;
     }
@@ -75,7 +75,10 @@ public partial class ReadOnlyMap<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnly
     /// <summary>
     /// Copies the left and right value pairs to an array starting at the specified array index.
     /// </summary>
-    public void CopyTo(KeyValuePair<TLeft, TRight>[] array, int arrayIndex) => _map.CopyTo(array, arrayIndex);
+    void ICollection<KeyValuePair<TLeft, TRight>>.CopyTo(KeyValuePair<TLeft, TRight>[] array, int arrayIndex)
+    {
+        ((ICollection<KeyValuePair<TLeft, TRight>>)_map).CopyTo(array, arrayIndex);
+    }
 
     /// <inheritdoc cref="GetEnumerator"/>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

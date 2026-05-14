@@ -1,9 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;netstandard2.1;net6.0;net6.0-windows10.0.19041;net8.0;net8.0-windows10.0.19041;net9.0;net9.0-windows10.0.19041;</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;netstandard2.1;net8.0;net8.0-windows10.0.19041;net9.0;net9.0-windows10.0.19041;net10.0;net10.0-windows10.0.19041;</TargetFrameworks>
     <NoWarn>$(NoWarn);CA1034</NoWarn>
 
-    <Version>3.3.3</Version>
+    <Version>4.0.0</Version>
     <PackageTags>List; Dictionary; HashSet; Set; EquatableArray;</PackageTags>
     <Description>
       Widely useful highly optimized collections that are missing from the .NET BCL.
@@ -24,14 +24,18 @@
     <None Include="..\..\README.md" Link="README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
-  <ItemGroup Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
-    <PackageReference Include="PolySharp" Version="1.14.1" PrivateAssets="All" />
+  <PropertyGroup>
+    <PolySharpIncludeRuntimeSupportedAttributes>true</PolySharpIncludeRuntimeSupportedAttributes>
+  </PropertyGroup>
+
+  <ItemGroup Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net9.0'))">
+    <PackageReference Include="PolySharp" Version="1.15.0" PrivateAssets="All" />
   </ItemGroup>
 
-  <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('netstandard2.1', '$(TargetFramework)'))">
+  <ItemGroup Condition="!$([MSBuild]::IsTargetFrameworkCompatible('$(TargetFramework)', 'net8.0'))">
     <PackageReference Include="System.Memory" Version="4.6.3" />
-    <PackageReference Include="System.Collections.Immutable" Version="10.0.1" />
+    <PackageReference Include="System.Collections.Immutable" Version="10.0.8" />
     <PackageReference Include="Microsoft.Bcl.HashCode" Version="6.0.0" />
-    <PackageReference Include="Microsoft.Bcl.Memory" Version="10.0.1" />
+    <PackageReference Include="Microsoft.Bcl.Memory" Version="10.0.8" />
   </ItemGroup>
 </Project>

@@ -111,7 +111,7 @@ public partial class ListDictionary<TKey, TValue>
             /// </summary>
             public bool MoveNext()
             {
-                Throw.IfEnumeratedCollectionChanged(_version, _dictionary._version);
+                Throw.IfEnumerationCollectionChanged(_version, _dictionary._version);
                 return _keysEnumerator.MoveNext();
             }
 

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -8,6 +9,7 @@ using System.Text;
 
 namespace Singulink.Collections;
 
+[StackTraceHidden]
 internal static class EquatableArrayImpl
 {
     [DoesNotReturn]
@@ -112,16 +114,20 @@ internal struct EquatableArrayImpl<T>
         // Check simple cases:
         T[] otherArray = other._array;
         T[] array = _array;
+
         if (array == otherArray)
             return true;
+
         if (array.Length != otherArray.Length)
             return false;
 
         // Compare hash codes first for speed (this will catch 99.99+% of non-equal cases):
+
         if (GetHashCode() != other.GetHashCode())
             return false;
 
         // Check if all elements are equal:
+
         for (int i = 0; i < array.Length; i++)
         {
             if (!EqualityComparer<T>.Default.Equals(array[i], otherArray[i]))
@@ -129,18 +135,13 @@ internal struct EquatableArrayImpl<T>
         }
 
         // Equal - perform de-duplication if needed (if create index values happen to be equal, we use the hash code of the array instance to break the tie):
+
         if (_createIndex < other._createIndex)
-        {
             other.Deduplicate(this);
-        }
         else if (_createIndex > other._createIndex || RuntimeHelpers.GetHashCode(array) > RuntimeHelpers.GetHashCode(otherArray))
-        {
             Deduplicate(other);
-        }
         else
-        {
             other.Deduplicate(this);
-        }
 
         // Return equal:
         return true;
@@ -149,19 +150,25 @@ internal struct EquatableArrayImpl<T>
     public bool Equals([NotNullWhen(true)] ref EquatableArrayImpl<T> other, IEqualityComparer<T>? equalityComparer)
     {
         // Check simple cases:
+
         T[] otherArray = other._array;
         T[] array = _array;
+
         if (array == otherArray)
             return true;
+
         if (array.Length != otherArray.Length)
             return false;
 
         // Compare hash codes first for speed (this will catch 99.99+% of non-equal cases):
+
         if (GetHashCode(equalityComparer) != other.GetHashCode(equalityComparer))
             return false;
 
         // Check if all elements are equal:
+
         equalityComparer ??= EqualityComparer<T>.Default;
+
         for (int i = 0; i < array.Length; i++)
         {
             if (!equalityComparer.Equals(array[i], otherArray[i]))
@@ -169,20 +176,15 @@ internal struct EquatableArrayImpl<T>
         }
 
         // Equal - perform de-duplication if needed (if create index values happen to be equal, we use the hash code of the array instance to break the tie):
-        if (_createIndex < other._createIndex)
-        {
-            other.Deduplicate(this);
-        }
-        else if (_createIndex > other._createIndex || RuntimeHelpers.GetHashCode(array) > RuntimeHelpers.GetHashCode(otherArray))
-        {
-            Deduplicate(other);
-        }
-        else
-        {
-            other.Deduplicate(this);
-        }
 
-        // Return equal:
+        if (_createIndex < other._createIndex)
+            other.Deduplicate(this);
+        else if (_createIndex > other._createIndex || RuntimeHelpers.GetHashCode(array) > RuntimeHelpers.GetHashCode(otherArray))
+            Deduplicate(other);
+        else
+            other.Deduplicate(this);
+
+        // Return equal
         return true;
     }
 
@@ -199,7 +201,7 @@ internal struct EquatableArrayImpl<T>
 
     public readonly string ToString(string? elementFormat, IFormatProvider? formatProvider)
     {
-        StringBuilder sb = new();
+        StringBuilder sb = new(50 + (2 * _array.Length));
 
 #if NET
         sb.Append(formatProvider, $"EquatableArray<{typeof(T).Name}>[{_array.Length}] {{ ");
@@ -212,34 +214,22 @@ internal struct EquatableArrayImpl<T>
 #endif
 
         var array = _array;
-        if (array.Length == 0)
+
+        if (array.Length is 0)
         {
             sb.Append('}');
         }
         else
         {
-            if (array[0] is IFormattable f0)
+            for (int i = 0; i < array.Length; i++)
             {
-                sb.Append(f0.ToString(elementFormat, formatProvider));
-            }
-            else
-            {
-                sb.Append(array[0]);
-            }
+                if (i != 0)
+                    sb.Append(", ");
 
-            sb.EnsureCapacity(sb.Length + (2 * array.Length) + 2);
-
-            for (int i = 1; i < array.Length; i++)
-            {
-                sb.Append(", ");
                 if (array[i] is IFormattable fi)
-                {
                     sb.Append(fi.ToString(elementFormat, formatProvider));
-                }
                 else
-                {
                     sb.Append(array[i]);
-                }
             }
 
             sb.Append(" }");
@@ -280,11 +270,7 @@ internal struct EquatableArrayImpl<T>
 
     public readonly void CopyTo(Span<T> destination)
     {
-#if NET8_0_OR_GREATER || NETSTANDARD || NETFRAMEWORK
         UnderlyingArray.CopyTo(destination);
-#else
-        new ReadOnlySpan<T>(_array).CopyTo(destination);
-#endif
     }
 
     public readonly Enumerator GetEnumerator() => new(in this);
@@ -306,16 +292,10 @@ internal struct EquatableArrayImpl<T>
     public readonly ImmutableArray<T> Slice(int start, int length, out bool identical)
     {
         identical = start == 0 && length == _array.Length;
-        if (identical) return UnderlyingArray;
 
-#if NET8_0_OR_GREATER || NETSTANDARD || NETFRAMEWORK
+        if (identical)
+            return UnderlyingArray;
+
         return UnderlyingArray.Slice(start, length);
-#else
-        // Do the bounds check:
-        var items = _array;
-        var sp = items.AsSpan(start, length);
-
-        return sp.Length is 0 ? ImmutableArray<T>.Empty : ImmutableCollectionsMarshal.AsImmutableArray(sp.ToArray());
-#endif
     }
 }

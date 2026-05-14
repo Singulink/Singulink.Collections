@@ -7,14 +7,14 @@ public class AsReadOnlyTests
     public void AsReadOnlyListDictionary()
     {
         var d = new ListDictionary<int, string>();
-        d[1].AddRange(new[] { "one", "uno", "1" });
-        d[2].AddRange(new[] { "two", "dos", "2" });
+        d[1].AddRange(["one", "uno", "1"]);
+        d[2].AddRange(["two", "dos", "2"]);
 
         var rod = d.AsReadOnly();
 
-        rod.Values.ShouldBe(new[] { "one", "uno", "1", "two", "dos", "2" }, ignoreOrder: true);
-        rod[1].ShouldBe(new[] { "one", "uno", "1" });
-        rod.ValueCollections.ShouldBe(new[] { d[1], d[2] }, ignoreOrder: true);
+        rod.Values.ShouldBe(["one", "uno", "1", "two", "dos", "2"], ignoreOrder: true);
+        rod[1].ShouldBe(["one", "uno", "1"]);
+        rod.ValueCollections.ShouldBe([d[1], d[2]], ignoreOrder: true);
         rod.Values.Contains("uno").ShouldBeTrue();
         rod.ContainsValue("dos").ShouldBeTrue();
     }
@@ -23,14 +23,14 @@ public class AsReadOnlyTests
     public void AsReadOnlyCollectionDictionary()
     {
         var d = new ListDictionary<int, string>();
-        d[1].AddRange(new[] { "one", "uno", "1" });
-        d[2].AddRange(new[] { "two", "dos", "2" });
+        d[1].AddRange(["one", "uno", "1"]);
+        d[2].AddRange(["two", "dos", "2"]);
 
         var rod = d.AsReadOnlyCollectionDictionary();
 
-        rod.Values.ShouldBe(new[] { "one", "uno", "1", "two", "dos", "2" }, ignoreOrder: true);
-        rod[1].ShouldBe(new[] { "one", "uno", "1" });
-        rod.ValueCollections.ShouldBe(new[] { d[1], d[2] }, ignoreOrder: true);
+        rod.Values.ShouldBe(["one", "uno", "1", "two", "dos", "2"], ignoreOrder: true);
+        rod[1].ShouldBe(["one", "uno", "1"]);
+        rod.ValueCollections.ShouldBe([d[1], d[2]], ignoreOrder: true);
         rod.Values.Contains("uno").ShouldBeTrue();
         rod.ContainsValue("dos").ShouldBeTrue();
     }
@@ -39,52 +39,52 @@ public class AsReadOnlyTests
     public void AsReadOnlyListDictionaryToReadOnlyCollectionDictionary()
     {
         var d = new ListDictionary<int, string>();
-        d[1].AddRange(new[] { "one", "uno", "1" });
-        d[2].AddRange(new[] { "two", "dos", "2" });
+        d[1].AddRange(["one", "uno", "1"]);
+        d[2].AddRange(["two", "dos", "2"]);
 
         var rod = d.AsReadOnly().AsReadOnlyCollectionDictionary();
 
-        rod.Values.ShouldBe(new[] { "one", "uno", "1", "two", "dos", "2" }, ignoreOrder: true);
-        rod[1].ShouldBe(new[] { "one", "uno", "1" });
-        rod.ValueCollections.ShouldBe(new[] { d[1], d[2] }, ignoreOrder: true);
+        rod.Values.ShouldBe(["one", "uno", "1", "two", "dos", "2"], ignoreOrder: true);
+        rod[1].ShouldBe(["one", "uno", "1"]);
+        rod.ValueCollections.ShouldBe([d[1], d[2]], ignoreOrder: true);
         rod.Values.Contains("uno").ShouldBeTrue();
         rod.ContainsValue("dos").ShouldBeTrue();
     }
 
     [TestMethod]
-    public void AsReadOnlyDictionaryOfList()
+    public void AsLookup_LiveView()
     {
         var d = new ListDictionary<int, string>();
-        d[1].AddRange(new[] { "one", "uno", "1" });
-        d[2].AddRange(new[] { "two", "dos", "2" });
+        d[1].AddRange(["one", "uno", "1"]);
+        d[2].AddRange(["two", "dos", "2"]);
 
-        var rod = d.AsReadOnlyDictionaryOfList();
+        var lookup = d.AsLookup();
 
-        rod[1].ShouldBe(new[] { "one", "uno", "1" });
-        rod[1][2].ShouldBe("1");
-        rod.Values.ShouldBe(new[] { d[1], d[2] }, ignoreOrder: true);
-        rod.Count.ShouldBe(2);
-        rod[1].Contains("uno").ShouldBe(true);
-        rod[2].Contains("uno").ShouldBe(false);
-        rod.Contains(new(2, d[2])).ShouldBe(true);
-        rod.Contains(new(2, d[1])).ShouldBe(false);
+        lookup.Count.ShouldBe(2);
+        lookup.Contains(1).ShouldBeTrue();
+        lookup.Contains(3).ShouldBeFalse();
+        lookup[1].ShouldBe(["one", "uno", "1"]);
+        lookup[3].ShouldBeEmpty();
+
+        d[3].Add("three");
+        lookup.Count.ShouldBe(3);
+        lookup[3].ShouldBe(["three"]);
     }
 
     [TestMethod]
-    public void AsReadOnlyDictionaryOfCollection()
+    public void ToLookup_Snapshot()
     {
         var d = new ListDictionary<int, string>();
-        d[1].AddRange(new[] { "one", "uno", "1" });
-        d[2].AddRange(new[] { "two", "dos", "2" });
+        d[1].AddRange(["one", "uno", "1"]);
+        d[2].AddRange(["two", "dos", "2"]);
 
-        var rod = d.AsReadOnlyDictionaryOfCollection();
+        var lookup = d.ToLookup();
 
-        rod[1].ShouldBe(new[] { "one", "uno", "1" });
-        rod.Values.ShouldBe(new[] { d[1], d[2] }, ignoreOrder: true);
-        rod.Count.ShouldBe(2);
-        rod[1].Contains("uno").ShouldBe(true);
-        rod[2].Contains("uno").ShouldBe(false);
-        rod.Contains(new(2, d[2])).ShouldBe(true);
-        rod.Contains(new(2, d[1])).ShouldBe(false);
+        lookup.Count.ShouldBe(2);
+        lookup[1].ShouldBe(["one", "uno", "1"]);
+
+        d[3].Add("three");
+        lookup.Count.ShouldBe(2);
+        lookup.Contains(3).ShouldBeFalse();
     }
 }

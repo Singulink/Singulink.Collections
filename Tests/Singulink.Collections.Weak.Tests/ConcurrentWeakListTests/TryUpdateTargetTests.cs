@@ -1,5 +1,5 @@
 #if NET9_0_OR_GREATER
-namespace Singulink.Collections.Weak.ConcurrentTests.ConcurrentWeakListTests;
+namespace Singulink.Collections.Weak.Tests.ConcurrentWeakListTests;
 
 [PrefixTestClass]
 public class TryUpdateTargetTests

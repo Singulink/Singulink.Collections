@@ -1,6 +1,8 @@
 ﻿using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 
+using Singulink.Collections.Utilities;
+
 namespace Singulink.Collections;
 
 /// <summary>
@@ -16,12 +18,8 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     where TKey : notnull
     where TValue : class
 {
-#if NETSTANDARD2_0
-    private Dictionary<TKey, WeakReference<TValue>> _lookup;
-    private int _capacity;
-#else
     private readonly Dictionary<TKey, WeakReference<TValue>> _lookup;
-#endif
+
     private int _autoCleanAddCount;
     private int _addCountSinceLastClean;
 
@@ -41,35 +39,9 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     }
 
     /// <summary>
-    /// Gets or sets the number of add (or indexer set) operations that automatically triggers the <see cref="Clean"/> method to run. Default value is
-    /// <see langword="null"/> which indicates that automatic cleaning is not performed.
-    /// </summary>
-    public int? AutoCleanAddCount
-    {
-        get => _autoCleanAddCount == 0 ? null : _autoCleanAddCount;
-        set {
-            if (value < 1)
-                throw new ArgumentOutOfRangeException(nameof(value));
-
-            _autoCleanAddCount = value.GetValueOrDefault();
-        }
-    }
-
-    /// <summary>
-    /// Gets the number of add (or indexer set) operations that have been performed since the last cleaning.
-    /// </summary>
-    public int AddCountSinceLastClean => _addCountSinceLastClean;
-
-    /// <summary>
     /// Gets the equality comparer used to compare keys in the dictionary.
     /// </summary>
     public IEqualityComparer<TKey> Comparer => _lookup.Comparer;
-
-    /// <summary>
-    /// Gets or sets a value indicating whether to automatically call <see cref="TrimExcess"/> whenever <see cref="Clean"/> is called. Default value is
-    /// <see langword="false"/>.
-    /// </summary>
-    public bool TrimExcessDuringClean { get; set; }
 
     /// <summary>
     /// Gets the keys in the dictionary.
@@ -101,7 +73,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     {
         get {
             if (!TryGetValue(key, out var value))
-                throw new KeyNotFoundException();
+                Throw.KeyNotFound();
 
             return value;
         }
@@ -161,7 +133,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     public void Add(TKey key, TValue value)
     {
         if (!TryAdd(key, value))
-            throw new ArgumentException("Specified key already exists.", nameof(key));
+            Throw.Arg("Specified key already exists.", nameof(key));
     }
 
     /// <summary>
@@ -267,26 +239,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
         foreach (var kvp in staleKvps)
             _lookup.Remove(kvp.Key);
 
-        if (TrimExcessDuringClean)
-            TrimExcess();
-
         _addCountSinceLastClean = 0;
-    }
-
-    /// <summary>
-    /// Reduces the internal capacity of this dictionary to the size needed to hold the current entries.
-    /// </summary>
-    public void TrimExcess()
-    {
-#if NETSTANDARD2_0
-        if (_capacity > _lookup.Count * 2)
-        {
-            _lookup = new Dictionary<TKey, WeakReference<TValue>>(_lookup, _lookup.Comparer);
-            _capacity = _lookup.Count;
-        }
-#else
-        _lookup.TrimExcess();
-#endif
     }
 
     /// <summary>
@@ -323,11 +276,6 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
 
     private void OnAdded()
     {
-#if NETSTANDARD2_0
-        if (_lookup.Count > _capacity)
-            _capacity = _lookup.Count;
-#endif
-
         _addCountSinceLastClean++;
 
         if (_autoCleanAddCount != 0 && _addCountSinceLastClean >= _autoCleanAddCount)

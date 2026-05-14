@@ -1,5 +1,7 @@
 ﻿using System.Collections;
 
+using Singulink.Collections.Utilities;
+
 namespace Singulink.Collections;
 
 /// <summary>
@@ -36,7 +38,7 @@ public sealed class WeakCollection<T> : IEnumerable<T> where T : class
         get => _autoCleanAddCount == 0 ? null : _autoCleanAddCount;
         set {
             if (value < 1)
-                throw new ArgumentOutOfRangeException(nameof(value));
+                Throw.ArgOutOfRange(nameof(value));
 
             _autoCleanAddCount = value.GetValueOrDefault();
         }
@@ -46,6 +48,15 @@ public sealed class WeakCollection<T> : IEnumerable<T> where T : class
     /// Gets the number of add operations that have been performed since the last cleaning.
     /// </summary>
     public int AddCountSinceLastClean => _addCountSinceLastClean;
+
+#if NET9_0_OR_GREATER
+
+    /// <summary>
+    /// Gets the number of elements that the internal data structure can hold without resizing.
+    /// </summary>
+    public int Capacity => _entries.Capacity;
+
+#endif
 
     /// <summary>
     /// Gets or sets a value indicating whether to automatically call <see cref="TrimExcess"/> whenever <see cref="Clean"/> is called. Default value is
@@ -165,18 +176,12 @@ public sealed class WeakCollection<T> : IEnumerable<T> where T : class
     /// </summary>
     public void TrimExcess() => _entries.TrimExcess();
 
+#if !NETSTANDARD2_0
     /// <summary>
     /// Ensures that this collection can hold the specified number of elements without growing.
     /// </summary>
-    /// <remarks>
-    /// This method has no effect on .NET Framework.
-    /// </remarks>
-    public void EnsureCapacity(int capacity)
-    {
-#if !NETSTANDARD2_0
-        _entries.EnsureCapacity(capacity);
+    public int EnsureCapacity(int capacity) => _entries.EnsureCapacity(capacity);
 #endif
-    }
 
     /// <summary>
     /// Returns an enumerator that iterates through the collection.

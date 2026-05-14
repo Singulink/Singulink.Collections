@@ -118,18 +118,13 @@ public partial class ListDictionary<TKey, TValue>
             /// </summary>
             public bool MoveNext()
             {
-                Throw.IfEnumeratedCollectionChanged(_version, _dictionary._version);
+                Throw.IfEnumerationCollectionChanged(_version, _dictionary._version);
+                bool result = _valueListsEnumerator.MoveNext();
 #if DEBUG
-                if (_valueListsEnumerator.MoveNext())
-                {
+                if (result)
                     DebugValid(_valueListsEnumerator.Current);
-                    return true;
-                }
-
-                return false;
-#else
-                return _valueListsEnumerator.MoveNext();
 #endif
+                return result;
             }
 
             /// <summary>

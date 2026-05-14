@@ -8,8 +8,6 @@ internal static class CollectionCopy
             Throw.ArgOutOfRange(nameof(arrayIndex));
 
         if (array.Length - arrayIndex < sourceCount)
-            ThrowNotLongEnough();
-
-        static void ThrowNotLongEnough() => throw new ArgumentException("Destination array is not long enough to copy all the items in the collection. Check array index and length.");
+            Throw.Arg("Destination array is not long enough to copy all the items in the collection. Check array index and length.");
     }
 }

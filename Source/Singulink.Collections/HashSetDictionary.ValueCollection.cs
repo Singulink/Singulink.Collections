@@ -126,7 +126,7 @@ public partial class HashSetDictionary<TKey, TValue>
             /// </summary>
             public bool MoveNext()
             {
-                Throw.IfEnumeratedCollectionChanged(_version, _dictionary._version);
+                Throw.IfEnumerationCollectionChanged(_version, _dictionary._version);
 
                 if (!_started)
                 {

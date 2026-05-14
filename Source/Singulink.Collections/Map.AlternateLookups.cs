@@ -3,7 +3,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using Singulink.Collections.Utilities;
 
 namespace Singulink.Collections;
 
@@ -103,7 +102,7 @@ partial class Map<TLeft, TRight>
                 if (_altRightSide.Dictionary.TryGetValue(value, out var existingLeftValue))
                 {
                     if (!LeftComparer.Equals(leftValue, existingLeftValue))
-                        Throw.Arg("Duplicate right value in the map.");
+                        ThrowDuplicateRightValue(null);
 
                     return;
                 }
@@ -464,7 +463,7 @@ partial class Map<TLeft, TRight>
                 if (_map._rightSide.TryGetValue(value, out var existingLeftValue))
                 {
                     if (!LeftComparer.Equals(leftValue, existingLeftValue))
-                        Throw.Arg("Duplicate right value in the map.");
+                        ThrowDuplicateRightValue(null);
 
                     return;
                 }

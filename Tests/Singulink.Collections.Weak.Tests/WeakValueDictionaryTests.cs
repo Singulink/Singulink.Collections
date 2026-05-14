@@ -81,7 +81,7 @@ public class WeakValueDictionaryTests
         c.Remove(1).ShouldBeTrue();
         c.Remove(4).ShouldBeFalse();
 
-#if NET48 // NS2.0 target does not support removing stale entries as items are encountered.
+#if NET48 || NET6_0 // NS2.0 and NS2.1 targets do not support removing stale entries as items are encountered.
         c.AddCountSinceLastClean.ShouldBe(6);
         c.UnsafeCount.ShouldBe(3);
 #else

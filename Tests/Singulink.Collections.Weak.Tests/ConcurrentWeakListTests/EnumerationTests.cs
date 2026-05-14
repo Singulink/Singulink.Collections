@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace Singulink.Collections.Weak.ConcurrentTests.ConcurrentWeakListTests;
+namespace Singulink.Collections.Weak.Tests.ConcurrentWeakListTests;
 
 [PrefixTestClass]
 public class EnumerationTests

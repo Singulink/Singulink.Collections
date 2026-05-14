@@ -1,4 +1,4 @@
-#if !NET8_0_OR_GREATER
+#if !NET
 namespace Microsoft.CodeAnalysis;
 
 #pragma warning disable CA1018 // Mark attributes with AttributeUsageAttribute

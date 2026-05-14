@@ -1,5 +1,7 @@
 ﻿using System.Collections;
 
+using Singulink.Collections.Utilities;
+
 namespace Singulink.Collections;
 
 /// <summary>
@@ -10,7 +12,7 @@ namespace Singulink.Collections;
 /// <para>Internal entries for garbage collected values are not removed automatically by default. You can perform a full clean by calling the <see
 /// cref="Clean"/> method or configure automatic cleaning after a set number of <see cref="Add(T)"/> operations by setting the <see
 /// cref="AutoCleanAddCount"/> property.</para>
-/// <para>Note: while this type is suitable for small collections, it does not scale well, so if you need a potentially large collection, or one that the size
+/// <para>Note: This type is optimized for small collections and does not scale well, so if you need a potentially large collection, or one that the size
 /// is directly or indirectly controlled by users, you should consider using <see cref="ConcurrentWeakList{T}"/> instead.</para>
 /// </remarks>
 public sealed class WeakList<T> : IEnumerable<T> where T : class
@@ -37,7 +39,7 @@ public sealed class WeakList<T> : IEnumerable<T> where T : class
         get => _autoCleanAddCount == 0 ? null : _autoCleanAddCount;
         set {
             if (value < 1)
-                throw new ArgumentOutOfRangeException(nameof(value));
+                Throw.ArgOutOfRange(nameof(value));
 
             _autoCleanAddCount = value.GetValueOrDefault();
         }
@@ -62,7 +64,7 @@ public sealed class WeakList<T> : IEnumerable<T> where T : class
         get => _extraTrimCapacity;
         set {
             if (_extraTrimCapacity < 0)
-                throw new ArgumentOutOfRangeException(nameof(value));
+                Throw.ArgOutOfRange(nameof(value));
 
             _extraTrimCapacity = value;
         }
@@ -118,7 +120,7 @@ public sealed class WeakList<T> : IEnumerable<T> where T : class
     public void InsertBefore(T findItem, T item, IEqualityComparer<T>? comparer = null)
     {
         if (!TryInsertBefore(findItem, item, comparer))
-            throw new ArgumentException("The specified item was not found.", nameof(findItem));
+            Throw.ItemNotFound(nameof(findItem));
     }
 
     /// <summary>
@@ -155,7 +157,7 @@ public sealed class WeakList<T> : IEnumerable<T> where T : class
     public void InsertAfter(T findItem, T item, IEqualityComparer<T>? comparer = null)
     {
         if (!TryInsertAfter(findItem, item, comparer))
-            throw new ArgumentException("The specified item was not found.", nameof(findItem));
+            Throw.ItemNotFound(nameof(findItem));
     }
 
     /// <summary>

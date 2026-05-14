@@ -1,12 +1,11 @@
 ﻿using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using Singulink.Collections.Utilities;
 
 namespace Singulink.Collections;
 
 /// <inheritdoc cref="IMap{TLeft, TRight}"/>
-public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLeft, TRight>, IDictionary<TLeft, TRight>, IReadOnlyDictionary<TLeft, TRight>
+public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IDictionary<TLeft, TRight>, IReadOnlyDictionary<TLeft, TRight>
     where TLeft : notnull
     where TRight : notnull
 {
@@ -26,12 +25,12 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLef
     public Map(int capacity) : this(capacity, null, null) { }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Map{TLeft, TRight}"/> class with the specified value comparers.
+    /// Initializes a new instance of the <see cref="Map{TLeft, TRight}"/> class with the specified left and right value comparers.
     /// </summary>
     public Map(IEqualityComparer<TLeft>? leftComparer, IEqualityComparer<TRight>? rightComparer) : this(0, leftComparer, rightComparer) { }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="Map{TLeft, TRight}"/> class with the specified capacity and value comparers.
+    /// Initializes a new instance of the <see cref="Map{TLeft, TRight}"/> class with the specified capacity and left and right value comparers.
     /// </summary>
     public Map(int capacity, IEqualityComparer<TLeft>? leftComparer, IEqualityComparer<TRight>? rightComparer)
     {
@@ -57,7 +56,7 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLef
             if (_rightSide.TryGetValue(value, out var existingLeftValue))
             {
                 if (!_leftSide.Comparer.Equals(leftValue, existingLeftValue))
-                    Throw.Arg("Duplicate right value in the map.");
+                    ThrowDuplicateRightValue(null);
 
                 return;
             }
@@ -70,9 +69,14 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLef
         }
     }
 
+#if NET9_0_OR_GREATER
     /// <summary>
-    /// Gets the number of mappings contained in the map.
+    /// Gets the number of associations that the map can hold without resizing its internal data structures.
     /// </summary>
+    public int Capacity => _leftSide.Capacity;
+#endif
+
+    /// <inheritdoc cref="IMap{TLeft, TRight}.Count"/>
     public int Count => _leftSide.Count;
 
     /// <summary>
@@ -80,7 +84,7 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLef
     /// </summary>
     public IEqualityComparer<TLeft> LeftComparer => _leftSide.Comparer;
 
-    /// <inheritdoc cref="IMap{TLeft, TRight}.LeftValues"/>
+    /// <inheritdoc cref="IReadOnlyMap{TLeft, TRight}.LeftValues"/>
     public Dictionary<TLeft, TRight>.KeyCollection LeftValues => _leftSide.Keys;
 
     /// <inheritdoc cref="IMap{TLeft, TRight}.Reverse"/>
@@ -91,24 +95,24 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLef
     /// </summary>
     public IEqualityComparer<TRight> RightComparer => _rightSide.Comparer;
 
-    /// <inheritdoc cref="IMap{TLeft, TRight}.RightValues"/>
+    /// <inheritdoc cref="IReadOnlyMap{TLeft, TRight}.RightValues"/>
     public Dictionary<TRight, TLeft>.KeyCollection RightValues => _rightSide.Keys;
 
     /// <inheritdoc cref="IMap{TLeft, TRight}.Add(TLeft, TRight)"/>
     public void Add(TLeft leftValue, TRight rightValue)
     {
         if (!_leftSide.TryAdd(leftValue, rightValue))
-            throw new ArgumentException("Duplicate left value in the map.", nameof(leftValue));
+            ThrowDuplicateLeftValue(nameof(leftValue));
 
         if (!_rightSide.TryAdd(rightValue, leftValue))
         {
             _leftSide.Remove(leftValue);
-            throw new ArgumentException("Duplicate right value in the map.", nameof(rightValue));
+            ThrowDuplicateRightValue(nameof(rightValue));
         }
     }
 
     /// <summary>
-    /// Removes all mappings from the map.
+    /// Removes all associations from the map.
     /// </summary>
     public void Clear()
     {
@@ -116,16 +120,16 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLef
         _rightSide.Clear();
     }
 
-    /// <inheritdoc cref="IMap{TLeft, TRight}.Contains(TLeft, TRight)"/>
+    /// <inheritdoc cref="IReadOnlyMap{TLeft, TRight}.Contains(TLeft, TRight)"/>
     public bool Contains(TLeft leftValue, TRight rightValue)
     {
         return _leftSide.TryGetValue(leftValue, out var existingRightValue) && _rightSide.Comparer.Equals(existingRightValue, rightValue);
     }
 
-    /// <inheritdoc cref="IMap{TLeft, TRight}.ContainsLeft(TLeft)"/>
+    /// <inheritdoc cref="IReadOnlyMap{TLeft, TRight}.ContainsLeft(TLeft)"/>
     public bool ContainsLeft(TLeft leftValue) => _leftSide.ContainsKey(leftValue);
 
-    /// <inheritdoc cref="IMap{TLeft, TRight}.ContainsRight(TRight)"/>
+    /// <inheritdoc cref="IReadOnlyMap{TLeft, TRight}.ContainsRight(TRight)"/>
     public bool ContainsRight(TRight rightValue) => _rightSide.ContainsKey(rightValue);
 
     /// <inheritdoc cref="IMap{TLeft, TRight}.Remove(TLeft, TRight)"/>
@@ -143,8 +147,14 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLef
     /// <summary>
     /// Gets the left value associated with the specified right value.
     /// </summary>
-    /// <exception cref="KeyNotFoundException">The right value was not found.</exception>
+    /// <exception cref="KeyNotFoundException">The specified right value was not found in the map.</exception>
     public TLeft GetLeftValue(TRight rightValue) => _rightSide[rightValue];
+
+    /// <summary>
+    /// Gets the right value associated with the specified left value.
+    /// </summary>
+    /// <exception cref="KeyNotFoundException">The specified left value was not found in the map.</exception>
+    public TRight GetRightValue(TLeft leftValue) => _leftSide[leftValue];
 
     /// <inheritdoc cref="IMap{TLeft, TRight}.RemoveLeft(TLeft)"/>
     public bool RemoveLeft(TLeft leftValue) => RemoveLeft(leftValue, out _);
@@ -203,24 +213,24 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLef
         return true;
     }
 
-    /// <inheritdoc cref="IMap{TLeft, TRight}.TryGetLeftValue(TRight, out TLeft)"/>
+    /// <inheritdoc cref="IReadOnlyMap{TLeft, TRight}.TryGetLeftValue(TRight, out TLeft)"/>
     public bool TryGetLeftValue(TRight rightValue, [MaybeNullWhen(false)] out TLeft leftValue) => _rightSide.TryGetValue(rightValue, out leftValue);
 
-    /// <inheritdoc cref="IMap{TLeft, TRight}.TryGetRightValue(TLeft, out TRight)"/>
+    /// <inheritdoc cref="IReadOnlyMap{TLeft, TRight}.TryGetRightValue(TLeft, out TRight)"/>
     public bool TryGetRightValue(TLeft leftValue, [MaybeNullWhen(false)] out TRight rightValue) => _leftSide.TryGetValue(leftValue, out rightValue);
 
     /// <summary>
-    /// Returns an enumerator that iterates through the left and right value pairs.
+    /// Returns an enumerator that iterates through the left and right value pairs in the map.
     /// </summary>
     public Dictionary<TLeft, TRight>.Enumerator GetEnumerator() => _leftSide.GetEnumerator();
 
 #if !NETSTANDARD2_0
-
     /// <summary>
-    /// Ensures that this map can hold up to a specified number of entries without any further expansion of its backing storage.
+    /// Ensures that the map can hold the specified number of associations without any further expansion of its backing storage.
     /// </summary>
-    /// <param name="capacity">The number of entries.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Capacity specified is less than 0.</exception>
+    /// <param name="capacity">The minimum number of associations the map should be able to hold without resizing.</param>
+    /// <returns>The new capacity of the map.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">The specified capacity is less than 0.</exception>
     public int EnsureCapacity(int capacity)
     {
         _leftSide.EnsureCapacity(capacity);
@@ -228,7 +238,7 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLef
     }
 
     /// <summary>
-    /// Sets the capacity of this map to what it would be if it had been originally initialized with all its entries.
+    /// Sets the capacity of the map to what it would be if it had been originally initialized with all its current entries.
     /// </summary>
     public void TrimExcess()
     {
@@ -237,10 +247,10 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLef
     }
 
     /// <summary>
-    /// Sets the capacity of this map to hold up a specified number of entries without any further expansion of its backing storage.
+    /// Sets the capacity of the map to hold the specified number of associations without any further expansion of its backing storage.
     /// </summary>
     /// <param name="capacity">The new capacity.</param>
-    /// <exception cref="ArgumentOutOfRangeException">Capacity specified is less than the number of entries in the map.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">The specified capacity is less than the number of associations in the map.</exception>
     public void TrimExcess(int capacity)
     {
         _leftSide.TrimExcess(capacity);
@@ -257,9 +267,6 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLef
     bool ICollection<KeyValuePair<TLeft, TRight>>.IsReadOnly => false;
 
     /// <inheritdoc cref="LeftValues"/>
-    IReadOnlyCollection<TLeft> IMap<TLeft, TRight>.LeftValues => LeftValues;
-
-    /// <inheritdoc cref="LeftValues"/>
     IReadOnlyCollection<TLeft> IReadOnlyMap<TLeft, TRight>.LeftValues => LeftValues;
 
     /// <inheritdoc cref="LeftValues"/>
@@ -267,9 +274,6 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLef
 
     /// <inheritdoc cref="LeftValues"/>
     IEnumerable<TLeft> IReadOnlyDictionary<TLeft, TRight>.Keys => LeftValues;
-
-    /// <inheritdoc cref="RightValues"/>
-    IReadOnlyCollection<TRight> IMap<TLeft, TRight>.RightValues => RightValues;
 
     /// <inheritdoc cref="RightValues"/>
     IReadOnlyCollection<TRight> IReadOnlyMap<TLeft, TRight>.RightValues => RightValues;
@@ -302,12 +306,11 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLef
     bool ICollection<KeyValuePair<TLeft, TRight>>.Contains(KeyValuePair<TLeft, TRight> item) => Contains(item.Key, item.Value);
 
     /// <summary>
-    /// Copies the left and right value pairs to an array starting at the specified array index.
+    /// Copies the left and right value pairs in the map to an array, starting at the specified array index.
     /// </summary>
     void ICollection<KeyValuePair<TLeft, TRight>>.CopyTo(KeyValuePair<TLeft, TRight>[] array, int arrayIndex)
     {
-        ICollection<KeyValuePair<TLeft, TRight>> leftCollection = _leftSide;
-        leftCollection.CopyTo(array, arrayIndex);
+        ((ICollection<KeyValuePair<TLeft, TRight>>)_leftSide).CopyTo(array, arrayIndex);
     }
 
     /// <inheritdoc cref="Remove(TLeft, TRight)"/>
@@ -326,4 +329,14 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IReadOnlyMap<TLef
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     #endregion
+
+    [DoesNotReturn]
+    [StackTraceHidden]
+    private static void ThrowDuplicateLeftValue(string? paramName) =>
+        throw new ArgumentException("Duplicate left value in the map.", paramName);
+
+    [DoesNotReturn]
+    [StackTraceHidden]
+    private static void ThrowDuplicateRightValue(string? paramName) =>
+        throw new ArgumentException("Duplicate right value in the map.", paramName);
 }
