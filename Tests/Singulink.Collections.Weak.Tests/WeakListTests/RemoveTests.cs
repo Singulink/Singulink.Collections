@@ -1,4 +1,4 @@
-namespace Singulink.Collections.Weak.Tests.ConcurrentWeakListTests;
+namespace Singulink.Collections.Weak.Tests.WeakListTests;
 
 [PrefixTestClass]
 public class RemoveTests
@@ -6,7 +6,7 @@ public class RemoveTests
     [TestMethod]
     public void RemoveSingleNode()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
 
@@ -28,7 +28,7 @@ public class RemoveTests
     [TestMethod]
     public void RemoveFirstNode()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -52,7 +52,7 @@ public class RemoveTests
     [TestMethod]
     public void RemoveMiddleNode()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -76,7 +76,7 @@ public class RemoveTests
     [TestMethod]
     public void RemoveLastNode()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -100,7 +100,7 @@ public class RemoveTests
     [TestMethod]
     public void RemoveViaListMultipleTimes()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
 
@@ -119,7 +119,7 @@ public class RemoveTests
     [TestMethod]
     public void DisposeNode()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
 
@@ -141,7 +141,7 @@ public class RemoveTests
     [TestMethod]
     public void DisposeFirstNode()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -165,7 +165,7 @@ public class RemoveTests
     [TestMethod]
     public void DisposeMiddleNode()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -189,7 +189,7 @@ public class RemoveTests
     [TestMethod]
     public void DisposeNodeMultipleTimes()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
 
@@ -208,7 +208,7 @@ public class RemoveTests
     [TestMethod]
     public void RemoveThenDispose()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
 
@@ -226,7 +226,7 @@ public class RemoveTests
     [TestMethod]
     public void DisposeThenRemove()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
 
@@ -244,7 +244,7 @@ public class RemoveTests
     [TestMethod]
     public void RemoveAllNodesOneByOne()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var values = Enumerable.Range(0, 10).Select((_) => new object()).ToList();
         var nodes = values.Select(list.AddLast).ToList();
 
@@ -265,7 +265,7 @@ public class RemoveTests
     [TestMethod]
     public void DisposeAllNodesOneByOne()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var values = Enumerable.Range(0, 10).Select((_) => new object()).ToList();
         var nodes = values.Select(list.AddLast).ToList();
 
@@ -286,7 +286,7 @@ public class RemoveTests
     [TestMethod]
     public void IsRemovedIsFalseForActiveNode()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
 
@@ -298,7 +298,7 @@ public class RemoveTests
     [TestMethod]
     public void IsRemovedIsTrueAfterRemove()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
 
@@ -314,7 +314,7 @@ public class RemoveTests
     [TestMethod]
     public void IsRemovedIsTrueAfterDispose()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
 
@@ -330,7 +330,7 @@ public class RemoveTests
     [TestMethod]
     public void IsRemovedIsTrueAfterListDispose()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
 
@@ -346,7 +346,7 @@ public class RemoveTests
     [TestMethod]
     public void IsRemovedIsTrueAfterClear()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
 
@@ -362,7 +362,7 @@ public class RemoveTests
     [TestMethod]
     public void RemoveFromLargeList()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var values = Enumerable.Range(0, 100).Select((_) => new object()).ToList();
         var nodes = values.Select(list.AddLast).ToList();
 
@@ -390,8 +390,8 @@ public class RemoveTests
     [TestMethod]
     public void RemoveNullNodeThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
-        Should.Throw<ArgumentNullException>(() => list.Remove((ConcurrentWeakList<object>.Node)null!));
+        Should.Throw<ArgumentNullException>(() => list.Remove((WeakList<object>.Node)null!));
     }
 }

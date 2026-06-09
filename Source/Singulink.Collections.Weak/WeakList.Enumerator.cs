@@ -4,9 +4,9 @@ using Singulink.Collections.Utilities;
 namespace Singulink.Collections;
 
 /// <content>
-/// Contains the <see cref="Enumerator"/> nested type for <see cref="ConcurrentWeakList{T}"/>.
+/// Contains the <see cref="Enumerator"/> nested type for <see cref="WeakList{T}"/>.
 /// </content>
-public sealed partial class ConcurrentWeakList<T>
+public sealed partial class WeakList<T>
 {
     /// <summary>
     /// Structure for enumerating over values in the list.
@@ -59,7 +59,7 @@ public sealed partial class ConcurrentWeakList<T>
         public readonly bool WasAddedDuringEnumeration => _nodeEnumerator.WasAddedDuringEnumeration;
 
         /// <summary>
-        /// Helper API to support enumerating over an instance of <see cref="ConcurrentWeakList{T}.Enumerator" />.
+        /// Helper API to support enumerating over an instance of <see cref="WeakList{T}.Enumerator" />.
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
         public readonly Enumerator GetEnumerator() => this;

@@ -3,14 +3,14 @@ using System.Runtime.CompilerServices;
 namespace Singulink.Collections;
 
 /// <content>
-/// Contains the locking implementation for <see cref="ConcurrentWeakList{T}"/>.
+/// Contains the locking implementation for <see cref="WeakList{T}"/>.
 /// </content>
-public sealed partial class ConcurrentWeakList<T>
+public sealed partial class WeakList<T>
 {
-    private ref struct LockScope(Lock locker, ConcurrentWeakList<T> list)
+    private ref struct LockScope(Lock locker, WeakList<T> list)
     {
         private Lock? _locker = locker;
-        private ConcurrentWeakList<T>? _list = list;
+        private WeakList<T>? _list = list;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Dispose()

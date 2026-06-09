@@ -9,9 +9,9 @@ namespace Singulink.Collections;
 #pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
 
 /// <content>
-/// Contains the linked list implementation for <see cref="ConcurrentWeakList{T}"/>.
+/// Contains the linked list implementation for <see cref="WeakList{T}"/>.
 /// </content>
-public sealed partial class ConcurrentWeakList<T>
+public sealed partial class WeakList<T>
 {
     // Helper to allocate a node - doesn't link it into the linked list.
     // Note: callers must GC.KeepAlive the value until after it is fully linked in.
@@ -211,7 +211,7 @@ public sealed partial class ConcurrentWeakList<T>
             // Enter lock & finish checking:
             using (EnterLock(out bool wasDisposed))
             {
-                Throw.IfDisposed(wasDisposed, typeof(ConcurrentWeakList<T>));
+                Throw.IfDisposed(wasDisposed, typeof(WeakList<T>));
 
                 // Handle a removed node if needed by running the outer loop again:
                 if (currentNode is { _isRemoved: true }) continue;
@@ -241,7 +241,7 @@ public sealed partial class ConcurrentWeakList<T>
             if (comparer.Equals(currentValue, existingValue))
             {
                 using var scope = EnterLock(out bool wasDisposed);
-                Throw.IfDisposed(wasDisposed, typeof(ConcurrentWeakList<T>));
+                Throw.IfDisposed(wasDisposed, typeof(WeakList<T>));
 
                 // Check if removed while we weren't holding the lock - we may as well make this somewhat atomic:
                 if (!current._isRemoved)

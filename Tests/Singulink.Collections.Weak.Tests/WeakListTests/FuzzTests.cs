@@ -1,4 +1,4 @@
-namespace Singulink.Collections.Weak.Tests.ConcurrentWeakListTests;
+namespace Singulink.Collections.Weak.Tests.WeakListTests;
 
 [PrefixTestClass]
 public class FuzzTests
@@ -9,12 +9,12 @@ public class FuzzTests
     [TestMethod]
     public void BasicFuzzTest(int seed)
     {
-        // In this, we just make an actual list, perform random operations on both it and a ConcurrentWeakList,
+        // In this, we just make an actual list, perform random operations on both it and a WeakList,
         // and ensure they stay the same (we keep all references alive).
         Random r = new(seed);
-        ConcurrentWeakList<object> weakList = new();
+        WeakList<object> weakList = new();
         List<object> actualList = [];
-        List<ConcurrentWeakList<object>.Node> nodes = [];
+        List<WeakList<object>.Node> nodes = [];
         const int Operations = 10000;
         const int MaxValues = 50;
 
@@ -33,7 +33,7 @@ public class FuzzTests
             {
                 object newValue = new();
                 int idx;
-                ConcurrentWeakList<object>.Node newNode;
+                WeakList<object>.Node newNode;
                 switch (actualList.Count == 0 ? r.Next(2) : r.Next(4))
                 {
                     case 0:
@@ -88,7 +88,7 @@ public class FuzzTests
     [TestMethod]
     public void UnsafePerformLockedOperationWithNullOperationThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
         Should.Throw<ArgumentNullException>(() => list.UnsafePerformLockedOperation(0, null!));
     }
@@ -96,7 +96,7 @@ public class FuzzTests
     [TestMethod]
     public void UnsafeTryPerformLockedOperationWithNullOperationThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
         Should.Throw<ArgumentNullException>(() => list.UnsafeTryPerformLockedOperation(0, null!));
     }

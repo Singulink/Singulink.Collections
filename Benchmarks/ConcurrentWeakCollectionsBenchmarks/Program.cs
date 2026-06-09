@@ -142,17 +142,17 @@ public class Benchs
     public int N { get; set; }
 
     private readonly Random _random = new();
-    private ConcurrentWeakList<object> _list = null!;
+    private WeakList<object> _list = null!;
     private readonly object _value = new();
     private object[] _values = null!;
-    private ConcurrentWeakList<object>.Node[] _nodes = null!;
+    private WeakList<object>.Node[] _nodes = null!;
 
     [GlobalSetup]
     public void GlobalSetup()
     {
         _list = new();
         _values = [.. Enumerable.Range(0, N).Select(_ => new object())];
-        _nodes = new ConcurrentWeakList<object>.Node[N];
+        _nodes = new WeakList<object>.Node[N];
         int i = 0;
         foreach (object x in _values) _nodes[i++] = _list.AddLast(x);
     }
@@ -168,7 +168,7 @@ public class Benchs
     [Benchmark]
     public void AddRemoveNodeAtStart()
     {
-        ConcurrentWeakList<object> list = _list;
+        WeakList<object> list = _list;
         var node = list.AddFirst(_value);
         list.Remove(node);
     }
@@ -176,7 +176,7 @@ public class Benchs
     [Benchmark]
     public void AddRemoveNodeAtEnd()
     {
-        ConcurrentWeakList<object> list = _list;
+        WeakList<object> list = _list;
         var node = list.AddLast(_value);
         list.Remove(node);
     }
@@ -184,7 +184,7 @@ public class Benchs
     [Benchmark]
     public void AddRemoveNodeRandomPosition()
     {
-        ConcurrentWeakList<object> list = _list;
+        WeakList<object> list = _list;
         var node = list.UnsafeInsertAt(_value, _random.Next(0, N + 1));
         list.Remove(node);
     }
@@ -192,7 +192,7 @@ public class Benchs
     [Benchmark]
     public void AddRemoveNodeRandomPositionEach()
     {
-        ConcurrentWeakList<object> list = _list;
+        WeakList<object> list = _list;
         int n = N;
         if (n == 0) return;
         int idx = _random.Next(0, n);
@@ -210,7 +210,7 @@ public class Benchs
     [Benchmark]
     public void Enumerate()
     {
-        ConcurrentWeakList<object> list = _list;
+        WeakList<object> list = _list;
 #pragma warning disable IDE0059 // Unnecessary assignment of a value
         foreach (object x in list)
 #pragma warning restore IDE0059 // Unnecessary assignment of a value
@@ -221,7 +221,7 @@ public class Benchs
     [Benchmark]
     public void CreateAddNodesClearDispose()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         int n = N;
         var nodes = _nodes;
@@ -247,7 +247,7 @@ public class Benchs
     [Benchmark]
     public void CreateAddPreexistingNodesClearDispose()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         int n = N;
         var nodes = _nodes;
@@ -269,7 +269,7 @@ public class Benchs
     [Benchmark]
     public void CreateAddNodesDispose()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         int n = N;
         var nodes = _nodes;
@@ -293,7 +293,7 @@ public class Benchs
     [Benchmark]
     public void CreateAddPreexistingNodesDispose()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         int n = N;
         var nodes = _nodes;
@@ -313,7 +313,7 @@ public class Benchs
     [Benchmark]
     public void CreateAddNodesGCAutoClean()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         int n = N;
         var nodes = _nodes;
@@ -335,7 +335,7 @@ public class Benchs
     [Benchmark]
     public void CreateAddPreexistingNodesGCAutoClean()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         int n = N;
         var nodes = _nodes;
@@ -353,7 +353,7 @@ public class Benchs
     [Benchmark]
     public void CreateAddSelfGCAutoClean()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         int n = N;
         var nodes = _nodes;

@@ -5,20 +5,20 @@ using Singulink.Collections.Utilities;
 namespace Singulink.Collections;
 
 /// <content>
-/// Contains the <see cref="NodeEnumerator"/> nested type for <see cref="ConcurrentWeakList{T}"/>.
+/// Contains the <see cref="NodeEnumerator"/> nested type for <see cref="WeakList{T}"/>.
 /// </content>
-public sealed partial class ConcurrentWeakList<T>
+public sealed partial class WeakList<T>
 {
     /// <summary>
     /// Structure for enumerating over nodes in the list.
     /// </summary>
     public struct NodeEnumerator
     {
-        internal readonly ConcurrentWeakList<T>? _list;
+        internal readonly WeakList<T>? _list;
         internal Node? _currentNode;
         internal ulong _listVersion;
 
-        internal NodeEnumerator(ConcurrentWeakList<T> list, Node? node)
+        internal NodeEnumerator(WeakList<T> list, Node? node)
         {
             _list = list;
             _currentNode = node;
@@ -54,7 +54,7 @@ public sealed partial class ConcurrentWeakList<T>
         public readonly bool WasAddedDuringEnumeration => _currentNode!._version > _listVersion;
 
         /// <summary>
-        /// Helper API to support enumerating over an instance of <see cref="ConcurrentWeakList{T}.NodeEnumerator" />.
+        /// Helper API to support enumerating over an instance of <see cref="WeakList{T}.NodeEnumerator" />.
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
         public readonly NodeEnumerator GetEnumerator() => this;

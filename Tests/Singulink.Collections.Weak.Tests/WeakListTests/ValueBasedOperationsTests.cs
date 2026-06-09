@@ -1,4 +1,4 @@
-namespace Singulink.Collections.Weak.Tests.ConcurrentWeakListTests;
+namespace Singulink.Collections.Weak.Tests.WeakListTests;
 
 [PrefixTestClass]
 public class ValueBasedOperationsTests
@@ -6,7 +6,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void FindInEmptyList()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
 
         list.Find((_) => true).ShouldBeNull();
@@ -16,7 +16,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void FindFirstItem()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -38,7 +38,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void FindMiddleItem()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -60,7 +60,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void FindLastItem()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -82,7 +82,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void FindNonexistentItem()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object searchValue = new();
@@ -100,7 +100,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void FindWithCustomPredicate()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "banana";
         string value3 = "cherry";
@@ -122,7 +122,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void FindValueWithDefaultComparer()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "banana";
         string value3 = "cherry";
@@ -149,7 +149,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void FindValueWithCustomComparer()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "BANANA";
         string value3 = "cherry";
@@ -175,7 +175,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void FindDoesNotIncludeItemAddedDuringSearch()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         list.AddLast(value1);
@@ -210,7 +210,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void FindSkipsNodeRemovedDuringSearch()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -243,7 +243,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void FindSkipsNodeRemovedAfterCurrentPosition()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -279,7 +279,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void FindInLargeList()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var values = Enumerable.Range(0, 1000).Select((_) => new object()).ToList();
         var nodes = values.Select(list.AddLast).ToList();
 
@@ -299,7 +299,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void FindFirstMatchInListWithDuplicates()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value = "duplicate";
         var node1 = list.AddLast(value);
         list.AddLast(value);
@@ -317,7 +317,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void FindWithNullPredicateThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
         Should.Throw<ArgumentNullException>(() => list.Find((Predicate<object>)null!));
     }
@@ -325,7 +325,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void RemoveValueFromEmptyList()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
 
         list.Remove(value).ShouldBeFalse();
@@ -336,7 +336,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void RemoveExistingValue()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "banana";
         string value3 = "cherry";
@@ -357,7 +357,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void RemoveFirstValue()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "banana";
         string value3 = "cherry";
@@ -378,7 +378,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void RemoveLastValue()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "banana";
         string value3 = "cherry";
@@ -399,7 +399,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void RemoveSingleValue()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value = "apple";
         list.AddLast(value);
 
@@ -414,7 +414,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void RemoveNonexistentValue()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "banana";
         list.AddLast(value1);
@@ -432,7 +432,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void RemoveValueWithCustomComparer()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "BANANA";
         string value3 = "cherry";
@@ -453,7 +453,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void RemoveFirstOccurrenceOfDuplicate()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value = "duplicate";
         list.AddLast(value);
         var node2 = list.AddLast(value);
@@ -474,7 +474,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void RemoveMultipleValuesOneByOne()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "banana";
         string value3 = "cherry";
@@ -499,7 +499,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void RemoveValueTwiceReturnsFalseSecondTime()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value = "apple";
         list.AddLast(value);
 
@@ -512,7 +512,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertBeforeInEmptyList()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
 
         var result = list.TryInsertBefore("existingValue", "newValue");
 
@@ -523,7 +523,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertBeforeExistingValue()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "cherry";
         list.AddLast(value1);
@@ -545,7 +545,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertBeforeFirstValue()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "banana";
         string value2 = "cherry";
         list.AddLast(value1);
@@ -567,7 +567,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertBeforeNonexistentValue()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "cherry";
         list.AddLast(value1);
@@ -586,7 +586,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertBeforeWithCustomComparer()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "CHERRY";
         list.AddLast(value1);
@@ -608,7 +608,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertBeforeFirstOccurrenceOfDuplicate()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value = "duplicate";
         list.AddLast(value);
         list.AddLast(value);
@@ -628,7 +628,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void InsertBeforeExistingValue()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "cherry";
         list.AddLast(value1);
@@ -650,7 +650,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void InsertBeforeNonexistentValueThrows()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "cherry";
         list.AddLast(value1);
@@ -667,7 +667,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void InsertBeforeInEmptyListThrows()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
 
         Should.Throw<ArgumentException>(() => list.InsertBefore("existingValue", "newValue"));
     }
@@ -675,7 +675,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void InsertBeforeWithCustomComparer()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "CHERRY";
         list.AddLast(value1);
@@ -697,7 +697,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertAfterInEmptyList()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
 
         var result = list.TryInsertAfter("existingValue", "newValue");
 
@@ -708,7 +708,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertAfterExistingValue()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "cherry";
         list.AddLast(value1);
@@ -730,7 +730,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertAfterLastValue()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "banana";
         list.AddLast(value1);
@@ -752,7 +752,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertAfterNonexistentValue()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "cherry";
         list.AddLast(value1);
@@ -771,7 +771,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertAfterWithCustomComparer()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "APPLE";
         string value2 = "cherry";
         list.AddLast(value1);
@@ -793,7 +793,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertAfterFirstOccurrenceOfDuplicate()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value = "duplicate";
         list.AddLast(value);
         list.AddLast(value);
@@ -813,7 +813,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void InsertAfterExistingValue()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "cherry";
         list.AddLast(value1);
@@ -835,7 +835,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void InsertAfterNonexistentValueThrows()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "cherry";
         list.AddLast(value1);
@@ -852,7 +852,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void InsertAfterInEmptyListThrows()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
 
         Should.Throw<ArgumentException>(() => list.InsertAfter("existingValue", "newValue"));
     }
@@ -860,7 +860,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void InsertAfterWithCustomComparer()
     {
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "APPLE";
         string value2 = "cherry";
         list.AddLast(value1);
@@ -882,7 +882,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertBeforeNullValueThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         list.AddLast(value);
 
@@ -894,7 +894,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertAfterNullValueThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         list.AddLast(value);
 
@@ -906,7 +906,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void InsertBeforeNullValueThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         list.AddLast(value);
 
@@ -918,7 +918,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void InsertAfterNullValueThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         list.AddLast(value);
 
@@ -930,7 +930,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertBeforeNullExistingValueThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         list.AddLast(value);
 
@@ -942,7 +942,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void TryInsertAfterNullExistingValueThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         list.AddLast(value);
 
@@ -954,7 +954,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void InsertBeforeNullExistingValueThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         list.AddLast(value);
 
@@ -966,7 +966,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void InsertAfterNullExistingValueThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         list.AddLast(value);
 
@@ -978,7 +978,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void RemoveNullValueThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
         Should.Throw<ArgumentNullException>(() => list.Remove((object)null!));
     }
@@ -986,7 +986,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void FindNullValueThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
         Should.Throw<ArgumentNullException>(() => list.Find((object)null!));
     }
@@ -994,7 +994,7 @@ public class ValueBasedOperationsTests
     [TestMethod]
     public void ContainsNullValueThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
         Should.Throw<ArgumentNullException>(() => list.Contains(null!));
     }
@@ -1005,7 +1005,7 @@ public class ValueBasedOperationsTests
         // This test uses a custom comparer that removes the target node just before it would be found,
         // simulating a concurrent removal. All operations should handle this gracefully.
 
-        var list = new ConcurrentWeakList<string>();
+        var list = new WeakList<string>();
         string value1 = "apple";
         string value2 = "banana";
         string value3 = "cherry";

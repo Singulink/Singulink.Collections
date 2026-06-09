@@ -1,4 +1,4 @@
-namespace Singulink.Collections.Weak.Tests.ConcurrentWeakListTests;
+namespace Singulink.Collections.Weak.Tests.WeakListTests;
 
 [PrefixTestClass]
 public class AddTests
@@ -6,7 +6,7 @@ public class AddTests
     [TestMethod]
     public void AddFirstToEmptyList()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
 
         var node = list.AddFirst(value);
@@ -21,7 +21,7 @@ public class AddTests
     [TestMethod]
     public void AddFirstToSingleItemList()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         list.AddLast(value1);
@@ -39,7 +39,7 @@ public class AddTests
     [TestMethod]
     public void AddFirstMultipleTimes()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object[] values = [new object(), new object(), new object()];
 
         foreach (object v in values)
@@ -56,7 +56,7 @@ public class AddTests
     [TestMethod]
     public void AddLastToEmptyList()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
 
         var node = list.AddLast(value);
@@ -71,7 +71,7 @@ public class AddTests
     [TestMethod]
     public void AddLastToSingleItemList()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         list.AddLast(value1);
@@ -89,7 +89,7 @@ public class AddTests
     [TestMethod]
     public void AddLastMultipleTimes()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object[] values = [new object(), new object(), new object()];
 
         foreach (object v in values)
@@ -104,7 +104,7 @@ public class AddTests
     [TestMethod]
     public void AddFirstNullThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
         Should.Throw<ArgumentNullException>(() => list.AddFirst(null!));
     }
@@ -112,7 +112,7 @@ public class AddTests
     [TestMethod]
     public void AddLastNullThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
         Should.Throw<ArgumentNullException>(() => list.AddLast(null!));
     }
@@ -120,7 +120,7 @@ public class AddTests
     [TestMethod]
     public void AddBeforeNullValueThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
 
@@ -132,7 +132,7 @@ public class AddTests
     [TestMethod]
     public void AddAfterNullValueThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
 
@@ -144,7 +144,7 @@ public class AddTests
     [TestMethod]
     public void AddBeforeNullNodeThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
         Should.Throw<ArgumentNullException>(() => list.AddBefore(null!, new object()));
     }
@@ -152,7 +152,7 @@ public class AddTests
     [TestMethod]
     public void AddAfterNullNodeThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
         Should.Throw<ArgumentNullException>(() => list.AddAfter(null!, new object()));
     }
@@ -160,7 +160,7 @@ public class AddTests
     [TestMethod]
     public void AddFirstOnDisposedListThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         list.Dispose();
 
         Should.Throw<ObjectDisposedException>(() => list.AddFirst(new object()));
@@ -169,7 +169,7 @@ public class AddTests
     [TestMethod]
     public void AddLastOnDisposedListThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         list.Dispose();
 
         Should.Throw<ObjectDisposedException>(() => list.AddLast(new object()));
@@ -178,8 +178,8 @@ public class AddTests
     [TestMethod]
     public void AddBeforeNodeFromDifferentListThrows()
     {
-        var list1 = new ConcurrentWeakList<object>();
-        var list2 = new ConcurrentWeakList<object>();
+        var list1 = new WeakList<object>();
+        var list2 = new WeakList<object>();
         object value = new();
         var node = list1.AddLast(value);
 
@@ -191,8 +191,8 @@ public class AddTests
     [TestMethod]
     public void AddAfterNodeFromDifferentListThrows()
     {
-        var list1 = new ConcurrentWeakList<object>();
-        var list2 = new ConcurrentWeakList<object>();
+        var list1 = new WeakList<object>();
+        var list2 = new WeakList<object>();
         object value = new();
         var node = list1.AddLast(value);
 
@@ -204,7 +204,7 @@ public class AddTests
     [TestMethod]
     public void AddBeforeFirstNode()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         var node1 = list.AddLast(value1);
@@ -222,7 +222,7 @@ public class AddTests
     [TestMethod]
     public void AddBeforeMiddleNode()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -243,7 +243,7 @@ public class AddTests
     [TestMethod]
     public void AddBeforeLastNode()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -263,7 +263,7 @@ public class AddTests
     [TestMethod]
     public void AddBeforeRemovedNodeAllowed()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -304,7 +304,7 @@ public class AddTests
     [TestMethod]
     public void AddBeforeRemovedNodeDisallowed()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         list.AddLast(value1);
@@ -327,7 +327,7 @@ public class AddTests
     [TestMethod]
     public void AddAfterFirstNode()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         var node1 = list.AddLast(value1);
@@ -345,7 +345,7 @@ public class AddTests
     [TestMethod]
     public void AddAfterMiddleNode()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -366,7 +366,7 @@ public class AddTests
     [TestMethod]
     public void AddAfterLastNode()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -386,7 +386,7 @@ public class AddTests
     [TestMethod]
     public void AddAfterRemovedNodeAllowed()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -427,7 +427,7 @@ public class AddTests
     [TestMethod]
     public void AddAfterRemovedNodeDisallowed()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         list.AddLast(value1);
@@ -450,7 +450,7 @@ public class AddTests
     [TestMethod]
     public void CountUpdatesCorrectlyWithMixedOperations()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         list.Count.ShouldBe(0);
 
         object value1 = new();
@@ -484,7 +484,7 @@ public class AddTests
     [TestMethod]
     public void AddManyItemsInOrder()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var values = Enumerable.Range(0, 100).Select((_) => new object()).ToList();
 
         foreach (object v in values)
@@ -499,7 +499,7 @@ public class AddTests
     [TestMethod]
     public void AddManyItemsInReverseOrder()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var values = Enumerable.Range(0, 100).Select((_) => new object()).ToList();
 
         foreach (object v in values)
@@ -517,7 +517,7 @@ public class AddTests
     public void ComplexInsertionPattern_AlternatingEnds()
     {
         // This pattern forces multiple rotations as we alternate adding to front and back
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var values = new List<object>();
         var expectedOrder = new List<object>();
 
@@ -554,9 +554,9 @@ public class AddTests
     public void ComplexInsertionPattern_MiddleInsertions()
     {
         // Build a list then insert many items in the middle to exercise mid-list linking
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var expectedOrder = new List<object>();
-        var nodes = new List<ConcurrentWeakList<object>.Node>();
+        var nodes = new List<WeakList<object>.Node>();
 
         // First, add 20 items
         for (int i = 0; i < 20; i++)
@@ -591,7 +591,7 @@ public class AddTests
     public void ComplexInsertionPattern_AddBeforeAndAfterChain()
     {
         // Create a chain using AddBefore and AddAfter repeatedly
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object anchor = new();
         var anchorNode = list.AddLast(anchor);
         var expectedOrder = new List<object> { anchor };
@@ -633,9 +633,9 @@ public class AddTests
     public void ComplexInsertionAndRemovalPattern()
     {
         // Insert and remove in a pattern that exercises linked-list relinking
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var values = new List<object>();
-        var nodes = new List<ConcurrentWeakList<object>.Node>();
+        var nodes = new List<WeakList<object>.Node>();
 
         // Add 30 items
         for (int i = 0; i < 30; i++)
@@ -646,7 +646,7 @@ public class AddTests
         }
 
         // Remove every 3rd node
-        List<ConcurrentWeakList<object>.Node> removedNodes = new();
+        List<WeakList<object>.Node> removedNodes = new();
         for (int i = 0; i < nodes.Count; i += 3)
         {
             list.Remove(nodes[i]);

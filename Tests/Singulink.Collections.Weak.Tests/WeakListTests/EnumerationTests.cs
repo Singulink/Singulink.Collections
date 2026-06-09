@@ -1,6 +1,6 @@
 using System.Runtime.CompilerServices;
 
-namespace Singulink.Collections.Weak.Tests.ConcurrentWeakListTests;
+namespace Singulink.Collections.Weak.Tests.WeakListTests;
 
 [PrefixTestClass]
 public class EnumerationTests
@@ -8,7 +8,7 @@ public class EnumerationTests
     [TestMethod]
     public void EnumerateEmpty()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
         var enumerator = list.GetEnumerator();
         enumerator.MoveNext().ShouldBeFalse();
@@ -17,7 +17,7 @@ public class EnumerationTests
     [TestMethod]
     public void EnumerateNodesEmpty()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
         var enumerator = list.GetNodeEnumerator();
         enumerator.MoveNext().ShouldBeFalse();
@@ -26,7 +26,7 @@ public class EnumerationTests
     [TestMethod]
     public void EnumerateOneValue()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         list.AddLast(value);
 
@@ -41,7 +41,7 @@ public class EnumerationTests
     [TestMethod]
     public void EnumerateNodesOneValue()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
 
@@ -58,7 +58,7 @@ public class EnumerationTests
     [TestMethod]
     public void EnumerateTwoDistinctValues()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         list.AddLast(value1);
@@ -78,7 +78,7 @@ public class EnumerationTests
     [TestMethod]
     public void EnumerateNodesTwoDistinctValues()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         var node1 = list.AddLast(value1);
@@ -102,7 +102,7 @@ public class EnumerationTests
     [TestMethod]
     public void EnumerateTwoSameValues()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         list.AddLast(value);
         list.AddLast(value);
@@ -120,7 +120,7 @@ public class EnumerationTests
     [TestMethod]
     public void EnumerateNodesTwoSameValues()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node1 = list.AddLast(value);
         var node2 = list.AddLast(value);
@@ -142,7 +142,7 @@ public class EnumerationTests
     [TestMethod]
     public void RemoveCurrentNodeWhileEnumerating()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -178,7 +178,7 @@ public class EnumerationTests
     [TestMethod]
     public void RemoveNextNodeWhileEnumerating()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -212,7 +212,7 @@ public class EnumerationTests
     [TestMethod]
     public void RemovePreviousNodeWhileEnumerating()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -248,7 +248,7 @@ public class EnumerationTests
     [TestMethod]
     public void AddNodeAtEndWhileEnumerating()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         var node1 = list.AddLast(value1);
@@ -277,7 +277,7 @@ public class EnumerationTests
     [TestMethod]
     public void AddNodeAtStartWhileEnumerating()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         var node1 = list.AddLast(value1);
@@ -302,7 +302,7 @@ public class EnumerationTests
     [TestMethod]
     public void AddNodeAfterCurrentWhileEnumerating()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -339,7 +339,7 @@ public class EnumerationTests
     [TestMethod]
     public void AddNodeBeforeCurrentWhileEnumerating()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -367,7 +367,7 @@ public class EnumerationTests
     [TestMethod]
     public void MovePreviousEmpty()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
         var enumerator = list.GetNodeEnumerator();
         enumerator.MovePrevious().ShouldBeFalse();
@@ -376,7 +376,7 @@ public class EnumerationTests
     [TestMethod]
     public void MovePreviousOneValue()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
 
@@ -393,7 +393,7 @@ public class EnumerationTests
     [TestMethod]
     public void MovePreviousTwoDistinctValues()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         var node1 = list.AddLast(value1);
@@ -417,7 +417,7 @@ public class EnumerationTests
     [TestMethod]
     public void MovePreviousTwoSameValues()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node1 = list.AddLast(value);
         var node2 = list.AddLast(value);
@@ -439,7 +439,7 @@ public class EnumerationTests
     [TestMethod]
     public void AddNodeAtEndWhileEnumeratingBackwards()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         var node1 = list.AddLast(value1);
@@ -464,7 +464,7 @@ public class EnumerationTests
     [TestMethod]
     public void AddNodeAtStartWhileEnumeratingBackwards()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         var node1 = list.AddLast(value1);
@@ -493,7 +493,7 @@ public class EnumerationTests
     [TestMethod]
     public void AddNodeBeforeCurrentWhileEnumeratingBackwards()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -528,7 +528,7 @@ public class EnumerationTests
     [TestMethod]
     public void AddNodeAfterCurrentWhileEnumeratingBackwards()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -556,7 +556,7 @@ public class EnumerationTests
     [TestMethod]
     public void NavigateBackAndForth()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -620,7 +620,7 @@ public class EnumerationTests
     [TestMethod]
     public void AsEnumerableBasic()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -664,7 +664,7 @@ public class EnumerationTests
     [TestMethod]
     public void AsEnumerableFromOffsetPosition()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -696,7 +696,7 @@ public class EnumerationTests
     [TestMethod]
     public void GetEnumeratorFromStartNode()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -740,7 +740,7 @@ public class EnumerationTests
     [TestMethod]
     public void AsEnumerableSkipNewNodes()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         var node1 = list.AddLast(value1);
@@ -751,8 +751,8 @@ public class EnumerationTests
         var enumerable = enumerator.AsEnumerable(skipNewNodes: true);
 
         object value3 = new();
-        ConcurrentWeakList<object>.Node? node3 = null;
-        var result = new List<ConcurrentWeakList<object>.Node>();
+        WeakList<object>.Node? node3 = null;
+        var result = new List<WeakList<object>.Node>();
 
         foreach (var node in enumerable)
         {
@@ -801,7 +801,7 @@ public class EnumerationTests
     [TestMethod]
     public void LinqOnListDirectly()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -829,7 +829,7 @@ public class EnumerationTests
     [TestMethod]
     public void AutoRemovedNodeSkippedDuringEnumeration()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value3 = new();
         var node1 = list.AddLast(value1);
@@ -868,7 +868,7 @@ public class EnumerationTests
     [TestMethod]
     public void NodeRemovedWhileLockedStaysInListDuringEnumeration()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -942,7 +942,7 @@ public class EnumerationTests
     [TestMethod]
     public void EnumerateManyValues()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var values = Enumerable.Range(0, 100).Select((_) => new object()).ToList();
 
         foreach (object value in values)
@@ -963,7 +963,7 @@ public class EnumerationTests
     [TestMethod]
     public void RemoveMultipleConsecutiveNodesWhileEnumeratingForward()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var values = Enumerable.Range(0, 5).Select((_) => new object()).ToList();
         var nodes = values.Select(list.AddLast).ToList();
 
@@ -991,7 +991,7 @@ public class EnumerationTests
     [TestMethod]
     public void RemoveMultipleConsecutiveNodesWhileEnumeratingBackward()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var values = Enumerable.Range(0, 5).Select((_) => new object()).ToList();
         var nodes = values.Select(list.AddLast).ToList();
 
@@ -1019,7 +1019,7 @@ public class EnumerationTests
     [TestMethod]
     public void GetEnumeratorWithNullStartNodeThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
         Should.Throw<ArgumentNullException>(() => list.GetEnumerator(null!));
     }
@@ -1027,7 +1027,7 @@ public class EnumerationTests
     [TestMethod]
     public void GetNodeEnumeratorWithNullStartNodeThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
 
         Should.Throw<ArgumentNullException>(() => list.GetNodeEnumerator(null!));
     }

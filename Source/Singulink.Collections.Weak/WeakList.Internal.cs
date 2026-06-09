@@ -8,9 +8,9 @@ namespace Singulink.Collections;
 #pragma warning disable RCS1043 // Remove 'partial' modifier from type with a single part
 
 /// <content>
-/// Contains the internal node tracking and finalization types for <see cref="ConcurrentWeakList{T}"/>.
+/// Contains the internal node tracking and finalization types for <see cref="WeakList{T}"/>.
 /// </content>
-public sealed partial class ConcurrentWeakList<T>
+public sealed partial class WeakList<T>
 {
 #if NET
     internal sealed class InternalNodeTrackingInfo(LinkedList<WeakReference<InternalNodeFinalizeHelper>> list, Lock locker)

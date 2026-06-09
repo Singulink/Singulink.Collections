@@ -1,5 +1,5 @@
 #if NET9_0_OR_GREATER
-namespace Singulink.Collections.Weak.Tests.ConcurrentWeakListTests;
+namespace Singulink.Collections.Weak.Tests.WeakListTests;
 
 [PrefixTestClass]
 public class TryUpdateTargetTests
@@ -7,7 +7,7 @@ public class TryUpdateTargetTests
     [TestMethod]
     public void TryUpdateTargetSucceeds()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object originalValue = new();
         object newValue = new();
         var node = list.AddLast(originalValue);
@@ -25,7 +25,7 @@ public class TryUpdateTargetTests
     [TestMethod]
     public void TryUpdateTargetMultipleTimes()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -47,7 +47,7 @@ public class TryUpdateTargetTests
     [TestMethod]
     public void TryUpdateTargetOnRemovedNodeReturnsFalse()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object originalValue = new();
         object newValue = new();
         var node = list.AddLast(originalValue);
@@ -65,7 +65,7 @@ public class TryUpdateTargetTests
     [TestMethod]
     public void TryUpdateTargetOnDisposedNodeReturnsFalse()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object originalValue = new();
         object newValue = new();
         var node = list.AddLast(originalValue);
@@ -83,7 +83,7 @@ public class TryUpdateTargetTests
     [TestMethod]
     public void TryUpdateTargetAfterListDisposedReturnsFalse()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object originalValue = new();
         object newValue = new();
         var node = list.AddLast(originalValue);
@@ -101,7 +101,7 @@ public class TryUpdateTargetTests
     [TestMethod]
     public void TryUpdateTargetAfterListClearReturnsFalse()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object originalValue = new();
         object newValue = new();
         var node = list.AddLast(originalValue);
@@ -119,7 +119,7 @@ public class TryUpdateTargetTests
     [TestMethod]
     public void TryUpdateTargetWithNullThrows()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object originalValue = new();
         var node = list.AddLast(originalValue);
 
@@ -131,7 +131,7 @@ public class TryUpdateTargetTests
     [TestMethod]
     public void TryUpdateTargetPreservesNodePosition()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -154,7 +154,7 @@ public class TryUpdateTargetTests
     [TestMethod]
     public void TryUpdateTargetDoesNotChangeListVersion()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object originalValue = new();
         object newValue = new();
         var node = list.AddLast(originalValue);
@@ -172,7 +172,7 @@ public class TryUpdateTargetTests
     [TestMethod]
     public void TryUpdateTargetDoesNotChangeNodeVersion()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object originalValue = new();
         object newValue = new();
         var node = list.AddLast(originalValue);

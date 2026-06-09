@@ -1,4 +1,4 @@
-namespace Singulink.Collections.Weak.Tests.ConcurrentWeakListTests;
+namespace Singulink.Collections.Weak.Tests.WeakListTests;
 
 [PrefixTestClass]
 public class ClearTests
@@ -6,7 +6,7 @@ public class ClearTests
     [TestMethod]
     public void ClearEmptyList()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         list.Clear();
         list.Count.ShouldBe(0);
     }
@@ -14,7 +14,7 @@ public class ClearTests
     [TestMethod]
     public void ClearOneValue()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         list.AddLast(value);
 
@@ -27,7 +27,7 @@ public class ClearTests
     [TestMethod]
     public void ClearTwoValues()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object[] values = [new object(), new object()];
         foreach (object v in values)
             list.AddLast(v);
@@ -41,7 +41,7 @@ public class ClearTests
     [TestMethod]
     public void ClearThreeValues()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object[] values = [new object(), new object(), new object()];
         foreach (object v in values)
             list.AddLast(v);
@@ -55,7 +55,7 @@ public class ClearTests
     [TestMethod]
     public void ClearManyValues()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var values = Enumerable.Range(0, 100).Select((_) => new object()).ToList();
         foreach (object v in values)
             list.AddLast(v);
@@ -72,7 +72,7 @@ public class ClearTests
         // Run multiple times as timing is non-deterministic
         for (int i = 0; i < 100; i++)
         {
-            var list = new ConcurrentWeakList<object>();
+            var list = new WeakList<object>();
             var values = Enumerable.Range(0, 50).Select((_) => new object()).ToList();
             var nodes = values.Select(list.AddLast).ToList();
 
@@ -98,13 +98,13 @@ public class ClearTests
         // Run multiple times as timing is non-deterministic (it fails on 1 run about 1/3 of the time on a high core computer, so run 1000 times to be certain)
         for (int i = 0; i < 1000; i++)
         {
-            var list = new ConcurrentWeakList<object>();
+            var list = new WeakList<object>();
             var initialValues = Enumerable.Range(0, 2000).Select((_) => new object()).ToList();
             foreach (object v in initialValues)
                 list.AddLast(v);
 
             var newValues = Enumerable.Range(0, 2000).Select((_) => new object()).ToList();
-            var addedNodes = new List<ConcurrentWeakList<object>.Node>();
+            var addedNodes = new List<WeakList<object>.Node>();
 
             // Start adding values in a separate thread
             var addThread = new Thread(() =>
@@ -146,7 +146,7 @@ public class ClearTests
     [TestMethod]
     public void ClearMarksNodesAsRemoved()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object[] values = [new object(), new object(), new object()];
         var nodes = values.Select(list.AddLast).ToArray();
 
@@ -161,7 +161,7 @@ public class ClearTests
     [TestMethod]
     public void ClearTwice()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var values = Enumerable.Range(0, 10).Select((_) => new object()).ToList();
         foreach (object v in values)
             list.AddLast(v);
@@ -178,7 +178,7 @@ public class ClearTests
     [TestMethod]
     public void ClearThenAddNewValues()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var oldValues = Enumerable.Range(0, 10).Select((_) => new object()).ToList();
         foreach (object v in oldValues)
             list.AddLast(v);

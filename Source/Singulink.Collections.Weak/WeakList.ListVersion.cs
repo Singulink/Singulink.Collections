@@ -1,9 +1,9 @@
 namespace Singulink.Collections;
 
 /// <content>
-/// Contains the <see cref="ListVersion"/> nested type for <see cref="ConcurrentWeakList{T}"/>.
+/// Contains the <see cref="ListVersion"/> nested type for <see cref="WeakList{T}"/>.
 /// </content>
-public sealed partial class ConcurrentWeakList<T>
+public sealed partial class WeakList<T>
 {
     /// <summary>
     /// Represents a version of the list at a point in time - the version is increased only whenever an item is added to the list.

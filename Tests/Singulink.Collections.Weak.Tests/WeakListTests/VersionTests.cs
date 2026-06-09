@@ -1,4 +1,4 @@
-namespace Singulink.Collections.Weak.Tests.ConcurrentWeakListTests;
+namespace Singulink.Collections.Weak.Tests.WeakListTests;
 
 [PrefixTestClass]
 public class VersionTests
@@ -6,7 +6,7 @@ public class VersionTests
     [TestMethod]
     public void VersionIncreasesAfterAdd()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var versionBefore = list.Version;
 
         object value = new();
@@ -21,7 +21,7 @@ public class VersionTests
     [TestMethod]
     public void VersionDoesNotChangeOnRemoveOrClear()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value = new();
         var node = list.AddLast(value);
         var versionAfterAdd = list.Version;
@@ -41,7 +41,7 @@ public class VersionTests
     [TestMethod]
     public void NodeVersionMatchesListVersionAtTimeOfAdd()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var versionBefore = list.Version;
 
         object value = new();
@@ -59,7 +59,7 @@ public class VersionTests
     [TestMethod]
     public void LaterNodesHaveHigherVersions()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         object value1 = new();
         object value2 = new();
         object value3 = new();
@@ -80,7 +80,7 @@ public class VersionTests
     [TestMethod]
     public void ComparisonOperators()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var version1 = list.Version;
         var version1Copy = list.Version;
 
@@ -119,7 +119,7 @@ public class VersionTests
     [TestMethod]
     public void EqualsAndCompareTo()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var version1 = list.Version;
         var version1Copy = list.Version;
 
@@ -155,7 +155,7 @@ public class VersionTests
     [TestMethod]
     public void GetHashCodeConsistency()
     {
-        var list = new ConcurrentWeakList<object>();
+        var list = new WeakList<object>();
         var version1 = list.Version;
         var version1Copy = list.Version;
 

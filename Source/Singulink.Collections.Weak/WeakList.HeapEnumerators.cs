@@ -4,9 +4,9 @@ using System.Diagnostics;
 namespace Singulink.Collections;
 
 /// <content>
-/// Contains the heap-allocated enumerator wrappers for <see cref="ConcurrentWeakList{T}"/>.
+/// Contains the heap-allocated enumerator wrappers for <see cref="WeakList{T}"/>.
 /// </content>
-public sealed partial class ConcurrentWeakList<T>
+public sealed partial class WeakList<T>
 {
     private sealed partial class HeapValueEnumerator(Enumerator impl, bool reversed, bool skipNewNodes) : IEnumerator<T>
     {

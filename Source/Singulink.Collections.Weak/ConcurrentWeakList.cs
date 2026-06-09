@@ -15,10 +15,7 @@ namespace Singulink.Collections;
 /// an operation level (that is, individual operations are thread-safe, but your own custom compound operations may still need external synchronization).
 /// </summary>
 /// <remarks>
-/// <para>Unlike <see cref="WeakList{T}" /> and <see cref="WeakCollection{T}" />, this type automatically cleans references on its own without requiring any
-/// user interaction.</para>
-/// <para>Note: This type scales better than <see cref="WeakList{T}" /> and <see cref="WeakCollection{T}" />, but has a higher overhead in scenarios where a
-/// small number of items are stored.</para>
+/// <para>This type automatically cleans references for garbage collected values on its own without requiring any user interaction.</para>
 /// <para>Note: Highly contested scenarios may experience significant practical performance degradation due to lock contention, be aware of this when using in
 /// such environments.</para>
 /// <para>Note: All provided big O runtimes are strict, but those above O(1) assume the case where no new nodes were added by another thread during the
@@ -34,11 +31,11 @@ namespace Singulink.Collections;
 /// indefinitely for each value added, until the value or this list is collected by the garbage collector, or <see cref="Dispose" /> is called. This does not
 /// apply to .NET 6+, as it has DependentHandle available, which does not have this issue.</para>
 /// </remarks>
-public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable where T : class
+public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : class
 {
 #if !NET
     // No DependentHandle type on .NET Standard, so we store the values in a CWT instead:
-    // IMPORTANT: InternalNodeFinalizeHelper must not hold a strong reference to the CWT or ConcurrentWeakList, otherwise it will leak
+    // IMPORTANT: InternalNodeFinalizeHelper must not hold a strong reference to the CWT or WeakList, otherwise it will leak
     // due to https://github.com/dotnet/runtime/issues/12255.
     private ConditionalWeakTable<T, LinkedList<InternalNodeFinalizeHelper>>? _cwt = new();
 #endif
@@ -90,9 +87,9 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
 #endif
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ConcurrentWeakList{T}"/> class with no elements.
+    /// Initializes a new instance of the <see cref="WeakList{T}"/> class with no elements.
     /// </summary>
-    public ConcurrentWeakList()
+    public WeakList()
     {
         _head = new(null, this) { _isPseudoNode = true };
         _tail = _head;
@@ -103,9 +100,9 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     }
 
     /// <summary>
-    /// Finalizes an instance of the <see cref="ConcurrentWeakList{T}"/> class.
+    /// Finalizes an instance of the <see cref="WeakList{T}"/> class.
     /// </summary>
-    ~ConcurrentWeakList()
+    ~WeakList()
     {
         // We want to block usage after potential resurrection (as it could be dangerous), as it could be actively problematic, so mark as disposed now:
         _head = null;
@@ -124,7 +121,7 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
             // Note: we need an memory barrier here, since otherwise the read might not be sequentially consistent (volatile alone is not enough).
             Thread.MemoryBarrier();
             nint size = Volatile.Read(ref _size);
-            Throw.IfDisposed(_head == null, typeof(ConcurrentWeakList<T>));
+            Throw.IfDisposed(_head == null, typeof(WeakList<T>));
             GC.KeepAlive(this);
             return size;
         }
@@ -141,7 +138,7 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
             // Note: we need an memory barrier here, since otherwise the read might not be sequentially consistent (volatile alone is not enough).
             Thread.MemoryBarrier();
             ulong version = Volatile.Read(ref _version);
-            Throw.IfDisposed(_head == null, typeof(ConcurrentWeakList<T>));
+            Throw.IfDisposed(_head == null, typeof(WeakList<T>));
             GC.KeepAlive(this);
             return new ListVersion(version);
         }
@@ -155,7 +152,7 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     public Node AddFirst(T value)
     {
         using var scope = EnterLock(out bool wasDisposed);
-        Throw.IfDisposed(wasDisposed, typeof(ConcurrentWeakList<T>));
+        Throw.IfDisposed(wasDisposed, typeof(WeakList<T>));
         DebugAssertNotDisposed();
         return InsertNearHelper(value, _head, addBefore: false); // Note: we add after, since the first one is the pseudo-node.
     }
@@ -168,7 +165,7 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     public Node AddLast(T value)
     {
         using var scope = EnterLock(out bool wasDisposed);
-        Throw.IfDisposed(wasDisposed, typeof(ConcurrentWeakList<T>));
+        Throw.IfDisposed(wasDisposed, typeof(WeakList<T>));
         DebugAssertNotDisposed();
         return InsertNearHelper(value, _tail, addBefore: false);
     }
@@ -304,7 +301,7 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     /// An individual enumeration step takes O(1) time when not resuming from a removed node.
     /// </para>
     /// <para>
-    /// These big O runtimes assume no nodes being added concurrently, see <see cref="ConcurrentWeakList{T}" /> for remarks about that case.
+    /// These big O runtimes assume no nodes being added concurrently, see <see cref="WeakList{T}" /> for remarks about that case.
     /// </para>
     /// </remarks>
     public NodeEnumerator GetNodeEnumerator() => new(this, null);
@@ -501,7 +498,7 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     /// This method removes all nodes one-by-one; using <see cref="Dispose" /> is faster if you do not need to reuse the list instance.
     /// </para>
     /// <para>
-    /// This big O runtime assume no nodes being added concurrently, see <see cref="ConcurrentWeakList{T}" /> for remarks about that case.
+    /// This big O runtime assume no nodes being added concurrently, see <see cref="WeakList{T}" /> for remarks about that case.
     /// </para>
     /// </remarks>
     public void Clear()
@@ -528,13 +525,13 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     /// </para>
     /// </summary>
     /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
-    public void UnsafePerformLockedOperation<TState>(TState state, Action<ConcurrentWeakList<T>, TState> operation)
+    public void UnsafePerformLockedOperation<TState>(TState state, Action<WeakList<T>, TState> operation)
 #if NET9_0_OR_GREATER
         where TState : allows ref struct
 #endif
     {
         using var scope = EnterLock(out bool wasDisposed);
-        Throw.IfDisposed(wasDisposed, typeof(ConcurrentWeakList<T>));
+        Throw.IfDisposed(wasDisposed, typeof(WeakList<T>));
         operation(this, state);
     }
 
@@ -552,7 +549,7 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     /// removal with it from the list's internal lock (this setup won't block the finalizer).
     /// </para>
     /// </summary>
-    public bool UnsafeTryPerformLockedOperation<TState>(TState state, Action<ConcurrentWeakList<T>, TState> operation)
+    public bool UnsafeTryPerformLockedOperation<TState>(TState state, Action<WeakList<T>, TState> operation)
 #if NET9_0_OR_GREATER
         where TState : allows ref struct
 #endif
@@ -564,7 +561,7 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     }
 
     /// <summary>
-    /// Disposes the <see cref="ConcurrentWeakList{T}" />, removing all nodes and preventing further use.
+    /// Disposes the <see cref="WeakList{T}" />, removing all nodes and preventing further use.
     /// </summary>
     public void Dispose()
     {

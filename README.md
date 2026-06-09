@@ -12,6 +12,7 @@
 > **`Singulink.Collections` v4 contains breaking changes.** The interface hierarchies have been restructured, value collections now implement `IGrouping<TKey, TValue>` for free LINQ interop, and the BCL projection extension methods (e.g. `AsReadOnlyDictionaryOfList`, `AsDictionaryOfCollection`) have been removed in favor of a smaller, cleaner surface. Impact is minimal for code that uses the concrete types or Singulink dictionary interfaces. See the [**v4 changes and migration guide**](V4-COLLECTIONS-CHANGES.md) if you were relying on the BCL adapters/shims.
 >
 > `Singulink.Collections.Weak` v3 also dropped .NET 6 support and adds `ConcurrentWeakList`.
+> `Singulink.Collections.Weak` v4 removes the old `WeakList` and `WeakCollection` types; `WeakList` is now a self-cleaning, thread-safe collection that maintains relative insertion order (formerly known as `ConcurrentWeakList`, which has been renamed).
 
 **Singulink.Collections** provides generally useful collections that are missing from .NET. They are highly optimized for performance, well documented and follow the same design principles as built-in .NET collections so they should feel instantly familiar.
 
@@ -27,8 +28,7 @@ The following is included in the package:
 **Singulink.Collections.Weak** provides a set of collection classes that store weak references to values so that the garbage collector is free to reclaim the memory they use when they aren't being referenced anymore. The values returned by the collections will never be `null` - if the value was garbage collected then the collection behaves as if the value was removed from the collection.
 
 The following collections are included in the package:
-- `WeakCollection`: Collection of weakly referenced values that keeps items in an undefined order.
-- `WeakList` / `ConcurrentWeakList`: Collection of weakly referenced values that maintains relative insertion order.
+- `WeakList`: Collection of weakly referenced values that maintains relative insertion order, is safe for concurrent use, and automatically removes values as they die.
 - `WeakValueDictionary`: Collection of keys and weakly referenced values (with `AlternateLookup` support).
 
 ### About Singulink
@@ -126,22 +126,19 @@ public class YourClass
 > [!TIP]
 > Coming from v3? See the [v4 changes and migration guide](V4-COLLECTIONS-CHANGES.md) for the rationale and replacements for the removed BCL projection extensions (`AsReadOnlyDictionaryOfList`, `AsDictionaryOfCollection`, ...).
 
-### WeakList / WeakCollection
+### WeakList
 
 ```c#
 var subscribers = new WeakList<EventSubscriber>();
-subscribers.Add(subscriber1);
-subscribers.Add(subscriber2);
+subscribers.AddLast(subscriber1);
+subscribers.AddLast(subscriber2);
 
-// Iteration silently skips any items that have been garbage collected.
+// The list type automatically drops any items that have been garbage collected, and you can even enumerate concurrently to this automatic process.
 foreach (var s in subscribers)
     s.Notify();
-
-// Optionally clean out collected entries on demand:
-subscribers.Clean();
 ```
 
-`ConcurrentWeakList<T>` has the same surface and is safe for concurrent use; prefer it when you have a large collection or many concurrent readers/writers.
+`WeakList<T>` automatically cleans up references to garbage collected values and is safe for concurrent access at an operation level, so individual operations are thread-safe without external locking.
 
 ### WeakValueDictionary
 

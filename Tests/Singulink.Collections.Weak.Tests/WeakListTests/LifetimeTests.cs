@@ -1,4 +1,4 @@
-namespace Singulink.Collections.Weak.Tests.ConcurrentWeakListTests;
+namespace Singulink.Collections.Weak.Tests.WeakListTests;
 
 [PrefixTestClass]
 public class LifetimeTests
@@ -6,7 +6,7 @@ public class LifetimeTests
     [TestMethod]
     public void ValueKeepsNodeInList()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         var (node, value) = Helpers.NotInlined(list, (list) =>
         {
@@ -27,7 +27,7 @@ public class LifetimeTests
     [TestMethod]
     public void ValueDiesWhenOnlyNodeInList()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         var (valueRef, node, internalNodeHelperWeakRef) = Helpers.NotInlined(list, (list) =>
         {
@@ -50,7 +50,7 @@ public class LifetimeTests
     [TestMethod]
     public void NodeDoesNotKeepValueAlive()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         var (node, valueRef, internalNodeHelperWeakRef) = Helpers.NotInlined(list, (list) =>
         {
@@ -76,7 +76,7 @@ public class LifetimeTests
     {
         var (listWeakRef, nodeWeakRef, internalNodeWeakRef, internalNodeHelperWeakRef) = Helpers.NotInlined(() =>
         {
-            var list = new ConcurrentWeakList<object>();
+            var list = new WeakList<object>();
             List<object> value = [list]; // Add as many things as possible to try to force a leak if there is one:
             var node = list.AddLast(value);
             value.Add(node);
@@ -100,7 +100,7 @@ public class LifetimeTests
     {
         var (listWeakRef, nodeWeakRef, internalNodeWeakRef, internalNodeHelperWeakRef, o) = Helpers.NotInlined(() =>
         {
-            var list = new ConcurrentWeakList<object>();
+            var list = new WeakList<object>();
             object value = new();
             var node = list.AddLast(value);
             var internalNodeWeakRef = new WeakReference<object?>(Helpers.GetInternalNode(node));
@@ -125,7 +125,7 @@ public class LifetimeTests
     {
         var (listWeakRef, nodeWeakRef, internalNodeWeakRef, internalNodeHelperWeakRef, o) = Helpers.NotInlined(() =>
         {
-            var list = new ConcurrentWeakList<object>();
+            var list = new WeakList<object>();
             object value = new();
             var node = list.AddLast(value);
             var internalNodeWeakRef = new WeakReference<object?>(Helpers.GetInternalNode(node));
@@ -150,7 +150,7 @@ public class LifetimeTests
     {
         var (listWeakRef, nodeWeakRef, internalNodeWeakRef, internalNodeHelperWeakRef, o) = Helpers.NotInlined(() =>
         {
-            var list = new ConcurrentWeakList<object>();
+            var list = new WeakList<object>();
             object value = new();
             var node = list.AddLast(value);
             var internalNodeWeakRef = new WeakReference<object?>(Helpers.GetInternalNode(node));
@@ -173,13 +173,13 @@ public class LifetimeTests
     [TestMethod]
     public void ValueKeepsNodeAlive()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         var (node, value) = Helpers.NotInlined(list, (list) =>
         {
             object value = new();
             var node = list.AddLast(value);
-            return (new WeakReference<ConcurrentWeakList<object>.Node>(node), value);
+            return (new WeakReference<WeakList<object>.Node>(node), value);
         });
 
         Helpers.ForceGC();
@@ -194,14 +194,14 @@ public class LifetimeTests
     [TestMethod]
     public void ClearAllowsNodeToDie()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         var nodeWeakRef = Helpers.NotInlined(list, (list) =>
         {
             object value = new();
             var node = list.AddLast(value);
             list.Clear();
-            return new WeakReference<ConcurrentWeakList<object>.Node>(node);
+            return new WeakReference<WeakList<object>.Node>(node);
         });
 
         Helpers.ForceGC();
@@ -214,14 +214,14 @@ public class LifetimeTests
     [TestMethod]
     public void DisposeAllowsNodeToDie()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         var nodeWeakRef = Helpers.NotInlined(list, (list) =>
         {
             object value = new();
             var node = list.AddLast(value);
             list.Dispose();
-            return new WeakReference<ConcurrentWeakList<object>.Node>(node);
+            return new WeakReference<WeakList<object>.Node>(node);
         });
 
         Helpers.ForceGC();
@@ -236,10 +236,10 @@ public class LifetimeTests
     {
         var (listWeak, node) = Helpers.NotInlined(() =>
         {
-            ConcurrentWeakList<object> list = new();
+            WeakList<object> list = new();
             object value = new();
             var node = list.AddLast(value);
-            return (new WeakReference<ConcurrentWeakList<object>>(list), node);
+            return (new WeakReference<WeakList<object>>(list), node);
         });
 
         Helpers.ForceGC();
@@ -254,7 +254,7 @@ public class LifetimeTests
     [TestMethod]
     public void ValueKeepsKeptNodeAliveOnly()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         var (node1, node1InternalNode, node1InternalNodeHelper, node2, value) = Helpers.NotInlined(list, (list) =>
         {
@@ -265,10 +265,10 @@ public class LifetimeTests
             var node1InternalNodeHelper = new WeakReference<object?>(Helpers.GetInternalNodeFinalizeHelper(node1));
             node1.Dispose();
             return (
-                new WeakReference<ConcurrentWeakList<object>.Node>(node1),
+                new WeakReference<WeakList<object>.Node>(node1),
                 node1InternalNode,
                 node1InternalNodeHelper,
-                new WeakReference<ConcurrentWeakList<object>.Node>(node2),
+                new WeakReference<WeakList<object>.Node>(node2),
                 value);
         });
 

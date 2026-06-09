@@ -9,12 +9,12 @@ namespace Singulink.Collections;
 #pragma warning disable RCS1043 // Remove 'partial' modifier from type with a single part
 
 /// <content>
-/// Contains the <see cref="Node"/> nested type for <see cref="ConcurrentWeakList{T}"/>.
+/// Contains the <see cref="Node"/> nested type for <see cref="WeakList{T}"/>.
 /// </content>
-public sealed partial class ConcurrentWeakList<T>
+public sealed partial class WeakList<T>
 {
     /// <summary>
-    /// Represents a node in a <see cref="ConcurrentWeakList{T}" />.
+    /// Represents a node in a <see cref="WeakList{T}" />.
     /// </summary>
     /// <remarks>
     /// Holding a strong reference to a <see cref="Node" /> does not prevent the value it references from being garbage collected.
@@ -28,7 +28,7 @@ public sealed partial class ConcurrentWeakList<T>
         internal InternalNode? _internalNode;
 
         // Since we store the list here directly, we need to hold a weak ref back to Node from InternalNode:
-        internal readonly ConcurrentWeakList<T> _list;
+        internal readonly WeakList<T> _list;
 
         // Our doubly linked list state:
         internal Node? _prev;
@@ -42,7 +42,7 @@ public sealed partial class ConcurrentWeakList<T>
         internal bool _isRemoved;
 
         // Private constructor:
-        internal Node(InternalNode? internalNode, ConcurrentWeakList<T> list)
+        internal Node(InternalNode? internalNode, WeakList<T> list)
         {
             _internalNode = internalNode;
             _list = list;
@@ -51,7 +51,7 @@ public sealed partial class ConcurrentWeakList<T>
         /// <summary>
         /// Gets the list that this node belongs to, or used to belong to.
         /// </summary>
-        public ConcurrentWeakList<T> List
+        public WeakList<T> List
         {
             get
             {
@@ -123,7 +123,7 @@ public sealed partial class ConcurrentWeakList<T>
         }
 
         /// <summary>
-        /// Disposes the node, removing it from the <see cref="ConcurrentWeakList{T}" /> it belongs to.
+        /// Disposes the node, removing it from the <see cref="WeakList{T}" /> it belongs to.
         /// </summary>
         public void Dispose()
         {

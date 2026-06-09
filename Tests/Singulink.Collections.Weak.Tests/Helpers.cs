@@ -42,17 +42,17 @@ internal static class Helpers
     private static class GetInternalNodeHelpers<T> where T : class
     {
         public static readonly MethodInfo _GetInternalNodeHelperMethod
-            = typeof(ConcurrentWeakList<T>.Node).GetMethod("GetInternalNodeHelper", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            = typeof(WeakList<T>.Node).GetMethod("GetInternalNodeHelper", BindingFlags.NonPublic | BindingFlags.Instance)!;
         public static readonly FieldInfo _InternalNodeField
-            = typeof(ConcurrentWeakList<T>.Node).GetField("_internalNode", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            = typeof(WeakList<T>.Node).GetField("_internalNode", BindingFlags.NonPublic | BindingFlags.Instance)!;
     }
 
-    public static object? GetInternalNode<T>(ConcurrentWeakList<T>.Node node) where T : class
+    public static object? GetInternalNode<T>(WeakList<T>.Node node) where T : class
     {
         return GetInternalNodeHelpers<T>._InternalNodeField.GetValue(node);
     }
 
-    public static object? GetInternalNodeFinalizeHelper<T>(ConcurrentWeakList<T>.Node node) where T : class
+    public static object? GetInternalNodeFinalizeHelper<T>(WeakList<T>.Node node) where T : class
     {
         return GetInternalNodeHelpers<T>._GetInternalNodeHelperMethod.Invoke(node, []);
     }
