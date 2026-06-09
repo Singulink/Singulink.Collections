@@ -21,7 +21,7 @@ namespace Singulink.Collections;
 /// small number of items are stored.</para>
 /// <para>Note: Highly contested scenarios may experience significant practical performance degradation due to lock contention, be aware of this when using in
 /// such environments.</para>
-/// <para>Note: All provided big O runtimes are strict, but those above O(log n) assume the case where no new nodes were added by another thread during the
+/// <para>Note: All provided big O runtimes are strict, but those above O(1) assume the case where no new nodes were added by another thread during the
 /// operation - if new nodes were added concurrently, it may cause the operation to take longer than expected (e.g., if a concurrent operation happens to
 /// always add a new node just after an enumeration's current node, then it will have to loop through all of those until it gets past them).</para>
 /// <para>For optimal performance, avoid letting the finalizer run; instead, dispose the list explicitly or clear it - otherwise, the finalizer thread may be
@@ -148,7 +148,7 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     }
 
     /// <summary>
-    /// Adds a value to the start of the list - takes O(log n) time.
+    /// Adds a value to the start of the list - takes O(1) time.
     /// </summary>
     /// <exception cref="ArgumentNullException">If the value is null.</exception>
     /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
@@ -161,7 +161,7 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     }
 
     /// <summary>
-    /// Adds a value to the end of the list - takes O(log n) time.
+    /// Adds a value to the end of the list - takes O(1) time.
     /// </summary>
     /// <exception cref="ArgumentNullException">If the value is null.</exception>
     /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
@@ -174,12 +174,12 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     }
 
     /// <summary>
-    /// Adds a value before the specified node of the list - takes O(log n) time.
+    /// Adds a value before the specified node of the list - takes O(1) time.
     /// </summary>
     /// <remarks>
     /// <para>The <see cref="AddBefore(Node, T)" /> override behaves as if <paramref name="allowBeforeRemovedNode"/> is <see langword="true" />.</para>
     /// <para>If a node has been removed, multiple adds near it might result in inconsistent ordering compared to if it was still in the list.</para>
-    /// <para>If adding next to a removed node, then the O(log n) runtime is no longer guaranteed.</para>
+    /// <para>If adding next to a removed node, then the O(1) runtime is no longer guaranteed.</para>
     /// </remarks>
     /// <exception cref="ArgumentNullException">If the value is null.</exception>
     /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
@@ -195,12 +195,12 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     }
 
     /// <summary>
-    /// Adds a value after the specified node of the list - takes O(log n) time.
+    /// Adds a value after the specified node of the list - takes O(1) time.
     /// </summary>
     /// <remarks>
     /// <para>The <see cref="AddAfter(Node, T)" /> override behaves as if <paramref name="allowAfterRemovedNode"/> is <see langword="true" />.</para>
     /// <para>If a node has been removed, multiple adds near it might result in inconsistent ordering compared to if it was still in the list.</para>
-    /// <para>If adding next to a removed node, then the O(log n) runtime is no longer guaranteed.</para>
+    /// <para>If adding next to a removed node, then the O(1) runtime is no longer guaranteed.</para>
     /// </remarks>
     /// <exception cref="ArgumentNullException">If the value is null.</exception>
     /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
@@ -298,11 +298,10 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     /// and <see cref="NodeEnumerator.AsEnumerable(bool, bool)" /> for controlling this behavior.
     /// </para>
     /// <para>
-    /// Given a list with no new nodes being added concurrently, full enumeration will take O(n log n) in the worst case, or O(n) time to complete in the
-    /// common case (no nodes removed concurrently).
+    /// Given a list with no new nodes being added concurrently, full enumeration takes O(n) time.
     /// </para>
     /// <para>
-    /// An individual enumeration step takes O(log n) time in the worst case, due to tree traversal.
+    /// An individual enumeration step takes O(1) time when not resuming from a removed node.
     /// </para>
     /// <para>
     /// These big O runtimes assume no nodes being added concurrently, see <see cref="ConcurrentWeakList{T}" /> for remarks about that case.
@@ -436,7 +435,7 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     }
 
     /// <summary>
-    /// Removes the specified node from the list if it is still in the list - takes O(log n) time.
+    /// Removes the specified node from the list if it is still in the list - takes O(1) time.
     /// </summary>
     /// <exception cref="InvalidOperationException">If the specified node never belonged to this list.</exception>
     public void Remove(Node node)
@@ -495,7 +494,7 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     }
 
     /// <summary>
-    /// Removes all nodes from the list - takes O(n log n) time if no new nodes are added concurrently.
+    /// Removes all nodes from the list - takes O(n) time if no new nodes are added concurrently.
     /// </summary>
     /// <remarks>
     /// <para>
@@ -507,7 +506,7 @@ public sealed partial class ConcurrentWeakList<T> : IEnumerable<T>, IDisposable 
     /// </remarks>
     public void Clear()
     {
-        // We clear by repeatedly deleting any node we can find until none are left - it is important we do it like this to ensure we only block for O(log n)
+        // We clear by repeatedly deleting any node we can find until none are left - it is important we do it like this to ensure we only block for O(1)
         // time at most at once. If the user wants to clear "properly", they should call Dispose and create a new instance.
 
         var enumerator = GetNodeEnumerator();

@@ -18,7 +18,7 @@ public class FuzzTests
         const int Operations = 10000;
         const int MaxValues = 50;
 
-        // Do random operations out of AddFirst, AddLast, AddBefore, AddAfter, Remove, InsertAt - we weight the add & remove groups equally, but if there's
+        // Do random operations out of AddFirst, AddLast, AddBefore, AddAfter, Remove - we weight the add & remove groups equally, but if there's
         // only 1 valid option, we always do that.
         for (int i = 0; i < Operations; i++)
         {
@@ -34,7 +34,7 @@ public class FuzzTests
                 object newValue = new();
                 int idx;
                 ConcurrentWeakList<object>.Node newNode;
-                switch (actualList.Count == 0 ? r.Next(3) : r.Next(5))
+                switch (actualList.Count == 0 ? r.Next(2) : r.Next(4))
                 {
                     case 0:
                         newNode = weakList.AddFirst(newValue);
@@ -45,12 +45,6 @@ public class FuzzTests
                         newNode = weakList.AddLast(newValue);
                         actualList.Add(newValue);
                         nodes.Add(newNode);
-                        break;
-                    case 2:
-                        idx = r.Next(actualList.Count + 1);
-                        newNode = weakList.UnsafeInsertAt(newValue, idx);
-                        actualList.Insert(idx, newValue);
-                        nodes.Insert(idx, newNode);
                         break;
                     case 3:
                         idx = r.Next(actualList.Count);
@@ -83,13 +77,6 @@ public class FuzzTests
             weakList.Count.ShouldBe(actualList.Count);
             weakList.ToList().ShouldBe(actualList);
             weakList.GetNodeEnumerator().AsEnumerable().ShouldBe(nodes);
-
-            // Check all the indices match up:
-            for (int j = 0; j < nodes.Count; j++)
-            {
-                var node = nodes[j];
-                weakList.UnsafeGetIndexOfNode(node).ShouldBe(j); // This also checks GetNodeAtImpl in debug mode, since GetIndexOfNode checks it.
-            }
         }
 
         // Keep values that are still in the list alive:

@@ -9,11 +9,11 @@ namespace Singulink.Collections;
 #pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
 
 /// <content>
-/// Contains the red-black tree implementation for <see cref="ConcurrentWeakList{T}"/>.
+/// Contains the linked list implementation for <see cref="ConcurrentWeakList{T}"/>.
 /// </content>
 public sealed partial class ConcurrentWeakList<T>
 {
-    // Helper to allocate a node - doesn't set it up in the red-black tree.
+    // Helper to allocate a node - doesn't link it into the linked list.
     // Note: callers must GC.KeepAlive the value until after it is fully linked in.
     // Note: callers must hold the lock for the list when calling this and have already checked for disposal.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -177,6 +177,9 @@ public sealed partial class ConcurrentWeakList<T>
             // Update links of previous and next nodes:
             prevNode._next = nextNode;
             nextNode?._prev = prevNode;
+
+            // If we removed the tail node, the previous node becomes the new tail (it's the last live node, or the pseudo-node if the list is now empty).
+            if (nextNode is null) _tail = prevNode;
 
             // Destroy the node (note: we leave prev & next links as they are so enumeration can continue):
             FinishDestroyNode(node);

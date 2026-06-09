@@ -143,7 +143,7 @@ public class TryUpdateTargetTests
         node2.TryUpdateTarget(newValue2).ShouldBeTrue();
 
         list.ToList().ShouldBe([value1, newValue2, value3]);
-        list.UnsafeGetIndexOfNode(node2).ShouldBe((nint)1);
+        list.GetNodeEnumerator().AsEnumerable().Skip(1).First().ShouldBe(node2);
 
         GC.KeepAlive(value1);
         GC.KeepAlive(value2);

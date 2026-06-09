@@ -465,7 +465,7 @@ public class ValueBasedOperationsTests
         list.Count.ShouldBe(2);
 
         // The second node should now be first
-        list.UnsafeGetNodeAt(0).ShouldBeSameAs(node2);
+        list.GetNodeEnumerator().AsEnumerable().First().ShouldBeSameAs(node2);
         list.ToList().ShouldBe([value, value]);
 
         GC.KeepAlive(value);

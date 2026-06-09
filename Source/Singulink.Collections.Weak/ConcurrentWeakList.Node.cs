@@ -112,7 +112,7 @@ public sealed partial class ConcurrentWeakList<T>
         {
             get
             {
-                // Note: when the lock is held, it is enough to just check the color, but otherwise checking IsRemoved is more up-to-date.
+                // Note: when the lock is held, it is enough to just check the _isRemoved flag, but otherwise checking _finalizeAttemptCount is more up-to-date.
                 var internalNode = _internalNode;
                 if (internalNode is null) return true;
                 Thread.MemoryBarrier(); // Ensure we get the latest value.

@@ -102,120 +102,6 @@ public class AddTests
     }
 
     [TestMethod]
-    public void InsertAtZeroInEmptyList()
-    {
-        var list = new ConcurrentWeakList<object>();
-        object value = new();
-
-        var node = list.UnsafeInsertAt(value, 0);
-
-        list.Count.ShouldBe(1);
-        node.Value.ShouldBeSameAs(value);
-        list.ToList().ShouldBe([value]);
-
-        GC.KeepAlive(value);
-    }
-
-    [TestMethod]
-    public void InsertAtZeroWithExistingItems()
-    {
-        var list = new ConcurrentWeakList<object>();
-        object value1 = new();
-        object value2 = new();
-        list.AddLast(value1);
-
-        var node = list.UnsafeInsertAt(value2, 0);
-
-        list.Count.ShouldBe(2);
-        node.Value.ShouldBeSameAs(value2);
-        list.ToList().ShouldBe([value2, value1]);
-
-        GC.KeepAlive(value1);
-        GC.KeepAlive(value2);
-    }
-
-    [TestMethod]
-    public void InsertAtEnd()
-    {
-        var list = new ConcurrentWeakList<object>();
-        object value1 = new();
-        object value2 = new();
-        list.AddLast(value1);
-
-        var node = list.UnsafeInsertAt(value2, 1);
-
-        list.Count.ShouldBe(2);
-        node.Value.ShouldBeSameAs(value2);
-        list.ToList().ShouldBe([value1, value2]);
-
-        GC.KeepAlive(value1);
-        GC.KeepAlive(value2);
-    }
-
-    [TestMethod]
-    public void InsertAtMiddle()
-    {
-        var list = new ConcurrentWeakList<object>();
-        object value1 = new();
-        object value2 = new();
-        object value3 = new();
-        list.AddLast(value1);
-        list.AddLast(value3);
-
-        var node = list.UnsafeInsertAt(value2, 1);
-
-        list.Count.ShouldBe(3);
-        node.Value.ShouldBeSameAs(value2);
-        list.ToList().ShouldBe([value1, value2, value3]);
-
-        GC.KeepAlive(value1);
-        GC.KeepAlive(value2);
-        GC.KeepAlive(value3);
-    }
-
-    [TestMethod]
-    public void InsertAtVariousIndices()
-    {
-        var list = new ConcurrentWeakList<object>();
-        object[] values = [new object(), new object(), new object(), new object(), new object()];
-
-        // Build list: [0], [1, 0], [1, 2, 0], [1, 2, 3, 0], [1, 4, 2, 3, 0]
-        list.AddLast(values[0]);
-        list.UnsafeInsertAt(values[1], 0);
-        list.UnsafeInsertAt(values[2], 1);
-        list.UnsafeInsertAt(values[3], 2);
-        list.UnsafeInsertAt(values[4], 1);
-
-        list.Count.ShouldBe(5);
-        list.ToList().ShouldBe([values[1], values[4], values[2], values[3], values[0]]);
-
-        GC.KeepAlive(values);
-    }
-
-    [TestMethod]
-    public void InsertAtNegativeIndexThrows()
-    {
-        var list = new ConcurrentWeakList<object>();
-        object value = new();
-
-        Should.Throw<ArgumentOutOfRangeException>(() => list.UnsafeInsertAt(value, -1));
-
-        GC.KeepAlive(value);
-    }
-
-    [TestMethod]
-    public void InsertAtOutOfBoundsIndexThrows()
-    {
-        var list = new ConcurrentWeakList<object>();
-        object value = new();
-        list.AddLast(new object());
-
-        Should.Throw<ArgumentOutOfRangeException>(() => list.UnsafeInsertAt(value, 2));
-
-        GC.KeepAlive(value);
-    }
-
-    [TestMethod]
     public void AddFirstNullThrows()
     {
         var list = new ConcurrentWeakList<object>();
@@ -229,14 +115,6 @@ public class AddTests
         var list = new ConcurrentWeakList<object>();
 
         Should.Throw<ArgumentNullException>(() => list.AddLast(null!));
-    }
-
-    [TestMethod]
-    public void InsertAtNullThrows()
-    {
-        var list = new ConcurrentWeakList<object>();
-
-        Should.Throw<ArgumentNullException>(() => list.UnsafeInsertAt(null!, 0));
     }
 
     [TestMethod]
@@ -295,15 +173,6 @@ public class AddTests
         list.Dispose();
 
         Should.Throw<ObjectDisposedException>(() => list.AddLast(new object()));
-    }
-
-    [TestMethod]
-    public void InsertAtOnDisposedListThrows()
-    {
-        var list = new ConcurrentWeakList<object>();
-        list.Dispose();
-
-        Should.Throw<ObjectDisposedException>(() => list.UnsafeInsertAt(new object(), 0));
     }
 
     [TestMethod]
@@ -410,7 +279,7 @@ public class AddTests
 
         newNode1.ShouldNotBeNull();
         list.Count.ShouldBe(3);
-        list.UnsafeGetIndexOfNode(newNode1).ShouldBe((nint)1);
+        list.GetNodeEnumerator().AsEnumerable().Skip(1).First().ShouldBe(newNode1);
         list.ToList().ShouldBe([value1, newValue1, value3]);
 
         // Additional calls should still succeed (position not guaranteed after first, since base node is removed)
@@ -533,7 +402,7 @@ public class AddTests
 
         newNode1.ShouldNotBeNull();
         list.Count.ShouldBe(3);
-        list.UnsafeGetIndexOfNode(newNode1).ShouldBe((nint)1);
+        list.GetNodeEnumerator().AsEnumerable().Skip(1).First().ShouldBe(newNode1);
         list.ToList().ShouldBe([value1, newValue1, value3]);
 
         // Additional calls should still succeed (position not guaranteed after first, since base node is removed)
@@ -593,16 +462,16 @@ public class AddTests
         list.AddFirst(value1);
         list.Count.ShouldBe(1);
 
-        list.AddLast(value2);
+        var node1 = list.AddLast(value2);
         list.Count.ShouldBe(2);
 
-        var node = list.UnsafeInsertAt(value3, 1);
+        var node2 = list.AddBefore(node1, value3);
         list.Count.ShouldBe(3);
 
-        list.AddBefore(node, value4);
+        list.AddBefore(node2, value4);
         list.Count.ShouldBe(4);
 
-        list.AddAfter(node, value5);
+        list.AddAfter(node2, value5);
         list.Count.ShouldBe(5);
 
         GC.KeepAlive(value1);
@@ -652,7 +521,8 @@ public class AddTests
         var values = new List<object>();
         var expectedOrder = new List<object>();
 
-        for (int i = 0; i < 50; i++)
+        int i;
+        for (i = 0; i < 50; i++)
         {
             object frontValue = new();
             object backValue = new();
@@ -669,11 +539,12 @@ public class AddTests
         list.Count.ShouldBe(100);
         list.ToList().ShouldBe(expectedOrder);
 
-        // Verify nodes return correct values at each position
-        for (int i = 0; i < list.Count; i++)
+        // Verify we have them in the correct positions
+        i = 0;
+        foreach (object value in list.GetEnumerator())
         {
-            var node = list.UnsafeGetNodeAt(i);
-            node.Value.ShouldBeSameAs(expectedOrder[i]);
+            value.ShouldBeSameAs(expectedOrder[i]);
+            i++;
         }
 
         GC.KeepAlive(values);
@@ -682,16 +553,17 @@ public class AddTests
     [TestMethod]
     public void ComplexInsertionPattern_MiddleInsertions()
     {
-        // Build a list then insert many items in the middle to trigger rebalancing
+        // Build a list then insert many items in the middle to exercise mid-list linking
         var list = new ConcurrentWeakList<object>();
         var expectedOrder = new List<object>();
+        var nodes = new List<ConcurrentWeakList<object>.Node>();
 
         // First, add 20 items
         for (int i = 0; i < 20; i++)
         {
             object value = new();
             expectedOrder.Add(value);
-            list.AddLast(value);
+            nodes.Add(list.AddLast(value));
         }
 
         // Now insert 30 items at various middle positions
@@ -700,19 +572,17 @@ public class AddTests
             object value = new();
             int insertPos = (i % (expectedOrder.Count - 1)) + 1; // Always insert somewhere in the middle
             expectedOrder.Insert(insertPos, value);
-            list.UnsafeInsertAt(value, insertPos);
+            nodes.Insert(insertPos, list.AddBefore(nodes[insertPos], value));
         }
 
         list.Count.ShouldBe(50);
         list.ToList().ShouldBe(expectedOrder);
 
-        // Verify nodes return correct values at each position
-        for (int i = 0; i < list.Count; i++)
-        {
-            var node = list.UnsafeGetNodeAt(i);
-            node.Value.ShouldBeSameAs(expectedOrder[i]);
-            node.IsRemoved.ShouldBeFalse();
-        }
+        // Verify nodes enumerate in the correct order and return correct values
+        var nodeList = list.GetNodeEnumerator().AsEnumerable().ToList();
+        nodes.SequenceEqual(nodeList).ShouldBeTrue();
+        expectedOrder.SequenceEqual(nodeList.Select((x) => x.Value)).ShouldBeTrue();
+        nodeList.Any((x) => x.IsRemoved).ShouldBeFalse();
 
         GC.KeepAlive(expectedOrder);
     }
@@ -748,16 +618,13 @@ public class AddTests
         list.Count.ShouldBe(41);
         list.ToList().ShouldBe(expectedOrder);
 
-        // Verify nodes return correct values at each position
-        for (int i = 0; i < list.Count; i++)
-        {
-            var node = list.UnsafeGetNodeAt(i);
-            node.Value.ShouldBeSameAs(expectedOrder[i]);
-            node.IsRemoved.ShouldBeFalse();
-        }
+        // Verify nodes enumerate in the correct order and return correct values
+        var nodesList = list.GetNodeEnumerator().AsEnumerable().ToList();
+        expectedOrder.SequenceEqual(nodesList.Select((x) => x.Value)).ShouldBeTrue();
+        nodesList.Any((x) => x.IsRemoved).ShouldBeFalse();
 
         // Verify anchor is still at the expected position
-        list.UnsafeGetIndexOfNode(anchorNode).ShouldBe((nint)anchorIndex);
+        nodesList.IndexOf(anchorNode).ShouldBe(anchorIndex);
 
         GC.KeepAlive(expectedOrder);
     }
@@ -765,7 +632,7 @@ public class AddTests
     [TestMethod]
     public void ComplexInsertionAndRemovalPattern()
     {
-        // Insert and remove in a pattern that exercises tree rebalancing
+        // Insert and remove in a pattern that exercises linked-list relinking
         var list = new ConcurrentWeakList<object>();
         var values = new List<object>();
         var nodes = new List<ConcurrentWeakList<object>.Node>();
@@ -779,9 +646,16 @@ public class AddTests
         }
 
         // Remove every 3rd node
+        List<ConcurrentWeakList<object>.Node> removedNodes = new();
         for (int i = 0; i < nodes.Count; i += 3)
         {
             list.Remove(nodes[i]);
+            removedNodes.Add(nodes[i]);
+        }
+
+        foreach (var node in removedNodes)
+        {
+            nodes.Remove(node);
         }
 
         // Insert new items at various positions
@@ -789,17 +663,17 @@ public class AddTests
         {
             object value = new();
             values.Add(value);
-            list.UnsafeInsertAt(value, (i * 2) % list.Count);
+            int insertPos = (int)((i * 2) % list.Count);
+            var nodeAtPos = nodes[insertPos];
+            nodes.Insert(insertPos, list.AddBefore(nodeAtPos, value));
         }
 
         // Verify remaining structure - nodes match ToList output
         var listContents = list.ToList();
-        for (int i = 0; i < list.Count; i++)
-        {
-            var node = list.UnsafeGetNodeAt(i);
-            node.Value.ShouldBeSameAs(listContents[i]);
-            node.IsRemoved.ShouldBeFalse();
-        }
+        var nodeList = list.GetNodeEnumerator().AsEnumerable().ToList();
+        listContents.SequenceEqual(nodeList.Select((x) => x.Value)).ShouldBeTrue();
+        nodeList.Any((x) => x.IsRemoved).ShouldBeFalse();
+        nodeList.SequenceEqual(nodes).ShouldBeTrue();
 
         GC.KeepAlive(values);
     }
