@@ -181,30 +181,44 @@ public class Benchs
         list.Remove(node);
     }
 
+#if NET
+    private static ref T GetArrayDataReference<T>(T[] array) => ref MemoryMarshal.GetArrayDataReference(array);
+#else
+    private static ref T GetArrayDataReference<T>(T[] array) => ref MemoryMarshal.GetReference((ReadOnlySpan<T>)array);
+#endif
+
     [Benchmark]
     public void AddRemoveNodeRandomPosition()
     {
+        // Note: we're using unsafe code here to ensure we're not measuring the array access bounds checks also.
         WeakList<object> list = _list;
-        var node = list.UnsafeInsertAt(_value, _random.Next(0, N + 1));
+        int idx = _random.Next(0, N + 1);
+        WeakList<object>.Node? node;
+        ref var node0 = ref GetArrayDataReference(_nodes);
+        if (idx == N) node = list.AddAfter(Unsafe.Add(ref node0, (uint)(N - 1)), _value);
+        else if (idx == 0) node = list.AddBefore(node0, _value);
+        else if (_random.Next(2) == 0) node = list.AddBefore(Unsafe.Add(ref node0, (uint)idx), _value);
+        else node = list.AddAfter(Unsafe.Add(ref node0, (uint)(idx - 1)), _value);
         list.Remove(node);
     }
 
     [Benchmark]
     public void AddRemoveNodeRandomPositionEach()
     {
+        // Note: we're using unsafe code here to ensure we're not measuring the array access bounds checks also.
+        // Note: we're not preserving the order properly in _nodes for this method, but that is fine for this benchmark (others will re-instantiate it).
         WeakList<object> list = _list;
         int n = N;
         if (n == 0) return;
         int idx = _random.Next(0, n);
-#if NET
-        static ref T GetArrayDataReference<T>(T[] array) => ref MemoryMarshal.GetArrayDataReference(array);
-#else
-        static ref T GetArrayDataReference<T>(T[] array) => ref MemoryMarshal.GetReference((ReadOnlySpan<T>)array);
-#endif
         ref var nodeSlot = ref Unsafe.Add(ref GetArrayDataReference(_nodes), (uint)idx)!;
         object oldValue = Unsafe.Add(ref GetArrayDataReference(_values), (uint)idx)!;
+        int otherNodeIndex = _random.Next(0, n - 1);
+        otherNodeIndex += otherNodeIndex >= idx ? 1 : 0; // This particular construction is handled by roslyn to not branch, which reduces potential variation.
+        var otherNode = Unsafe.Add(ref GetArrayDataReference(_nodes), (uint)otherNodeIndex);
         list.Remove(nodeSlot);
-        nodeSlot = list.UnsafeInsertAt(oldValue, _random.Next(0, n));
+        if (_random.Next(2) == 0) nodeSlot = list.AddBefore(otherNode, oldValue);
+        else nodeSlot = list.AddAfter(otherNode, oldValue);
     }
 
     [Benchmark]
