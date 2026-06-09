@@ -24,12 +24,6 @@ namespace Singulink.Collections;
 /// <para>For optimal performance, avoid letting the finalizer run; instead, dispose the list explicitly or clear it - otherwise, the finalizer thread may be
 /// blocked for a significant amount of time if the list is large.</para>
 /// <para>Note: This type is not safe to resurrect, or use in a partially finalized state.</para>
-/// <para>Note: On .NET Standard, all associated memory may not immediately (or promptly) removed when a value is removed from the list, this is due to
-/// <see cref="ConditionalWeakTable{TKey, TValue}.Remove(TKey)" /> taking O(n) time, and thus scaling terribly in the common case of the value dying quickly
-/// afterwards, and being problematic for how long our internal lock would need to be held, so don't expect all helper memory to be freed until the value is
-/// collected by the garbage collector (it may still be around after <see cref="Clear" /> even). This means that potentially O(1) memory may be around
-/// indefinitely for each value added, until the value or this list is collected by the garbage collector, or <see cref="Dispose" /> is called. This does not
-/// apply to .NET 6+, as it has DependentHandle available, which does not have this issue.</para>
 /// </remarks>
 public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : class
 {

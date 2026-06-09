@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <!--Note: keeping both the .NET 6.0 and .NET Framework 4.8 targets is important, as they test the .NET Standard 2.1 and 2.0 implementations respectively.-->
     <TargetFrameworks>net48;net6.0;net8.0;net9.0;net10.0</TargetFrameworks>
   </PropertyGroup>
 

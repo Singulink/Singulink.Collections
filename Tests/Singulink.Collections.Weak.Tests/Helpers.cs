@@ -57,6 +57,28 @@ internal static class Helpers
         return GetInternalNodeHelpers<T>._GetInternalNodeHelperMethod.Invoke(node, []);
     }
 
+    /// <summary>
+    /// Returns whether the netstandard CWT-based tracking table currently has an entry for <paramref name="value"/>, or <see langword="null"/>
+    /// when the running configuration does not use the CWT path (e.g. the .NET DependentHandle path, where there is no CWT).
+    /// </summary>
+    public static bool? CwtContainsValue<T>(WeakList<T> list, T value) where T : class
+    {
+        var field = typeof(WeakList<T>).GetField("_cwt", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        if (field is null)
+            return null; // .NET path uses DependentHandle; there is no CWT.
+
+        object? cwt = field.GetValue(list);
+
+        if (cwt is null)
+            return false;
+
+        var tryGetValue = cwt.GetType().GetMethod("TryGetValue")!;
+        object?[] args = [value, null];
+
+        return (bool)tryGetValue.Invoke(cwt, args)!;
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static void Consume<T>(ref T value) { }
 }

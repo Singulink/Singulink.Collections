@@ -139,11 +139,24 @@ public sealed partial class WeakList<T>
                         _dependentHandle.Dispose();
                         _trackingInfoHandle.Dispose();
 #else
+                        // Capture the value (through its weak handle) before disposing it; if it is still alive we use it to evict the CWT entry below.
+                        var value = _value.TryGetTarget<T>();
                         _value.Dispose();
 
                         // Ensure removed from CWT tracking stuff (the remove logic might have missed it, since we're not necessarily alive anymore, so it
                         // might not be able to look up these lists):
-                        if (_cwtNode.TryGetTarget<LinkedListNode<InternalNodeFinalizeHelper>>() is { } cwtNode) cwtNode.List?.Remove(cwtNode);
+                        if (_cwtNode.TryGetTarget<LinkedListNode<InternalNodeFinalizeHelper>>() is { } cwtNode)
+                        {
+                            // Note: removing the node nulls cwtNode.List, so capture the per-value list first.
+                            var perValueList = cwtNode.List;
+                            perValueList?.Remove(cwtNode);
+
+                            // If the value is still alive and this was its last node, evict the now-empty per-value entry from the CWT so it does not linger
+                            // until the value is collected (it survives Clear() / Remove() otherwise).
+                            // Note: if the value is already dead, the CWT entry will already automatically remove itself at some point.
+                            if (value is not null && perValueList is { Count: 0 }) list._cwt?.Remove(value);
+                        }
+
                         _cwtNode.Dispose();
 #endif
                     }

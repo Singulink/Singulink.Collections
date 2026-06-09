@@ -283,4 +283,59 @@ public class LifetimeTests
         GC.KeepAlive(value);
         GC.KeepAlive(list);
     }
+
+    [TestMethod]
+    public void RemovingNodesEvictsCwtEntriesWhileValuesStayAlive()
+    {
+        WeakList<object> list = new();
+        var values = new List<object>();
+        var nodes = new List<WeakList<object>.Node>();
+
+        for (int i = 0; i < 100; i++)
+        {
+            object value = new();
+            values.Add(value);
+            nodes.Add(list.AddLast(value));
+        }
+
+        foreach (object value in values)
+            Helpers.CwtContainsValue(list, value)?.ShouldBeTrue();
+
+        foreach (var node in nodes)
+            list.Remove(node);
+
+        // The per-value CWT entries should be evicted immediately even though the values are still alive, rather than lingering until the
+        // values are eventually collected.
+        foreach (object value in values)
+            Helpers.CwtContainsValue(list, value)?.ShouldBeFalse();
+
+        GC.KeepAlive(values);
+        GC.KeepAlive(list);
+    }
+
+    [TestMethod]
+    public void ClearEvictsCwtEntriesWhileValuesStayAlive()
+    {
+        WeakList<object> list = new();
+        var values = new List<object>();
+
+        for (int i = 0; i < 100; i++)
+        {
+            object value = new();
+            values.Add(value);
+            list.AddLast(value);
+        }
+
+        foreach (object value in values)
+            Helpers.CwtContainsValue(list, value)?.ShouldBeTrue();
+
+        list.Clear();
+
+        // Clearing the list should evict the per-value CWT entries immediately even though the values are still alive.
+        foreach (object value in values)
+            Helpers.CwtContainsValue(list, value)?.ShouldBeFalse();
+
+        GC.KeepAlive(values);
+        GC.KeepAlive(list);
+    }
 }
