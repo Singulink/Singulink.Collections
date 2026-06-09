@@ -28,7 +28,7 @@ public sealed partial class ConcurrentWeakList<T>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private LockScope EnterLock(out bool wasDisposed)
     {
-        if (_root == null)
+        if (_head == null)
         {
             wasDisposed = true;
             return default;
@@ -39,7 +39,7 @@ public sealed partial class ConcurrentWeakList<T>
         {
             if (_locker.TryEnter())
             {
-                wasDisposed = _root == null;
+                wasDisposed = _head == null;
                 if (wasDisposed) _locker.Exit();
                 return wasDisposed ? default : new LockScope(_locker, this);
             }
@@ -51,7 +51,7 @@ public sealed partial class ConcurrentWeakList<T>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private LockScope TryEnterLock(out bool wasDisposed, out bool entered)
     {
-        if (_root == null)
+        if (_head == null)
         {
             wasDisposed = true;
             entered = false;
@@ -60,7 +60,7 @@ public sealed partial class ConcurrentWeakList<T>
 
         if (_locker.TryEnter())
         {
-            wasDisposed = _root == null;
+            wasDisposed = _head == null;
             entered = !wasDisposed;
             if (wasDisposed) _locker.Exit();
             return wasDisposed ? default : new LockScope(_locker, this);

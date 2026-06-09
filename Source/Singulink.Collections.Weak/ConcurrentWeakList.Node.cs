@@ -30,24 +30,16 @@ public sealed partial class ConcurrentWeakList<T>
         // Since we store the list here directly, we need to hold a weak ref back to Node from InternalNode:
         internal readonly ConcurrentWeakList<T> _list;
 
-        // Our red-black tree state:
-        internal Node? _parent;
-        internal Node? _left;
-        internal Node? _right;
-        internal Color _color;
+        // Our doubly linked list state:
+        internal Node? _prev;
+        internal Node? _next;
         internal bool _isPseudoNode;
-        internal nint _subtreeSize; // The size of this node's subtree, including itself.
         internal ulong _version;  // The version of the list when this node was added.
-        internal enum Color : byte
-        {
-            Black,
-            Red,
 
-            // Used to mark nodes that have been removed but are still alive for enumerations.
-            // When set, the _right node is set to the next node in the list, so that we can continue enumerating.
-            // Also, _left is set to the node that was previously ordered before this one, so that we can go backwards.
-            Removed,
-        }
+        // Used to mark nodes that have been removed but are still alive for enumerations.
+        // When set, the _next node is set to the next node in the list, so that we can continue enumerating.
+        // Also, _prev is set to the node that was previously ordered before this one, so that we can go backwards.
+        internal bool _isRemoved;
 
         // Private constructor:
         internal Node(InternalNode? internalNode, ConcurrentWeakList<T> list)
@@ -81,7 +73,7 @@ public sealed partial class ConcurrentWeakList<T>
             {
                 // Note: we must take the lock here, as otherwise we could be partway through disposing or updating the value:
                 // Note: we technically still could be partway through disposing after taking the lock, but not in a problematic way.
-                if (_list._root is null) return null;
+                if (_list._head is null) return null;
                 using var scope = _list.EnterLock(out bool wasDisposed);
                 if (wasDisposed) return null;
                 var internalNode = _internalNode;

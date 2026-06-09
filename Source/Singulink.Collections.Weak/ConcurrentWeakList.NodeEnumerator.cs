@@ -84,8 +84,8 @@ public sealed partial class ConcurrentWeakList<T>
             // Since there's no way to guarantee that the non-removed node is still in the list by the time the caller uses it, we just try our best.
             if (isRemovedNode && newNode is not null)
             {
-                do newNode = newNode._right;
-                while (newNode is { _color: Node.Color.Removed } or { IsRemoved: true });
+                do newNode = newNode._next;
+                while (newNode is { _isRemoved: true } or { IsRemoved: true });
             }
 
             // Set the new node and return:
@@ -123,8 +123,8 @@ public sealed partial class ConcurrentWeakList<T>
             // Since there's no way to guarantee that the non-removed node is still in the list by the time the caller uses it, we just try our best.
             if (isRemovedNode && newNode is not null)
             {
-                do newNode = newNode._left;
-                while (newNode is { _color: Node.Color.Removed } or { IsRemoved: true });
+                do newNode = newNode._prev;
+                while (newNode is { _isRemoved: true } or { IsRemoved: true });
             }
 
             // Set the new node and return:
@@ -156,7 +156,7 @@ public sealed partial class ConcurrentWeakList<T>
         [MemberNotNullWhen(false, nameof(_list))]
         internal readonly bool IsDisposed()
         {
-            return _list is null or { _root: null };
+            return _list is null or { _head: null };
         }
     }
 }
