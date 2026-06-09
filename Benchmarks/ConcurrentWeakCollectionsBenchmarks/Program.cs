@@ -213,6 +213,15 @@ public class Benchs
         int idx = _random.Next(0, n);
         ref var nodeSlot = ref Unsafe.Add(ref GetArrayDataReference(_nodes), (uint)idx)!;
         object oldValue = Unsafe.Add(ref GetArrayDataReference(_values), (uint)idx)!;
+
+        if (n == 1)
+        {
+            // Only one node in the list, so there is no other node to position relative to; re-add it at the start/end instead.
+            list.Remove(nodeSlot);
+            nodeSlot = _random.Next(2) == 0 ? list.AddFirst(oldValue) : list.AddLast(oldValue);
+            return;
+        }
+
         int otherNodeIndex = _random.Next(0, n - 1);
         otherNodeIndex += otherNodeIndex >= idx ? 1 : 0; // This particular construction is handled by roslyn to not branch, which reduces potential variation.
         var otherNode = Unsafe.Add(ref GetArrayDataReference(_nodes), (uint)otherNodeIndex);
