@@ -115,8 +115,8 @@ public sealed partial class WeakList<T>
                 // Note: when the lock is held, it is enough to just check the _isRemoved flag, but otherwise checking _finalizeAttemptCount is more up-to-date.
                 var internalNode = _internalNode;
                 if (internalNode is null) return true;
-                Thread.MemoryBarrier(); // Ensure we get the latest value.
-                bool result = Volatile.Read(ref internalNode._finalizeAttemptCount) == -1;
+                Thread.MemoryBarrier(); // Ensure we get the latest value (this stops the read from being re-ordered earlier, but it can still re-order to later).
+                bool result = internalNode._finalizeAttemptCount == -1;
                 GC.KeepAlive(_list);
                 return result;
             }

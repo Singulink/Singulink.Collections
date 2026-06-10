@@ -124,7 +124,6 @@ public sealed partial class WeakList<T>
                 if (entered)
                 {
                     _finalizeAttemptCount = -1;
-                    Thread.MemoryBarrier(); // Mark as removed.
                     try
                     {
                         list.DeleteHelper(node);
@@ -166,7 +165,7 @@ public sealed partial class WeakList<T>
                     // Let's just try again later as it might not be contested then (up to 5 times):
                     _finalizeAttemptCount++;
                     implHandle.Handle = original.Handle;
-                    Thread.MemoryBarrier(); // Ensure the handle gets updated before we exit the lock.
+                    Thread.MemoryBarrier(); // Ensure the handle gets updated before we exit the method (we don't hold the lock here).
                     return false;
                 }
             }
@@ -174,7 +173,6 @@ public sealed partial class WeakList<T>
             {
                 // Mark as removed even though list is disposed - callers may still check IsRemoved:
                 _finalizeAttemptCount = -1;
-                Thread.MemoryBarrier(); // Mark as removed.
 
                 // Dispose these in here, as we don't pass out "wasDisposed" to callers, which means they can't check for that (which is fine to leave to
                 // dispose there, but they can't really check for that):
@@ -259,7 +257,6 @@ public sealed partial class WeakList<T>
                 impl.Dispose();
                 GC.SuppressFinalize(internalNodeHelper);
                 GC.KeepAlive(internalNodeHelper); // Ensure it's alive long enough that we don't run the finalizer.
-                Thread.MemoryBarrier(); // Ensure the removed mark (_finalizeAttemptCount) is visible before we exit the lock.
             }
             else
             {

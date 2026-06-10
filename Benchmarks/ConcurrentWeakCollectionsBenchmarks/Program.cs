@@ -195,7 +195,8 @@ public class Benchs
         int idx = _random.Next(0, N + 1);
         WeakList<object>.Node? node;
         ref var node0 = ref GetArrayDataReference(_nodes);
-        if (idx == N) node = list.AddAfter(Unsafe.Add(ref node0, (uint)(N - 1)), _value);
+        if (N == 0) node = _random.Next(2) == 0 ? list.AddFirst(_value) : list.AddLast(_value);
+        else if (idx == N) node = list.AddAfter(Unsafe.Add(ref node0, (uint)(N - 1)), _value);
         else if (idx == 0) node = list.AddBefore(node0, _value);
         else if (_random.Next(2) == 0) node = list.AddBefore(Unsafe.Add(ref node0, (uint)idx), _value);
         else node = list.AddAfter(Unsafe.Add(ref node0, (uint)(idx - 1)), _value);

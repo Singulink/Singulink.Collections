@@ -35,9 +35,6 @@ public sealed partial class WeakList<T>
         internalNode._cwtNode = WeakHandle.Alloc(_cwt.GetValue(value, static _ => []).AddLast(internalNodeHelper));
 #endif
         GC.KeepAlive(internalNode);
-        GC.KeepAlive(internalNodeHelper);
-
-        // Note: our memory barrier to ensure the write is visible before the lock exits is in the caller (ManualAdd).
         _version++;
         Debug.Assert(_version > 0, "Version overflowed.");
         node._version = _version;
@@ -74,10 +71,6 @@ public sealed partial class WeakList<T>
             newNode._next = nextNode;
             prevNode._next = newNode;
             nextNode?._prev = newNode;
-
-            // Insert a memory barrier, to ensure that the new size & version are visible by the time the lock exits, to threads that do not re-enter it;
-            // otherwise, nothing stops the write from being re-ordered after the lock is released.
-            Thread.MemoryBarrier();
 
             // Return our node:
             return newNode;
@@ -143,10 +136,7 @@ public sealed partial class WeakList<T>
     private void FinishDestroyNode(Node n)
     {
         // Update size:
-        // Note: we need to use a memory barrier here, to ensure that the new size is visible by the time the lock exits, to threads that do not re-enter it;
-        // otherwise, nothing stops the write from being re-ordered after the lock is released.
         _size--;
-        Thread.MemoryBarrier();
 
         // Mark node as removed for enumerators:
         n._isRemoved = true;
@@ -270,12 +260,11 @@ public sealed partial class WeakList<T>
         DebugAssertNotDisposed();
 
         // Mark disposed:
-        // Note: we want other threads to be able to see it as soon as (in program order) we release the lock, even if they don't take it; hence the memory
-        // barrier.
+        // Note: we want other threads to be able to see it as soon as (in program order) we release the lock, even if they don't take it. Luckily, the Exit
+        // method gives us volatile write barrier semantics, which means that the write here must be visible by the time it is released.
         var oldRoot = _head;
         _head = null;
         _tail = null;
-        Thread.MemoryBarrier();
 
         // Exit the lock held by this thread now so that other threads can proceed:
         while (_locker.IsHeldByCurrentThread) _locker.Exit();

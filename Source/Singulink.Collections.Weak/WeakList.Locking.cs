@@ -41,7 +41,6 @@ public sealed partial class WeakList<T>
             {
                 wasDisposed = _head == null;
                 if (wasDisposed) _locker.Exit();
-                else Thread.MemoryBarrier(); // Most of the methods rely on size or version, so insert a memory barrier to ensure we cannot read stale values for those.
                 return wasDisposed ? default : new LockScope(_locker, this);
             }
 
@@ -64,7 +63,6 @@ public sealed partial class WeakList<T>
             wasDisposed = _head == null;
             entered = !wasDisposed;
             if (wasDisposed) _locker.Exit();
-            else Thread.MemoryBarrier(); // Most of the methods rely on size or version, so insert a memory barrier to ensure we cannot read stale values for those.
             return wasDisposed ? default : new LockScope(_locker, this);
         }
 

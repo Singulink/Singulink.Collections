@@ -112,7 +112,7 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     {
         get
         {
-            // Note: we need an memory barrier here, since otherwise the read might not be sequentially consistent (volatile alone is not enough).
+            // Note: we need an memory barrier & volatile read here, since otherwise the read might not be sequentially consistent.
             Thread.MemoryBarrier();
             nint size = Volatile.Read(ref _size);
             Throw.IfDisposed(_head == null, typeof(WeakList<T>));
@@ -129,7 +129,7 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     {
         get
         {
-            // Note: we need an memory barrier here, since otherwise the read might not be sequentially consistent (volatile alone is not enough).
+            // Note: we need an memory barrier & volatile read here, since otherwise the read might not be sequentially consistent.
             Thread.MemoryBarrier();
             ulong version = Volatile.Read(ref _version);
             Throw.IfDisposed(_head == null, typeof(WeakList<T>));
@@ -585,9 +585,4 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
         if (!wr.TryGetTarget(out var result)) return null;
         return result;
     }
-
-    [DoesNotReturn]
-    [StackTraceHidden]
-    private static void ThrowUnreachableExceptionForOverIterated() =>
-        throw new UnreachableException("The data structure has reached a corrupted state that would cause a deadlock, so the operation was aborted.");
 }
