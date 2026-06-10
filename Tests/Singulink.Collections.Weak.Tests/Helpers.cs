@@ -41,20 +41,25 @@ internal static class Helpers
 
     private static class GetInternalNodeHelpers<T> where T : class
     {
+        // The node state now lives in a NodeState struct stored in the Node's '_impl' field.
+        public static readonly FieldInfo _ImplField
+            = typeof(WeakList<T>.Node).GetField("_impl", BindingFlags.NonPublic | BindingFlags.Instance)!;
         public static readonly MethodInfo _GetInternalNodeHelperMethod
-            = typeof(WeakList<T>.Node).GetMethod("GetInternalNodeHelper", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            = _ImplField.FieldType.GetMethod("GetInternalNodeHelper", BindingFlags.Public | BindingFlags.Instance)!;
         public static readonly FieldInfo _InternalNodeField
-            = typeof(WeakList<T>.Node).GetField("_internalNode", BindingFlags.NonPublic | BindingFlags.Instance)!;
+            = _ImplField.FieldType.GetField("_internalNode", BindingFlags.NonPublic | BindingFlags.Instance)!;
     }
 
     public static object? GetInternalNode<T>(WeakList<T>.Node node) where T : class
     {
-        return GetInternalNodeHelpers<T>._InternalNodeField.GetValue(node);
+        object impl = GetInternalNodeHelpers<T>._ImplField.GetValue(node)!;
+        return GetInternalNodeHelpers<T>._InternalNodeField.GetValue(impl);
     }
 
     public static object? GetInternalNodeFinalizeHelper<T>(WeakList<T>.Node node) where T : class
     {
-        return GetInternalNodeHelpers<T>._GetInternalNodeHelperMethod.Invoke(node, []);
+        object impl = GetInternalNodeHelpers<T>._ImplField.GetValue(node)!;
+        return GetInternalNodeHelpers<T>._GetInternalNodeHelperMethod.Invoke(impl, []);
     }
 
     /// <summary>
@@ -63,12 +68,22 @@ internal static class Helpers
     /// </summary>
     public static bool? CwtContainsValue<T>(WeakList<T> list, T value) where T : class
     {
-        var field = typeof(WeakList<T>).GetField("_cwt", BindingFlags.NonPublic | BindingFlags.Instance);
+        var containerValuesField = typeof(WeakList<T>).GetField("_containerValues", BindingFlags.NonPublic | BindingFlags.Instance);
+
+        if (containerValuesField is null)
+            return null;
+
+        object? containerValues = containerValuesField.GetValue(list);
+
+        if (containerValues is null)
+            return null;
+
+        var field = containerValues.GetType().GetField("_cwt", BindingFlags.NonPublic | BindingFlags.Instance);
 
         if (field is null)
             return null; // .NET path uses DependentHandle; there is no CWT.
 
-        object? cwt = field.GetValue(list);
+        object? cwt = field.GetValue(containerValues);
 
         if (cwt is null)
             return false;

@@ -4,11 +4,11 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 using Singulink.Collections.Utilities;
+using Singulink.Collections.WeakCollectionHelpers;
 
 namespace Singulink.Collections;
 
 #pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
-#pragma warning disable IDE0028 // Simplify collection initialization
 
 /// <summary>
 /// Represents a collection of weakly referenced values that maintains relative insertion order. This type is also automatically safe for concurrent access at
@@ -27,12 +27,8 @@ namespace Singulink.Collections;
 /// </remarks>
 public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : class
 {
-#if !NET
-    // No DependentHandle type on .NET Standard, so we store the values in a CWT instead:
-    // IMPORTANT: InternalNodeFinalizeHelper must not hold a strong reference to the CWT or WeakList, otherwise it will leak
-    // due to https://github.com/dotnet/runtime/issues/12255.
-    private ConditionalWeakTable<T, LinkedList<InternalNodeFinalizeHelper>>? _cwt = new();
-#endif
+    // These are the values we need for our weak tracking support.
+    private ContainerValues<T, Node, WeakList<T>, Node.NodeHelpers> _containerValues;
 
     // The head and tail nodes of the linked list:
     // Note: when not disposed, we always have at least one node (the pseudo-node), which is always ordered first.
@@ -45,29 +41,12 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     // value.
     private nint _size;
 
-    private readonly Lock _locker = new();
-
     // This allows us to track whether an item was added before or after an enumeration:
     private ulong _version;
-
-    // NOTE!!! For correctness, it's crucial that no finalizer accesses any managed values except through weak references, as otherwise they may be partially
-    // null-ed out already by the time the finalizer runs, leading to bugs - therefore, we carefully ensure we do all of that through weak references, while
-    // still ensuring that the finalizers can run & collect everything.
-    // We use this side-data structure on .NET (not standard) to allow us to still clean up nodes when the collection is collected.
-    // The way it works is that the collection hold a strong ref to the list, and so does the internal node, but the helper only holds it as weak. That way,
-    // while the collection is alive, it can modify the list, but once it's collected, the helper can find any InternalNodes that are still alive (if any),
-    // since they hold also hold a strong ref to the list; but it does not need to hold a strong reference to the linked list, which would be problematic.
-#if NET
-    private readonly InternalNodeTrackingInfo _internalNodes;
-    private readonly CleanupHelper _cleanupHelper;
-#endif
 
     // Helper to assert not disposed in Debug mode (doesn't check in Release mode, but still gives nullable analysis info):
     [MemberNotNull(nameof(_head))]
     [MemberNotNull(nameof(_tail))]
-#if !NET
-    [MemberNotNull(nameof(_cwt))]
-#endif
     partial void DebugAssertNotDisposed();
 #if DEBUG
     partial void DebugAssertNotDisposed()
@@ -75,7 +54,7 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
         Debug.Assert(_head is not null, "Object is disposed.");
         Debug.Assert(_tail is not null, "_tail should not be null since not disposed.");
 #if !NET
-        Debug.Assert(_cwt is not null, "_cwt should not be null since not disposed.");
+        Debug.Assert(_containerValues._cwt is not null, "Cwt should not be null since not disposed.");
 #endif
     }
 #endif
@@ -87,10 +66,7 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     {
         _head = new(null, this) { _isPseudoNode = true };
         _tail = _head;
-#if NET
-        _internalNodes = new([], new());
-        _cleanupHelper = new(WeakHandle.Alloc(_internalNodes));
-#endif
+        _containerValues = new();
     }
 
     /// <summary>
@@ -568,7 +544,7 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     // Throws if the wrong list, and returns true if the node is still in the list, or false if not.
     private bool CheckNode(Node n)
     {
-        if (n._list != this)
+        if (n.ListDirect != this)
         {
             [StackTraceHidden]
             static void Throw() => throw new InvalidOperationException("The specified node does not belong to this list.");
@@ -576,13 +552,5 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
         }
 
         return !n._isRemoved;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static TValue? TryGetValue<TValue>(WeakReference<TValue>? wr) where TValue : class
-    {
-        if (wr is null) return null;
-        if (!wr.TryGetTarget(out var result)) return null;
-        return result;
     }
 }

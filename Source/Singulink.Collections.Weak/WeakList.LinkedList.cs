@@ -3,6 +3,7 @@ using System.Runtime;
 using System.Runtime.CompilerServices;
 
 using Singulink.Collections.Utilities;
+using Singulink.Collections.WeakCollectionHelpers;
 
 namespace Singulink.Collections;
 
@@ -20,21 +21,7 @@ public sealed partial class WeakList<T>
     private Node AllocNode(T value)
     {
         DebugAssertNotDisposed();
-        InternalNode internalNode = new();
-        Node node = new(internalNode, this);
-        InternalNodeFinalizeHelper internalNodeHelper = new();
-        internalNode._node = WeakHandle.Alloc(node);
-        internalNodeHelper._impl = StrongHandle.Alloc(internalNode);
-        node._internalNodeHelper = new(internalNodeHelper);
-#if NET
-        internalNode._dependentHandle = new DependentHandle(value, internalNodeHelper);
-        internalNode._finalizeHelperNode = WeakHandle.Alloc(_internalNodes.List.AddLast(node._internalNodeHelper));
-        internalNode._trackingInfoHandle = StrongHandle.Alloc(_internalNodes);
-#else
-        internalNode._value = WeakHandle.Alloc(value);
-        internalNode._cwtNode = WeakHandle.Alloc(_cwt.GetValue(value, static _ => []).AddLast(internalNodeHelper));
-#endif
-        GC.KeepAlive(internalNode);
+        Node node = new((value, new()), this);
         _version++;
         Debug.Assert(_version > 0, "Version overflowed.");
         node._version = _version;
@@ -142,10 +129,7 @@ public sealed partial class WeakList<T>
         n._isRemoved = true;
 
         // Note - we don't have to clean up the internal node, as it's only possible to get to this method from the method in that class that already.
-        Debug.Assert((n.GetInternalNodeHelper()?._impl.Handle).GetValueOrDefault() == IntPtr.Zero, "Should only be called through InternalNode's deletion.");
-
-        // Free node's reference to internal node finalizer helper:
-        n._internalNodeHelper = null;
+        Debug.Assert(n._impl.IsFinalizeHelperHandleZero(), "Should only be called through InternalNode's deletion.");
     }
 
     // The caller must hold the lock for the list when calling this and have already checked for disposal.
@@ -267,23 +251,10 @@ public sealed partial class WeakList<T>
         _tail = null;
 
         // Exit the lock held by this thread now so that other threads can proceed:
-        while (_locker.IsHeldByCurrentThread) _locker.Exit();
+        while (_containerValues._locker.IsHeldByCurrentThread) _containerValues._locker.Exit();
 
-        // Clean out resources:
-#if NET
-        _internalNodes.List.Clear();
-        _cleanupHelper.ListRef.Dispose();
-        GC.SuppressFinalize(_cleanupHelper);
-        GC.KeepAlive(_cleanupHelper);
-        GC.KeepAlive(_internalNodes);
-#else
-        // Note: on .NET Standard 2.0, there's no CWT.Clear(), so we just null it out and let the GC clean it up.
-#if NETSTANDARD2_1_OR_GREATER
-        _cwt.Clear();
-#endif
-        GC.KeepAlive(_cwt); // Ensure the CWT lives to here at least.
-        _cwt = null;
-#endif
+        // Clean out our container values
+        _containerValues.CleanOut();
 
         // Forget all nodes:
         var n = oldRoot;
@@ -294,14 +265,8 @@ public sealed partial class WeakList<T>
             n._prev = null;
             n._next = null;
 
-            // Finalizer is not critical here, other than our handles & marking removed, so clean those up and then suppress:
-            if (n.GetInternalNodeHelper() is { } helper)
-            {
-                n._internalNode?.EarlyDispose(helper, _locker, true);
-            }
-
-            // Set node finalizer to null:
-            n._internalNodeHelper = null;
+            // Clean up the node
+            n.CleanUpForHandleFailureOrDispose(ref _containerValues);
 
             // Move to next node:
             n = next;

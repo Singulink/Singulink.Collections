@@ -12,6 +12,8 @@ internal sealed class Lock
 {
     public bool TryEnter() => Monitor.TryEnter(this);
 
+    public void Enter() => Monitor.Enter(this);
+
     public void Exit() => Monitor.Exit(this);
 
     public bool IsHeldByCurrentThread => Monitor.IsEntered(this);

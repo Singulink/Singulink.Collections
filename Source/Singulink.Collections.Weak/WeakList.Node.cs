@@ -2,14 +2,15 @@ using System.Diagnostics;
 using System.Runtime;
 using System.Runtime.CompilerServices;
 
+using Singulink.Collections.WeakCollectionHelpers;
+
 namespace Singulink.Collections;
 
-#pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
 #pragma warning disable SA1401 // Fields should be private
 #pragma warning disable RCS1043 // Remove 'partial' modifier from type with a single part
 
 /// <content>
-/// Contains the <see cref="Node"/> nested type for <see cref="WeakList{T}"/>.
+/// Contains the <see cref="Node"/> nested type for <see cref="WeakList{T}"/> type.
 /// </content>
 public sealed partial class WeakList<T>
 {
@@ -21,14 +22,17 @@ public sealed partial class WeakList<T>
     /// </remarks>
     public sealed partial class Node : IDisposable
     {
-        // We need a weak reference here as the Node will be strongly held by the data structure until it's removed, but the InternalNodeFinalizeHelper is the
-        // thing that is meant to be automatically GC'd.
-        // Note: we don't use WeakHandle here, as we want to ensure that we're trivially thread-safe when trying to "dispose" it & read it simultaneously.
-        internal WeakReference<InternalNodeFinalizeHelper>? _internalNodeHelper; // Type of value is InternalNodeFinalizeHelper.
-        internal InternalNode? _internalNode;
+        // Our callbacks for NodeState to use
+        internal struct NodeHelpers : INodeHelpers<T, Node, WeakList<T>, NodeHelpers>
+        {
+            public ref NodeState<T, Node, WeakList<T>, NodeHelpers> GetNodeState(Node node) => ref node._impl;
+            public void DeleteHelper(WeakList<T> container, Node node) => container.DeleteHelper(node);
+            public bool IsDisposed(WeakList<T> container) => container._head is null;
+            public ref ContainerValues<T, Node, WeakList<T>, NodeHelpers> GetContainerValues(WeakList<T> container) => ref container._containerValues;
+        }
 
-        // Since we store the list here directly, we need to hold a weak ref back to Node from InternalNode:
-        internal readonly WeakList<T> _list;
+        // Node state:
+        internal NodeState<T, Node, WeakList<T>, NodeHelpers> _impl;
 
         // Our doubly linked list state:
         internal Node? _prev;
@@ -42,23 +46,25 @@ public sealed partial class WeakList<T>
         internal bool _isRemoved;
 
         // Private constructor:
-        internal Node(InternalNode? internalNode, WeakList<T> list)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal Node((T Value, InternalNode<T, Node, WeakList<T>, NodeHelpers> InternalNode)? state, WeakList<T> list)
         {
-            _internalNode = internalNode;
-            _list = list;
+            if (state is { } s)
+            {
+                _impl = new(s.InternalNode, list);
+                _impl.Alloc(s.Value, this, s.InternalNode, ref list._containerValues);
+            }
+            else
+            {
+                _impl = new(null, list);
+            }
         }
 
         /// <summary>
         /// Gets the list that this node belongs to, or used to belong to.
         /// </summary>
-        public WeakList<T> List
-        {
-            get
-            {
-                GC.KeepAlive(_list);
-                return _list;
-            }
-        }
+        public WeakList<T> List => _impl.Container;
+        internal WeakList<T> ListDirect => _impl.ContainerDirect;
 
         /// <summary>
         /// Gets the target value of this node if it is still available, otherwise <see langword="null" />.
@@ -67,38 +73,7 @@ public sealed partial class WeakList<T>
         /// This method can return <see langword="null" /> even if the node has not yet been removed from the list, so don't try to use this to optimize
         /// avoiding calling <see cref="Dispose()" /> unnecessarily; it's better to just call it unconditionally.
         /// </remarks>
-        public T? Value
-        {
-            get
-            {
-                // Note: we must take the lock here, as otherwise we could be partway through disposing or updating the value:
-                // Note: we technically still could be partway through disposing after taking the lock, but not in a problematic way.
-                if (_list._head is null) return null;
-                using var scope = _list.EnterLock(out bool wasDisposed);
-                if (wasDisposed) return null;
-                var internalNode = _internalNode;
-                if (internalNode is null) return null;
-                var helper = GetInternalNodeHelper();
-                if (helper is null) return null;
-
-                // Do the actual get:
-                T? retV;
-#if NET
-                var dependentHandle = internalNode._dependentHandle;
-                if (!dependentHandle.IsAllocated) return null;
-                object? result = dependentHandle.Target;
-                Debug.Assert(result is T or null, "Stored target should be of the correct type or null.");
-                retV = Unsafe.As<T?>(result);
-#else
-                var result = internalNode._value;
-                retV = result.TryGetTarget<T>();
-#endif
-
-                // Keep helper alive & return:
-                GC.KeepAlive(helper);
-                return retV;
-            }
-        }
+        public T? Value => _impl.Value;
 
         /// <summary>
         /// Gets the version of the list when this node was added.
@@ -108,41 +83,12 @@ public sealed partial class WeakList<T>
         /// <summary>
         /// Gets a value indicating whether this node has been removed from the list.
         /// </summary>
-        public bool IsRemoved
-        {
-            get
-            {
-                // Note: when the lock is held, it is enough to just check the _isRemoved flag, but otherwise checking _finalizeAttemptCount is more up-to-date.
-                var internalNode = _internalNode;
-                if (internalNode is null) return true;
-                Thread.MemoryBarrier(); // Ensure we get the latest value (this stops the read from being re-ordered earlier, but it can still re-order to later).
-                bool result = internalNode._finalizeAttemptCount == -1;
-                GC.KeepAlive(_list);
-                return result;
-            }
-        }
+        public bool IsRemoved => _impl.IsRemoved;
 
         /// <summary>
         /// Disposes the node, removing it from the <see cref="WeakList{T}" /> it belongs to.
         /// </summary>
-        public void Dispose()
-        {
-            if (_internalNode is not null && GetInternalNodeHelper() is { } helper)
-            {
-                var impl = new StrongHandle(Interlocked.Exchange(ref helper._impl.Handle, IntPtr.Zero));
-                if (impl.Handle != IntPtr.Zero && _internalNode.Dispose(disposing: true, this, ref helper._impl, impl))
-                {
-                    GC.SuppressFinalize(helper);
-                }
-
-                GC.KeepAlive(helper);
-                GC.KeepAlive(_internalNode);
-            }
-
-            _internalNodeHelper = null;
-            _internalNode = null;
-            GC.KeepAlive(_list);
-        }
+        public void Dispose() => _impl.Dispose(this);
 
 #if NET
         /// <summary>
@@ -152,35 +98,10 @@ public sealed partial class WeakList<T>
         /// <remarks>
         /// This method is only supported on frameworks that have <see cref="DependentHandle" />.
         /// </remarks>
-        public bool TryUpdateTarget(T newTarget)
-        {
-            // Note: nothing in theory prevents us from implementing this on .NET Standard, but it would be more complex (due to having to update the CWT), so
-            // we just don't support it there for now.
-            using var scope = _list.EnterLock(out bool wasDisposed);
-            if (GetInternalNodeHelper() is not { } helper) return false;
-            if (wasDisposed) return false;
-            if (helper._impl.Handle == IntPtr.Zero) return false;
-            var internalNode = _internalNode;
-            if (internalNode is null) return false;
-
-            // Update the DependentHandle:
-            if (!internalNode._dependentHandle.IsAllocated) return false;
-            object? oldTarget = internalNode._dependentHandle.Target;
-            DependentHandle dh = new(newTarget, helper);
-            var oldDh = internalNode._dependentHandle;
-            internalNode._dependentHandle = dh;
-            oldDh.Dispose();
-
-            // Keep alive the old target, new target, and the helper until after we've updated the handle:
-            GC.KeepAlive(oldTarget);
-            GC.KeepAlive(newTarget);
-            GC.KeepAlive(helper);
-            return true;
-        }
+        public bool TryUpdateTarget(T newTarget) => _impl.TryUpdateTarget(newTarget);
 #endif
 
-        // Helper method for testing & for internal use:
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal InternalNodeFinalizeHelper? GetInternalNodeHelper() => TryGetValue(_internalNodeHelper);
+        // The method to call to clean out the node for 'HandleFailureOrDispose' methods.
+        internal void CleanUpForHandleFailureOrDispose(ref ContainerValues<T, Node, WeakList<T>, NodeHelpers> containerValues) => _impl.CleanUpForHandleFailureOrDispose(ref containerValues);
     }
 }
