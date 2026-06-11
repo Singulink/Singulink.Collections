@@ -251,7 +251,7 @@ public sealed partial class WeakList<T>
         _tail = null;
 
         // Exit the lock held by this thread now so that other threads can proceed:
-        while (_containerValues._locker.IsHeldByCurrentThread) _containerValues._locker.Exit();
+        while (_locker.IsHeldByCurrentThread) _locker.Exit();
 
         // Clean out our container values
         _containerValues.CleanOut();
@@ -266,7 +266,7 @@ public sealed partial class WeakList<T>
             n._next = null;
 
             // Clean up the node
-            n.CleanUpForHandleFailureOrDispose(ref _containerValues);
+            n.CleanUpForHandleFailureOrDispose();
 
             // Move to next node:
             n = next;
@@ -274,5 +274,6 @@ public sealed partial class WeakList<T>
 
         // Suppress finalizer for this list now, as we've cleaned up everything:
         GC.SuppressFinalize(this);
+        GC.KeepAlive(this);
     }
 }

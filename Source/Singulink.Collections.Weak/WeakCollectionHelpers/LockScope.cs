@@ -41,7 +41,7 @@ internal ref struct LockScope(Lock locker, object container)
         }
 
         SpinWait sw = default;
-        var locker = default(TNodeHelpers).GetContainerValues(container)._locker;
+        var locker = default(TNodeHelpers).GetLocker(container);
         while (true)
         {
             if (locker.TryEnter())
@@ -75,7 +75,7 @@ internal ref struct LockScope(Lock locker, object container)
             return default;
         }
 
-        var locker = default(TNodeHelpers).GetContainerValues(container)._locker;
+        var locker = default(TNodeHelpers).GetLocker(container);
         if (locker.TryEnter())
         {
             wasDisposed = default(TNodeHelpers).IsDisposed(container);

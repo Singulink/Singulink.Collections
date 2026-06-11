@@ -63,9 +63,12 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
         // Try to enter the lock now:
         var container = default(TNodeHelpers).GetNodeState(node)._container;
         bool entered = true;
-        using var scope = (_finalizeAttemptCount < 5 && !disposing)
-            ? LockScope.TryEnterLock<T, TNode, TContainer, TNodeHelpers>(container, out bool wasDisposed, out entered)
-            : LockScope.EnterLock<T, TNode, TContainer, TNodeHelpers>(container, out wasDisposed);
+        bool wasDisposed = default(TNodeHelpers).HasLocker ? default(TNodeHelpers).IsDisposed(container) : false;
+        using var scope = default(TNodeHelpers).HasLocker
+            ? (_finalizeAttemptCount < 5 && !disposing)
+                ? LockScope.TryEnterLock<T, TNode, TContainer, TNodeHelpers>(container, out wasDisposed, out entered)
+                : LockScope.EnterLock<T, TNode, TContainer, TNodeHelpers>(container, out wasDisposed)
+            : default;
         if (!wasDisposed)
         {
             if (entered)

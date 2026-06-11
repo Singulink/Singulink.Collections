@@ -30,6 +30,9 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     // These are the values we need for our weak tracking support.
     private ContainerValues<T, Node, WeakList<T>, Node.NodeHelpers> _containerValues;
 
+    // The locker for the list.
+    private readonly Lock _locker;
+
     // The head and tail nodes of the linked list:
     // Note: when not disposed, we always have at least one node (the pseudo-node), which is always ordered first.
     // When disposed, this is set to null.
@@ -67,6 +70,7 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
         _head = new(null, this) { _isPseudoNode = true };
         _tail = _head;
         _containerValues = new();
+        _locker = new();
     }
 
     /// <summary>

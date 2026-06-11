@@ -23,12 +23,14 @@ public sealed partial class WeakList<T>
     public sealed partial class Node : IDisposable
     {
         // Our callbacks for NodeState to use
-        internal struct NodeHelpers : INodeHelpers<T, Node, WeakList<T>, NodeHelpers>
+        internal readonly struct NodeHelpers : INodeHelpers<T, Node, WeakList<T>, NodeHelpers>
         {
             public ref NodeState<T, Node, WeakList<T>, NodeHelpers> GetNodeState(Node node) => ref node._impl;
             public void DeleteHelper(WeakList<T> container, Node node) => container.DeleteHelper(node);
             public bool IsDisposed(WeakList<T> container) => container._head is null;
             public ref ContainerValues<T, Node, WeakList<T>, NodeHelpers> GetContainerValues(WeakList<T> container) => ref container._containerValues;
+            public Lock GetLocker(WeakList<T> container) => container._locker;
+            public bool HasLocker => true;
         }
 
         // Node state:
@@ -102,6 +104,6 @@ public sealed partial class WeakList<T>
 #endif
 
         // The method to call to clean out the node for 'HandleFailureOrDispose' methods.
-        internal void CleanUpForHandleFailureOrDispose(ref ContainerValues<T, Node, WeakList<T>, NodeHelpers> containerValues) => _impl.CleanUpForHandleFailureOrDispose(ref containerValues);
+        internal void CleanUpForHandleFailureOrDispose() => _impl.CleanUpForHandleFailureOrDispose();
     }
 }

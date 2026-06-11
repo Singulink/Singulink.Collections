@@ -1,7 +1,9 @@
 ﻿#if NET9_0_OR_GREATER
 
+using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using Singulink.Collections.Utilities;
 
 namespace Singulink.Collections;
 
@@ -17,6 +19,7 @@ partial class WeakValueDictionary<TKey, TValue>
     public AlternateLookup<TAlternateKey> GetAlternateLookup<TAlternateKey>()
         where TAlternateKey : notnull, allows ref struct
     {
+        ThrowIfDisposed();
         return new AlternateLookup<TAlternateKey>(this, _lookup.GetAlternateLookup<TAlternateKey>());
     }
 
@@ -25,6 +28,8 @@ partial class WeakValueDictionary<TKey, TValue>
         [MaybeNullWhen(false)] out AlternateLookup<TAlternateKey> lookup)
         where TAlternateKey : notnull, allows ref struct
     {
+        ThrowIfDisposed();
+
         if (_lookup.TryGetAlternateLookup<TAlternateKey>(out var altLookup))
         {
             lookup = new AlternateLookup<TAlternateKey>(this, altLookup);
@@ -42,24 +47,25 @@ partial class WeakValueDictionary<TKey, TValue>
     public readonly struct AlternateLookup<TAlternateKey> where TAlternateKey : notnull, allows ref struct
     {
         private readonly WeakValueDictionary<TKey, TValue> _dictionary;
-        private readonly Dictionary<TKey, WeakReference<TValue>>.AlternateLookup<TAlternateKey> _altLookup;
+        private readonly ConcurrentDictionary<TKey, Node>.AlternateLookup<TAlternateKey> _altLookup;
 
-        internal AlternateLookup(WeakValueDictionary<TKey, TValue> dictionary, Dictionary<TKey, WeakReference<TValue>>.AlternateLookup<TAlternateKey> altLookup)
+        internal AlternateLookup(WeakValueDictionary<TKey, TValue> dictionary, ConcurrentDictionary<TKey, Node>.AlternateLookup<TAlternateKey> altLookup)
         {
             _dictionary = dictionary;
             _altLookup = altLookup;
         }
 
         /// <summary>
-        /// Gets the value associated wit the specified alternate key.
+        /// Gets the value associated with the specified alternate key.
         /// </summary>
-        public TValue? this[TAlternateKey key]
+        public TValue this[TAlternateKey key]
         {
-            get {
-                if (_altLookup.TryGetValue(key, out var weakRef) && weakRef.TryGetTarget(out var value))
-                    return value;
+            get
+            {
+                if (!TryGetValue(key, out var value))
+                    Throw.KeyNotFound();
 
-                return null;
+                return value;
             }
         }
 
@@ -74,29 +80,89 @@ partial class WeakValueDictionary<TKey, TValue>
         public WeakValueDictionary<TKey, TValue> Dictionary => _dictionary;
 
         /// <inheritdoc cref="ContainsKey(TAlternateKey, out TKey)"/>/>
-        public bool ContainsKey(TAlternateKey key) => _altLookup.ContainsKey(key);
+        public bool ContainsKey(TAlternateKey key)
+        {
+            _dictionary.ThrowIfDisposed();
+            return TryGetValue(key, out _);
+        }
 
         /// <summary>
         /// Returns a value indicating whether the dictionary contains the specified alternate key.
         /// </summary>
-        public bool ContainsKey(TAlternateKey key, [MaybeNullWhen(false)] out TKey actualKey) => TryGetValue(key, out actualKey, out _);
+        public bool ContainsKey(TAlternateKey key, [MaybeNullWhen(false)] out TKey actualKey)
+        {
+            _dictionary.ThrowIfDisposed();
+            return TryGetValue(key, out actualKey, out _);
+        }
 
         /// <inheritdoc cref="Remove(TAlternateKey, out TKey, out TValue)"/>
-        public bool Remove(TAlternateKey key) => Remove(key, out _, out _);
+        public bool Remove(TAlternateKey key)
+        {
+            _dictionary.ThrowIfDisposed();
+            return Remove(key, out _, out _);
+        }
 
         /// <summary>
         /// Removes the value with the specified alternate key from the dictionary.
         /// </summary>
         public bool Remove(TAlternateKey key, [MaybeNullWhen(false)] out TKey actualKey, [MaybeNullWhen(false)] out TValue value)
         {
-            if (_altLookup.TryGetValue(key, out actualKey, out var weakRef) && weakRef.TryGetTarget(out value))
+            _dictionary.ThrowIfDisposed();
+            try
             {
-                _dictionary.Remove(actualKey);
-                return true;
-            }
+                while (true)
+                {
+                    if (_altLookup.TryGetValue(key, out var actualKeyTmp, out var node))
+                    {
+                        if (node.Value.TryGetTarget(out var valueTmp))
+                        {
+                            bool removed = false;
 
-            value = default;
-            return false;
+                            // Try to remove this key & value pair. If we fail to remove it, then we need to try again, since it could be the case that there's a
+                            // new value this should succeed for.
+                            if (_dictionary._lookup.TryRemove(new KeyValuePair<TKey, Node>(actualKeyTmp, node)))
+                            {
+                                node.Dispose();
+                                removed = true;
+                            }
+                            else
+                            {
+                                continue;
+                            }
+
+                            // Note: we do GC.KeepAlive on a temporary since 'value' could be overwritten before we could actually call that.
+                            GC.KeepAlive(valueTmp);
+
+                            if (removed)
+                            {
+                                actualKey = actualKeyTmp;
+                                value = valueTmp;
+                            }
+                            else
+                            {
+                                actualKey = default;
+                                value = default;
+                            }
+
+                            return removed;
+                        }
+                        else
+                        {
+                            // We may as well dispose early if possible, since we're clearly done with it (the value has died).
+                            node.Dispose();
+                        }
+                    }
+
+                    actualKey = default;
+                    value = default;
+                    return false;
+                }
+            }
+            catch
+            {
+                _dictionary.HandleFailure();
+                throw;
+            }
         }
 
         /// <inheritdoc cref="TryGetValue(TAlternateKey, out TKey, out TValue)"/>
@@ -107,10 +173,27 @@ partial class WeakValueDictionary<TKey, TValue>
         /// </summary>
         public bool TryGetValue(TAlternateKey key, [MaybeNullWhen(false)] out TKey actualKey, [MaybeNullWhen(false)] out TValue value)
         {
-            if (_altLookup.TryGetValue(key, out actualKey, out var weakRef) && weakRef.TryGetTarget(out value))
-                return true;
+            _dictionary.ThrowIfDisposed();
+
+            if (_altLookup.TryGetValue(key, out var actualKeyTmp, out var entry))
+            {
+                if (entry.Value.TryGetTarget(out var valueTmp))
+                {
+                    // Note: we do GC.KeepAlive on a temporary since 'value' could be overwritten before we could actually call that.
+                    value = valueTmp;
+                    GC.KeepAlive(valueTmp);
+                    actualKey = actualKeyTmp;
+                    return true;
+                }
+                else
+                {
+                    // We may as well dispose early if possible, since we're clearly done with it (the value has died).
+                    entry.Dispose();
+                }
+            }
 
             value = default;
+            actualKey = default;
             return false;
         }
     }

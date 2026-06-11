@@ -180,7 +180,7 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
         _internalNodeHelper = new(internalNodeHelper);
 #if NET
         internalNode._dependentHandle = new DependentHandle(value, internalNodeHelper);
-        internalNode._finalizeHelperNode = WeakHandle.Alloc(containerValues._internalNodes.List.AddLast(_internalNodeHelper));
+        lock (containerValues._internalNodes.Locker) internalNode._finalizeHelperNode = WeakHandle.Alloc(containerValues._internalNodes.List.AddLast(_internalNodeHelper));
         internalNode._trackingInfoHandle = StrongHandle.Alloc(containerValues._internalNodes);
 #else
         internalNode._value = WeakHandle.Alloc(value);
@@ -190,12 +190,12 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     }
 
     // The method to call to clean out the node for 'HandleFailureOrDispose' methods.
-    public void CleanUpForHandleFailureOrDispose(ref ContainerValues<T, TNode, TContainer, TNodeHelpers> containerValues)
+    public void CleanUpForHandleFailureOrDispose()
     {
         // Finalizer is not critical here, other than our handles & marking removed, so clean those up and then suppress:
         if (GetInternalNodeHelper() is { } helper)
         {
-            _internalNode?.EarlyDispose(helper, containerValues._locker, true);
+            _internalNode?.EarlyDispose(helper, default(TNodeHelpers).GetLocker(_container), true);
         }
 
         // Set node finalizer to null:

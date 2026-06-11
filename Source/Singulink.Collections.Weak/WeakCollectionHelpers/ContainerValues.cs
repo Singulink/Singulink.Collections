@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 // NOTE: for correct usage, ensure you follow what WeakList does.
-// NOTE: only the _locker field, constructor, and CleanOut methods are intended to be used outside of the namespace.
+// NOTE: only the constructor and CleanOut method are intended to be used outside of the namespace.
 
 namespace Singulink.Collections.WeakCollectionHelpers;
 
@@ -34,17 +34,15 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
     internal readonly CleanupHelper<T, TNode, TContainer, TNodeHelpers> _cleanupHelper;
 #endif
 
-    internal readonly Lock _locker;
-
     public ContainerValues()
     {
 #if NET
         _internalNodes = new([], new());
         _cleanupHelper = new(WeakHandle.Alloc(_internalNodes));
 #endif
-        _locker = new();
     }
 
+    // Note: we require the caller to be holding the lock (or for no new allocations to occur concurrently otherwise) for this method to be safe.
     internal void CleanOut()
     {
         // Clean out resources:

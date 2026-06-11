@@ -1,27 +1,29 @@
 ﻿using System.Collections;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 using Singulink.Collections.Utilities;
+using Singulink.Collections.WeakCollectionHelpers;
 
 namespace Singulink.Collections;
+
+#pragma warning disable IDE0028 // Simplify collection initialization
+#pragma warning disable CS0436 // Type conflicts with imported type
 
 /// <summary>
 /// Represents a collection of keys and weakly referenced values. If this collection is accessed concurrently from multiple threads (even in a read-only manner)
 /// then all accesses must be synchronized with a full lock.
 /// </summary>
-/// <remarks>
-/// On .NET, internal entries for garbage collected values are cleaned as they are encountered (i.e. when a key lookup is performed on a garbage collected value
-/// or key/value pairs are enumerated over). This is not the case on .NET Standard targets like .NET Framework. You can perform a full clean by calling the <see
-/// cref="Clean"/> method or configure automatic cleaning after a set number of add operations by setting the <see cref="AutoCleanAddCount"/> property.
-/// </remarks>
 public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
     where TKey : notnull
     where TValue : class
 {
-    private readonly Dictionary<TKey, WeakReference<TValue>> _lookup;
+    // The actual dictionary that we use
+    private ConcurrentDictionary<TKey, Node>? _lookup;
 
-    private int _autoCleanAddCount;
-    private int _addCountSinceLastClean;
+    // These are the values we need for our weak tracking support.
+    private ContainerValues<TValue, Node, WeakValueDictionary<TKey, TValue>, Node.NodeHelpers> _containerValues;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="WeakValueDictionary{TKey, TValue}"/> class.
@@ -36,50 +38,116 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     public WeakValueDictionary(IEqualityComparer<TKey>? comparer)
     {
         _lookup = new(comparer);
+        _containerValues = new();
+    }
+
+    /// <summary>
+    /// Finalizes an instance of the <see cref="WeakValueDictionary{TKey, TValue}"/> class.
+    /// </summary>
+    ~WeakValueDictionary()
+    {
+        // We want to block usage after potential resurrection (as it could be dangerous), as it could be actively problematic, so mark as disposed now:
+        // NOTE: we do not expose a dispose method directly, as it would be unsafe (since we do not perform suitable locking around stuff).
+        // However, it is unsafe to use the collection after resurrection, so we still need to track it based on that, so we still track disposal internally.
+        _lookup = null;
+        Thread.MemoryBarrier();
+    }
+
+    // Helper to assert not disposed in Debug mode (doesn't check in Release mode, but still gives nullable analysis info):
+    [MemberNotNull(nameof(_lookup))]
+    private void ThrowIfDisposed()
+    {
+        Throw.IfDisposed(_lookup == null, typeof(WeakValueDictionary<TKey, TValue>));
     }
 
     /// <summary>
     /// Gets the equality comparer used to compare keys in the dictionary.
     /// </summary>
-    public IEqualityComparer<TKey> Comparer => _lookup.Comparer;
+    public IEqualityComparer<TKey> Comparer
+    {
+        get
+        {
+            ThrowIfDisposed();
+            return _lookup.Comparer;
+        }
+    }
 
     /// <summary>
     /// Gets the keys in the dictionary.
     /// </summary>
-    public IEnumerable<TKey> Keys => this.Select(kvp => kvp.Key);
+    public IEnumerable<TKey> Keys
+    {
+        get
+        {
+            ThrowIfDisposed();
+            return this.Select((x) => x.Key);
+        }
+    }
 
     /// <summary>
     /// Gets the values in the dictionary.
     /// </summary>
-    public IEnumerable<TValue> Values => this.Select(kvp => kvp.Value);
+    public IEnumerable<TValue> Values
+    {
+        get
+        {
+            ThrowIfDisposed();
+            return this.Select((x) => x.Value);
+        }
+    }
 
     /// <summary>
     /// Gets the number of entries in the internal data structure. This value will be different than the actual count if any of the values were garbage
     /// collected but still have internal entries in the dictionary that have not been cleaned.
     /// </summary>
-    /// <remarks>
-    /// <para>This count will not be accurate if values have been collected since the last clean. You can call <see cref="Clean"/> to force a full sweep
-    /// before reading the count to get a more accurate value, but keep in mind that a subsequent enumeration may still return fewer values if they happen
-    /// to get garbage collected before or during the enumeration. If you require an accurate count together with all the values then you should
-    /// temporarily copy the values into a strongly referenced collection (like a <see cref="List{T}"/> or <see cref="Dictionary{TKey, TValue}"/>) so that
-    /// they can't be garbage collected and use that to get the count and access the values.</para>
-    /// </remarks>
-    public int UnsafeCount => _lookup.Count;
+    public int UnsafeCount
+    {
+        get
+        {
+            ThrowIfDisposed();
+            return _lookup.Count;
+        }
+    }
 
     /// <summary>
     /// Gets or sets the value associated with the specified key.
     /// </summary>
     public TValue this[TKey key]
     {
-        get {
+        get
+        {
             if (!TryGetValue(key, out var value))
                 Throw.KeyNotFound();
 
             return value;
         }
-        set {
-            _lookup[key] = new WeakReference<TValue>(value);
-            OnAdded();
+        set
+        {
+            ThrowIfDisposed();
+            try
+            {
+                // Try to get the previous value so we can dispose it (rather than letting it finalize), if possible.
+                // Despite being more calls, this is more optimal overall, as it avoids an unnecessary finalization.
+                // However, it's not required for correctness, so if we don't get it straight away, then we just write normally.
+                var newNode = AllocNode(key, value);
+                if (_lookup.TryGetValue(key, out var oldNode) && _lookup.TryUpdate(key, newNode, oldNode))
+                {
+                    oldNode.Dispose();
+                    return;
+                }
+
+                // Just overwrite unconditionally.
+                _lookup[key] = newNode;
+            }
+            catch
+            {
+                HandleFailure();
+                throw;
+            }
+            finally
+            {
+                GC.KeepAlive(value);
+            }
         }
     }
 
@@ -91,14 +159,21 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// <returns><see langword="true"/> if the dictionary contains a value with the specified key, otherwise <see langword="false"/>.</returns>
     public bool TryGetValue(TKey key, [NotNullWhen(true)] out TValue? value)
     {
+        ThrowIfDisposed();
         if (_lookup.TryGetValue(key, out var entry))
         {
-            if (entry.TryGetTarget(out value))
+            if (entry.Value.TryGetTarget(out var valueTmp))
+            {
+                // Note: we do GC.KeepAlive on a temporary since 'value' could be overwritten before we could actually call that.
+                value = valueTmp;
+                GC.KeepAlive(valueTmp);
                 return true;
-#if NET
+            }
             else
-                _lookup.Remove(key);
-#endif
+            {
+                // We may as well dispose early if possible, since we're clearly done with it (the value has died).
+                entry.Dispose();
+            }
         }
 
         value = null;
@@ -110,20 +185,57 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// </summary>
     public bool TryAdd(TKey key, TValue value)
     {
-        if (_lookup.TryGetValue(key, out var entry))
+        ThrowIfDisposed();
+        try
         {
-            if (entry.TryGetTarget(out var _))
+            // Try TryAdd first
+            var node = AllocNode(key, value);
+            Node? toDispose = null;
+            if (_lookup.TryAdd(key, node))
+            {
+                return true;
+            }
+
+            // Try replacing an entry if it's not representing an alive value
+            else if (_lookup.AddOrUpdate(key, node, (_, old) =>
+            {
+                // Check if it is representing an alive value.
+                if (old.Value.TryGetTarget(out var valueTmp))
+                {
+                    GC.KeepAlive(valueTmp);
+                    toDispose = null; // This is necessary, as the callback may be called more than once.
+                    return old;
+                }
+
+                // Otherwise, the value is dead, so we replace it.
+                else
+                {
+                    toDispose = old;
+                    return node;
+                }
+            }) == node)
+            {
+                toDispose?.Dispose();
+                return true;
+            }
+
+            // Otherwise, we failed to add it.
+            else
+            {
+                // Dispose now, since we failed to add it.
+                node.Dispose();
                 return false;
-
-            entry.SetTarget(value);
+            }
         }
-        else
+        catch
         {
-            _lookup.Add(key, new WeakReference<TValue>(value));
+            HandleFailure();
+            throw;
         }
-
-        OnAdded();
-        return true;
+        finally
+        {
+            GC.KeepAlive(value);
+        }
     }
 
     /// <summary>
@@ -142,13 +254,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// <returns><see langword="true"/> if the item was found and removed, otherwise <see langword="false"/>.</returns>
     public bool Remove(TKey key)
     {
-        if (_lookup.TryGetValue(key, out var entry))
-        {
-            _lookup.Remove(key);
-            return entry.TryGetTarget(out _);
-        }
-
-        return false;
+        return Remove(key, out _);
     }
 
     /// <summary>
@@ -159,14 +265,33 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// <returns><see langword="true"/> if the item was found and removed, otherwise <see langword="false"/>.</returns>
     public bool Remove(TKey key, [MaybeNullWhen(false)] out TValue value)
     {
-        if (_lookup.TryGetValue(key, out var entry))
+        ThrowIfDisposed();
+        try
         {
-            _lookup.Remove(key);
-            return entry.TryGetTarget(out value);
-        }
+            if (_lookup.TryRemove(key, out var node))
+            {
+                if (node.Value.TryGetTarget(out var valueTmp))
+                {
+                    // Note: we do GC.KeepAlive on a temporary since 'value' could be overwritten before we could actually call that.
+                    value = valueTmp;
+                    GC.KeepAlive(valueTmp);
+                    return true;
+                }
+                else
+                {
+                    // We may as well dispose early if possible, since we're clearly done with it (the value has died).
+                    node.Dispose();
+                }
+            }
 
-        value = default;
-        return false;
+            value = null;
+            return false;
+        }
+        catch
+        {
+            HandleFailure();
+            throw;
+        }
     }
 
     /// <summary>
@@ -174,23 +299,52 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// </summary>
     public bool Remove(TKey key, TValue value, IEqualityComparer<TValue>? comparer = null)
     {
-        if (_lookup.TryGetValue(key, out var entry))
+        ThrowIfDisposed();
+        try
         {
-            if (entry.TryGetTarget(out var current))
+            while (true)
             {
-                if ((comparer ?? EqualityComparer<TValue>.Default).Equals(value, current))
+                if (_lookup.TryGetValue(key, out var node))
                 {
-                    _lookup.Remove(key);
-                    return true;
+                    if (node.Value.TryGetTarget(out var valueTmp))
+                    {
+                        // Check if they are equal.
+                        bool removed = false;
+                        if (comparer?.Equals(value, valueTmp) != false)
+                        {
+                            // Try to remove this key & value pair. If we fail to remove it, then we need to try again, since it could be the case that there's a
+                            // new value this should succeed for.
+                            if (_lookup.TryRemove(new KeyValuePair<TKey, Node>(key, node)))
+                            {
+                                node.Dispose();
+                                removed = true;
+                            }
+                            else
+                            {
+                                continue;
+                            }
+                        }
+
+                        // Note: we do GC.KeepAlive on a temporary since 'value' could be overwritten before we could actually call that.
+                        GC.KeepAlive(valueTmp);
+                        return removed;
+                    }
+                    else
+                    {
+                        // We may as well dispose early if possible, since we're clearly done with it (the value has died).
+                        node.Dispose();
+                    }
                 }
-            }
-            else
-            {
-                _lookup.Remove(key);
+
+                value = null;
+                return false;
             }
         }
-
-        return false;
+        catch
+        {
+            HandleFailure();
+            throw;
+        }
     }
 
     /// <summary>
@@ -203,7 +357,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// </summary>
     public bool Contains(TKey key, TValue value, IEqualityComparer<TValue>? comparer = null)
     {
-        return TryGetValue(key, out var current) && (comparer ?? EqualityComparer<TValue>.Default).Equals(value, current);
+        return TryGetValue(key, out var current) && comparer?.Equals(value, current) != false;
     }
 
     /// <summary>
@@ -221,38 +375,12 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// </summary>
     public void Clear()
     {
-        _lookup.Clear();
-        _addCountSinceLastClean = 0;
-    }
-
-    /// <summary>
-    /// Removes internal entries that refer to values that have been garbage collected.
-    /// </summary>
-    public void Clean()
-    {
-#if NET
-        var staleKvps = _lookup.Where(kvp => !kvp.Value.TryGetTarget(out _));
-#else
-        var staleKvps = _lookup.Where(kvp => !kvp.Value.TryGetTarget(out _)).ToList();
-#endif
-
-        foreach (var kvp in staleKvps)
-            _lookup.Remove(kvp.Key);
-
-        _addCountSinceLastClean = 0;
-    }
-
-    /// <summary>
-    /// Ensures that this dictionary can hold the specified number of elements without growing.
-    /// </summary>
-    /// <remarks>
-    /// This method has no effect on .NET Framework.
-    /// </remarks>
-    public void EnsureCapacity(int capacity)
-    {
-#if !NETSTANDARD2_0
-        _lookup.EnsureCapacity(capacity);
-#endif
+        // Note: we attempt to dispose the entries here also
+        ThrowIfDisposed();
+        foreach (var kvp in _lookup)
+        {
+            kvp.Value.Dispose();
+        }
     }
 
     /// <summary>
@@ -260,26 +388,15 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// </summary>
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
     {
+        ThrowIfDisposed();
         foreach (var kvp in _lookup)
         {
-            if (kvp.Value.TryGetTarget(out var value))
+            ThrowIfDisposed();
+            if (kvp.Value.Value.TryGetTarget(out var value))
                 yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
-#if NET
             else
-                _lookup.Remove(kvp.Key);
-#endif
+                kvp.Value.Dispose();
         }
-#if NET
-        _addCountSinceLastClean = 0;
-#endif
-    }
-
-    private void OnAdded()
-    {
-        _addCountSinceLastClean++;
-
-        if (_autoCleanAddCount != 0 && _addCountSinceLastClean >= _autoCleanAddCount)
-            Clean();
     }
 
     /// <summary>

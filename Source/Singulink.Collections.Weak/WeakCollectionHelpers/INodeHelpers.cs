@@ -26,4 +26,14 @@ internal interface INodeHelpers<T, TNode, TContainer, TNodeHelpers>
     /// Gets the state field for a given container instance.
     /// </summary>
     ref ContainerValues<T, TNode, TContainer, TNodeHelpers> GetContainerValues(TContainer container);
+
+    /// <summary>
+    /// Gets the locker for a given container instance.
+    /// </summary>
+    Lock GetLocker(TContainer container);
+
+    /// <summary>
+    /// Gets a value indicating whether the container needs a locker or not. If not, then <see cref="GetLocker"/> will throw.
+    /// </summary>
+    bool HasLocker { get; }
 }
