@@ -45,7 +45,7 @@ internal static class Helpers
         public static readonly FieldInfo _ImplField
             = typeof(WeakList<T>.Node).GetField("_impl", BindingFlags.NonPublic | BindingFlags.Instance)!;
         public static readonly MethodInfo _GetInternalNodeHelperMethod
-            = _ImplField.FieldType.GetMethod("GetInternalNodeHelper", BindingFlags.Public | BindingFlags.Instance)!;
+            = _ImplField.FieldType.GetMethod("GetInternalNodeHelper", BindingFlags.NonPublic | BindingFlags.Instance)!;
         public static readonly FieldInfo _InternalNodeField
             = _ImplField.FieldType.GetField("_internalNode", BindingFlags.NonPublic | BindingFlags.Instance)!;
     }

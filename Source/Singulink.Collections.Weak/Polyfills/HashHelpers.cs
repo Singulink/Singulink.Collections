@@ -2,11 +2,12 @@
 // Licensed under MIT from dotnet, see https://github.com/dotnet/runtime/blob/main/LICENSE.TXT for full license.
 
 #pragma warning disable IDE0161 // Convert to file-scoped namespace
+#pragma warning disable RCS1043 // Remove 'partial' modifier from type with a single part
 #pragma warning disable SA1119 // Statement should not use unnecessary parenthesis
 #pragma warning disable SA1131 // Use readable conditions
-#pragma warning disable SA1513 // Closing brace should be followed by blank line
-#pragma warning disable SA1407 // Arithmetic expressions should declare precedence
 #pragma warning disable SA1405 // Debug.Assert should provide message text
+#pragma warning disable SA1407 // Arithmetic expressions should declare precedence
+#pragma warning disable SA1513 // Closing brace should be followed by blank line
 
 #if !NET
 // Licensed to the .NET Foundation under one or more agreements.

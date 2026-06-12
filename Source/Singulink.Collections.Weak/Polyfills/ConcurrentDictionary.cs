@@ -1,17 +1,17 @@
 // Based on https://github.com/dotnet/runtime/blob/2fb730d284c245d2fe6c26925f442f51cd94926d/src/libraries/System.Private.CoreLib/src/System/Collections/Concurrent/ConcurrentDictionary.cs
 // Licensed under MIT from dotnet, see https://github.com/dotnet/runtime/blob/main/LICENSE.TXT for full license.
 
-#pragma warning disable IDE0161 // Convert to file-scoped namespace
-#pragma warning disable SA1514 // Element documentation header should be preceded by blank line
-#pragma warning disable SA1203 // Constants should appear before fields
-#pragma warning disable IDE0008 // Use explicit type
-#pragma warning disable SA1513 // Closing brace should be followed by blank line
-#pragma warning disable SA1405 // Debug.Assert should provide message text
-#pragma warning disable CS0436 // Type conflicts with imported type
-#pragma warning disable SA1629 // Documentation text should end with a period
-#pragma warning disable SA1623 // Property summary documentation should match accessors
-#pragma warning disable SA1401 // Fields should be private
 #pragma warning disable CA2208 // Instantiate argument exceptions correctly
+#pragma warning disable CS0436 // Type conflicts with imported type
+#pragma warning disable IDE0008 // Use explicit type
+#pragma warning disable IDE0161 // Convert to file-scoped namespace
+#pragma warning disable SA1203 // Constants should appear before fields
+#pragma warning disable SA1401 // Fields should be private
+#pragma warning disable SA1405 // Debug.Assert should provide message text
+#pragma warning disable SA1513 // Closing brace should be followed by blank line
+#pragma warning disable SA1514 // Element documentation header should be preceded by blank line
+#pragma warning disable SA1623 // Property summary documentation should match accessors
+#pragma warning disable SA1629 // Documentation text should end with a period
 
 using RuntimeNullables;
 

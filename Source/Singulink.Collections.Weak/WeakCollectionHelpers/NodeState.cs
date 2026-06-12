@@ -48,15 +48,22 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
         }
     }
 
-    // Internal helper to just return the container and do nothing else.
+    /// <summary>
+    /// Gets the container that this node belongs to, or used to belong to, without any additional checks or operations.
+    /// </summary>
     public readonly TContainer ContainerDirect => _container;
 
     /// <summary>
     /// Gets the target value of this node if it is still available, otherwise <see langword="null" />.
     /// </summary>
     /// <remarks>
+    /// <para>
     /// This method can return <see langword="null" /> even if the node has not yet been removed from the container, so don't try to use this to optimize
     /// avoiding calling <see cref="Dispose(TNode)" /> unnecessarily; it's better to just call it unconditionally.
+    /// </para>
+    /// <para>
+    /// Note: this property is not possible to use safely on non-locking collections.
+    /// </para>
     /// </remarks>
     public readonly T? Value
     {
@@ -98,7 +105,6 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     {
         get
         {
-            // Note: when the lock is held, it is enough to just check the _isRemoved flag, but otherwise checking _finalizeAttemptCount is more up-to-date.
             var internalNode = _internalNode;
             if (internalNode is null) return true;
             Thread.MemoryBarrier(); // Ensure we get the latest value (this stops the read from being re-ordered earlier, but it can still re-order to later).
@@ -137,7 +143,12 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     /// </summary>
     /// <exception cref="ArgumentNullException">If the value is null.</exception>
     /// <remarks>
+    /// <para>
     /// This method is only supported on frameworks that have <see cref="DependentHandle" />.
+    /// </para>
+    /// <para>
+    /// Note: this method is not possible to use safely on non-locking collections.
+    /// </para>
     /// </remarks>
     public readonly bool TryUpdateTarget(T newTarget)
     {
@@ -166,11 +177,15 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     }
 #endif
 
-    // Helper method for testing & for internal use:
+    /// <summary>
+    /// Helper method for testing and for internal use.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>? GetInternalNodeHelper() => WeakReferenceHelpers.TryGetValue(_internalNodeHelper);
+    private readonly InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>? GetInternalNodeHelper() => WeakReferenceHelpers.TryGetValue(_internalNodeHelper);
 
-    // Helper for allocating the node & related resources
+    /// <summary>
+    /// Helper for allocating the node and related resources.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Alloc(T value, TNode node, InternalNode<T, TNode, TContainer, TNodeHelpers> internalNode, ref ContainerValues<T, TNode, TContainer, TNodeHelpers> containerValues)
     {
@@ -200,7 +215,12 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
         GC.KeepAlive(node);
     }
 
-    // The method to call to clean out the node for 'HandleFailureOrDispose' methods.
+    /// <summary>
+    /// The method to call to clean out the node for 'HandleFailureOrDispose' methods.
+    /// </summary>
+    /// <remarks>
+    /// This method does not support non-locking collections.
+    /// </remarks>
     public void CleanUpForHandleFailureOrDispose()
     {
         // Finalizer is not critical here, other than our handles & marking removed, so clean those up and then suppress:
@@ -216,6 +236,9 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     /// <summary>
     /// Helper method to check that the finalize helper handle is zero currently - this allows checking that the code was called from the finalizer in a likely correct state (sanity check only).
     /// </summary>
+    /// <remarks>
+    /// This method does not support non-locking collections.
+    /// </remarks>
     public readonly bool IsFinalizeHelperHandleZero()
     {
         return (GetInternalNodeHelper()?._impl.Handle).GetValueOrDefault() == IntPtr.Zero;

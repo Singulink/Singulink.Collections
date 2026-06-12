@@ -3,6 +3,8 @@ using System.Diagnostics;
 
 namespace Singulink.Collections;
 
+#pragma warning disable RCS1043 // Remove 'partial' modifier from type with a single part
+
 /// <content>
 /// Contains the heap-allocated enumerator wrappers for <see cref="WeakList{T}"/>.
 /// </content>

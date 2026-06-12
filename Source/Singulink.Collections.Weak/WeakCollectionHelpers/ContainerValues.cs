@@ -6,6 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace Singulink.Collections.WeakCollectionHelpers;
 
+#pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
 #pragma warning disable IDE0028 // Simplify collection initialization
 
 // Per-container state embedded inside the concrete container type.
@@ -46,6 +47,7 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
     }
 
     // Note: we require the caller to be holding the lock (or for no new allocations to occur concurrently otherwise) for this method to be safe.
+    // Note: this method is not possible to use safely on non-locking collections.
     internal void CleanOut()
     {
         // Clean out resources:

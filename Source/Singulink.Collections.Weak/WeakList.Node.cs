@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Runtime;
 using System.Runtime.CompilerServices;
 
@@ -6,8 +5,8 @@ using Singulink.Collections.WeakCollectionHelpers;
 
 namespace Singulink.Collections;
 
-#pragma warning disable SA1401 // Fields should be private
 #pragma warning disable RCS1043 // Remove 'partial' modifier from type with a single part
+#pragma warning disable SA1401 // Fields should be private
 
 /// <content>
 /// Contains the <see cref="Node"/> nested type for <see cref="WeakList{T}"/> type.
@@ -85,7 +84,14 @@ public sealed partial class WeakList<T>
         /// <summary>
         /// Gets a value indicating whether this node has been removed from the list.
         /// </summary>
-        public bool IsRemoved => _impl.IsRemoved;
+        public bool IsRemoved
+        {
+            get
+            {
+                // Note: when the lock is held, it is enough to just check the _isRemoved flag, but otherwise checking _finalizeAttemptCount is more up-to-date.
+                return _impl.IsRemoved;
+            }
+        }
 
         /// <summary>
         /// Disposes the node, removing it from the <see cref="WeakList{T}" /> it belongs to.
