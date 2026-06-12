@@ -56,9 +56,6 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     {
         Debug.Assert(_head is not null, "Object is disposed.");
         Debug.Assert(_tail is not null, "_tail should not be null since not disposed.");
-#if !NET
-        Debug.Assert(_containerValues._cwt is not null, "Cwt should not be null since not disposed.");
-#endif
     }
 #endif
 

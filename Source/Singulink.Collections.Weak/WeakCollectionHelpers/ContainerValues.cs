@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 
 namespace Singulink.Collections.WeakCollectionHelpers;
 
-#pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
+#pragma warning disable IDE0028 // Simplify collection initialization
 
 // Per-container state embedded inside the concrete container type.
 internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
@@ -19,6 +19,9 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
     // No DependentHandle type on .NET Standard, so we store the values in a CWT instead:
     // IMPORTANT: InternalNodeFinalizeHelper must not hold a strong reference to the CWT or WeakList, otherwise it will leak
     // due to https://github.com/dotnet/runtime/issues/12255.
+    // NOTE: uses of the linked lists are expected to lock on the list. This is important, since otherwise we can run into race conditions. E.g., if we just
+    // checked it's empty, we will want to remove it from the cwt, but it may have become used again between when we checked it and when we tried to remove it.
+    // We can either lock on the container to achieve this, or we can just lock on the linked list itself (needs to be consistent though).
     internal ConditionalWeakTable<T, LinkedList<InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>>>? _cwt = new();
 #endif
 

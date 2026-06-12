@@ -184,7 +184,18 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
         internalNode._trackingInfoHandle = StrongHandle.Alloc(containerValues._internalNodes);
 #else
         internalNode._value = WeakHandle.Alloc(value);
-        internalNode._cwtNode = WeakHandle.Alloc(containerValues._cwt!.GetValue(value, static _ => []).AddLast(internalNodeHelper));
+        Debug.Assert(containerValues._cwt != null, "CWT should not be null here, as the container is not disposed.");
+        var list = containerValues._cwt.GetValue(value, static _ => []);
+        bool entered = !default(TNodeHelpers).HasLocker; // We need to lock on the linked list, if we don't have the container lock.
+        if (entered) Monitor.Enter(list);
+        try
+        {
+            internalNode._cwtNode = WeakHandle.Alloc(list.AddLast(internalNodeHelper));
+        }
+        finally
+        {
+            if (entered) Monitor.Exit(list);
+        }
 #endif
         GC.KeepAlive(node);
     }

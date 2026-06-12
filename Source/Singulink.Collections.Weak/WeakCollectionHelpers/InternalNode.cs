@@ -101,15 +101,28 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
                     {
                         // Note: removing the node nulls cwtNode.List, so capture the per-value list first.
                         var perValueList = cwtNode.List;
-                        perValueList?.Remove(cwtNode);
-
-                        // If the value is still alive and this was its last node, evict the now-empty per-value entry from the CWT so it does not linger
-                        // until the value is collected (it survives Clear() / Remove() otherwise).
-                        // Note: if the value is already dead, the CWT entry will already automatically remove itself at some point.
-                        if (value is not null && perValueList is { Count: 0 })
+                        if (perValueList != null)
                         {
-                            var cwt = default(TNodeHelpers).GetContainerValues(container)._cwt;
-                            cwt?.Remove(value);
+                            // We need to lock on the linked list here, if we aren't already holding the container lock.
+                            bool entered2 = !default(TNodeHelpers).HasLocker;
+                            if (entered2) Monitor.Enter(perValueList);
+                            try
+                            {
+                                perValueList.Remove(cwtNode);
+
+                                // If the value is still alive and this was its last node, evict the now-empty per-value entry from the CWT so it does not linger
+                                // until the value is collected (it survives Clear() / Remove() otherwise).
+                                // Note: if the value is already dead, the CWT entry will already automatically remove itself at some point.
+                                if (value is not null && perValueList is { Count: 0 })
+                                {
+                                    var cwt = default(TNodeHelpers).GetContainerValues(container)._cwt;
+                                    if (cwt != null && cwt.TryGetValue(value, out var actualList) && actualList == perValueList) cwt.Remove(value);
+                                }
+                            }
+                            finally
+                            {
+                                if (entered2) Monitor.Exit(perValueList);
+                            }
                         }
                     }
 
