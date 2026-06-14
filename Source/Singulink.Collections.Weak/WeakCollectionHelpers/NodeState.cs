@@ -235,7 +235,7 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
             // - We stop concurrent cleanup helper removal by keeping the collection alive until after this code.
             // - Therefore, there are no cases where it could be modified concurrently, and we have appropriate barriers from the lock to ensure consistency.
             // However, a non-locking collection could have removals occuring concurrently, therefore we need to lock the usage of this list always.
-            lock (containerValues._internalNodes.Locker) internalNode._finalizeHelperNode = WeakHandle.Alloc(containerValues._internalNodes.List.AddLast(_internalNodeHelper));
+            lock (containerValues._internalNodes) internalNode._finalizeHelperNode = WeakHandle.Alloc(containerValues._internalNodes.List.AddLast(_internalNodeHelper));
         }
 #else
         internalNode._value = WeakHandle.Alloc(value);

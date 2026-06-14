@@ -17,16 +17,24 @@ internal sealed class CleanupHelper<T, TNode, TContainer, TNodeHelpers>(WeakHand
     {
         if (ListRef.TryGetTarget<InternalNodeTrackingInfo<T, TNode, TContainer, TNodeHelpers>>() is { } list)
         {
-            lock (list.Locker)
+            // Note: we only need the lock on non-locking collections. On locking collections, we already know that this cannot run concurrently with new node
+            // allocations nor with removals, since they require the lock, which keeps the collection alive.
+            bool entered = !default(TNodeHelpers).HasLocker;
+            if (entered) Monitor.Enter(list);
+            try
             {
                 foreach (var handle in list.List)
                 {
                     if (WeakReferenceHelpers.TryGetValue(handle) is { } node &&
                         node._impl.GetTarget<InternalNode<T, TNode, TContainer, TNodeHelpers>>() is { } n)
                     {
-                        n.EarlyDispose(node, list.Locker, isDisposed: true);
+                        n.EarlyDispose(node, null, isDisposed: true);
                     }
                 }
+            }
+            finally
+            {
+                if (entered) Monitor.Exit(list);
             }
 
             GC.KeepAlive(list);

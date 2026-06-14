@@ -41,7 +41,7 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
     public ContainerValues()
     {
 #if NET
-        _internalNodes = new([], new());
+        _internalNodes = new([]);
         _cleanupHelper = new(WeakHandle.Alloc(_internalNodes));
 #endif
     }

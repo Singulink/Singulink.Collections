@@ -45,12 +45,30 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
 
     private void RemoveFinalizeHelper()
     {
-        var trackingInfo = _trackingInfoHandle.GetNotNullTarget<InternalNodeTrackingInfo<T, TNode, TContainer, TNodeHelpers>>();
-
         if (_finalizeHelperNode.TryGetTarget<LinkedListNode<WeakReference<InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>>>>()
             is { } finalizeHelperNode)
         {
-            lock (trackingInfo.Locker) Monitor.Enter(trackingInfo!);
+            // Note: we only need to take the lock here for non-locking collections, as for locking collections, we can only reach this codepath on an alive
+            // list that will be kept alive by the caller (due to them having the lock); thus we cannot run simultaneously to the cleanup helper.
+
+            bool entered = !default(TNodeHelpers).HasLocker;
+            object? lockOn = null;
+
+            if (entered)
+            {
+                lockOn = _trackingInfoHandle.GetNotNullTarget<InternalNodeTrackingInfo<T, TNode, TContainer, TNodeHelpers>>();
+                Monitor.Enter(lockOn);
+            }
+
+            try
+            {
+                finalizeHelperNode.List?.Remove(finalizeHelperNode);
+            }
+            finally
+            {
+                if (entered) Monitor.Exit(lockOn!);
+            }
+
             GC.KeepAlive(finalizeHelperNode);
         }
 
