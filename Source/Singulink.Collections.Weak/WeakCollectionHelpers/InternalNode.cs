@@ -45,9 +45,11 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
 
     private void RemoveFinalizeHelper()
     {
+        var trackingInfo = _trackingInfoHandle.GetNotNullTarget<InternalNodeTrackingInfo<T, TNode, TContainer, TNodeHelpers>>();
+
         if (_finalizeHelperNode.TryGetTarget<LinkedListNode<WeakReference<InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>>>>() is { } finalizeHelperNode)
         {
-            finalizeHelperNode.List?.Remove(finalizeHelperNode);
+            lock (trackingInfo.Locker) Monitor.Enter(trackingInfo!);
             GC.KeepAlive(finalizeHelperNode);
         }
 

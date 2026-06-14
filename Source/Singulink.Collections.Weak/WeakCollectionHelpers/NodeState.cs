@@ -211,8 +211,24 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
         _internalNodeHelper = new(internalNodeHelper);
 #if NET
         internalNode._dependentHandle = new DependentHandle(value, internalNodeHelper);
-        lock (containerValues._internalNodes.Locker) internalNode._finalizeHelperNode = WeakHandle.Alloc(containerValues._internalNodes.List.AddLast(_internalNodeHelper));
         internalNode._trackingInfoHandle = StrongHandle.Alloc(containerValues._internalNodes);
+
+        LinkedListNode<WeakReference<InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>>> internalNodesNode;
+        if (default(TNodeHelpers).HasLocker)
+        {
+            internalNodesNode = containerValues._internalNodes.List.AddLast(_internalNodeHelper);
+        }
+        else
+        {
+            // Note: we only need to hold this lock on the non-locking collection for the following reason:
+            // - We stop concurrent manual removals by holding the collection lock.
+            // - We stop concurrent cleanup helper removal by keeping the collection alive until after this code.
+            // - Therefore, there are no cases where it could be modified concurrently, and we have appropriate barriers from the lock to ensure consistency.
+            // However, a non-locking collection could have removals occuring concurrently, therefore we need to lock the usage of this list always.
+            lock (containerValues._internalNodes.Locker) internalNodesNode = containerValues._internalNodes.List.AddLast(_internalNodeHelper);
+        }
+
+        internalNode._finalizeHelperNode = WeakHandle.Alloc(internalNodesNode);
 #else
         internalNode._value = WeakHandle.Alloc(value);
         Debug.Assert(containerValues._cwt != null, "CWT should not be null here, as the container is not disposed.");
