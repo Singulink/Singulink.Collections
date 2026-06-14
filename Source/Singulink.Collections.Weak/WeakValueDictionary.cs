@@ -333,7 +333,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
                         if (comparer?.Equals(value, valueTmp) != false)
                         {
                             // Try to remove this key & value pair. If we fail to remove it, then we need to try again, since it could be the case that there's
-                            // a new value this should succeed for.
+                            // a new value this should either succeed or fail for (it is indeterminate).
                             if (_lookup.TryRemove(new KeyValuePair<TKey, Node>(key, node)))
                             {
                                 node.Dispose();
@@ -399,6 +399,9 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// <summary>
     /// Removes all keys and values from the dictionary.
     /// </summary>
+    /// <remarks>
+    /// This operation is not atomic, each value is removed one at a time in a way that is not special.
+    /// </remarks>
     public void Clear()
     {
         // Note: we attempt to dispose the entries here also

@@ -116,35 +116,23 @@ partial class WeakValueDictionary<TKey, TValue>
                     {
                         if (node.Value.TryGetTarget(out var valueTmp))
                         {
-                            bool removed = false;
-
                             // Try to remove this key & value pair. If we fail to remove it, then we need to try again, since it could be the case that there's
                             // a new value this should succeed for.
                             if (_dictionary._lookup.TryRemove(new KeyValuePair<TKey, Node>(actualKeyTmp, node)))
                             {
                                 node.Dispose();
-                                removed = true;
                             }
                             else
                             {
+                                GC.KeepAlive(valueTmp);
                                 continue;
                             }
 
                             // Note: we do GC.KeepAlive on a temporary since 'value' could be overwritten before we could actually call that.
                             GC.KeepAlive(valueTmp);
-
-                            if (removed)
-                            {
-                                actualKey = actualKeyTmp;
-                                value = valueTmp;
-                            }
-                            else
-                            {
-                                actualKey = default;
-                                value = default;
-                            }
-
-                            return removed;
+                            actualKey = actualKeyTmp;
+                            value = valueTmp;
+                            return true;
                         }
                         else
                         {
