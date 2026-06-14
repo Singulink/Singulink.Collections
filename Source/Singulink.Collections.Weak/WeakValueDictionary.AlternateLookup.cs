@@ -163,6 +163,10 @@ partial class WeakValueDictionary<TKey, TValue>
                 _dictionary.HandleFailure();
                 throw;
             }
+            finally
+            {
+                GC.KeepAlive(_dictionary);
+            }
         }
 
         /// <inheritdoc cref="TryGetValue(TAlternateKey, out TKey, out TValue)"/>
@@ -175,26 +179,33 @@ partial class WeakValueDictionary<TKey, TValue>
         {
             _dictionary.ThrowIfDisposed();
 
-            if (_altLookup.TryGetValue(key, out var actualKeyTmp, out var entry))
+            try
             {
-                if (entry.Value.TryGetTarget(out var valueTmp))
+                if (_altLookup.TryGetValue(key, out var actualKeyTmp, out var entry))
                 {
-                    // Note: we do GC.KeepAlive on a temporary since 'value' could be overwritten before we could actually call that.
-                    value = valueTmp;
-                    GC.KeepAlive(valueTmp);
-                    actualKey = actualKeyTmp;
-                    return true;
+                    if (entry.Value.TryGetTarget(out var valueTmp))
+                    {
+                        // Note: we do GC.KeepAlive on a temporary since 'value' could be overwritten before we could actually call that.
+                        value = valueTmp;
+                        GC.KeepAlive(valueTmp);
+                        actualKey = actualKeyTmp;
+                        return true;
+                    }
+                    else
+                    {
+                        // We may as well dispose early if possible, since we're clearly done with it (the value has died).
+                        entry.Dispose();
+                    }
                 }
-                else
-                {
-                    // We may as well dispose early if possible, since we're clearly done with it (the value has died).
-                    entry.Dispose();
-                }
-            }
 
-            value = default;
-            actualKey = default;
-            return false;
+                value = default;
+                actualKey = default;
+                return false;
+            }
+            finally
+            {
+                GC.KeepAlive(_dictionary);
+            }
         }
     }
 }

@@ -27,7 +27,9 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     // Since we store the list here directly, we need to hold a weak ref back to Node from InternalNode:
     internal readonly TContainer _container;
 
-    // Constructor
+    /// <summary>
+    /// Initializes a new instance of the <see cref="NodeState{T, TNode, TContainer, TNodeHelpers}"/> struct based on the provided parameters.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public NodeState(InternalNode<T, TNode, TContainer, TNodeHelpers>? internalNode, TContainer container)
     {
@@ -128,7 +130,7 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
                 GC.SuppressFinalize(helper);
             }
 
-            GC.KeepAlive(helper);
+            GC.KeepAlive(helper); // Ensure the finalizer can't run while we're attempting to dispose, so we can be sure it's done at the end of this method.
             GC.KeepAlive(self);
         }
 
@@ -186,6 +188,20 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     /// <summary>
     /// Helper for allocating the node and related resources.
     /// </summary>
+    /// <remarks>
+    /// <para>
+    /// Callers must have already checked for disposal.
+    /// </para>
+    /// <para>
+    /// Callers must GC.KeepAlive the value until after it is fully link into the collection.
+    /// </para>
+    /// <para>
+    /// For locking collections, the caller must hold the lock to call this method.
+    /// </para>
+    /// <para>
+    /// This method requires the caller to hold the lock if it is a locking collection, or to ensure the collection is kept alive until after the list is fully linked in otherwise.
+    /// </para>
+    /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Alloc(T value, TNode node, InternalNode<T, TNode, TContainer, TNodeHelpers> internalNode, ref ContainerValues<T, TNode, TContainer, TNodeHelpers> containerValues)
     {

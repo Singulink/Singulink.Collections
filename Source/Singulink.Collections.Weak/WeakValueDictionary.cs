@@ -68,7 +68,9 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
         get
         {
             ThrowIfDisposed();
-            return _lookup.Comparer;
+            var result = _lookup.Comparer;
+            GC.KeepAlive(this);
+            return result;
         }
     }
 
@@ -147,6 +149,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
             finally
             {
                 GC.KeepAlive(value);
+                GC.KeepAlive(this);
             }
         }
     }
@@ -160,24 +163,36 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     public bool TryGetValue(TKey key, [NotNullWhen(true)] out TValue? value)
     {
         ThrowIfDisposed();
-        if (_lookup.TryGetValue(key, out var entry))
+        try
         {
-            if (entry.Value.TryGetTarget(out var valueTmp))
+            if (_lookup.TryGetValue(key, out var entry))
             {
-                // Note: we do GC.KeepAlive on a temporary since 'value' could be overwritten before we could actually call that.
-                value = valueTmp;
-                GC.KeepAlive(valueTmp);
-                return true;
+                if (entry.Value.TryGetTarget(out var valueTmp))
+                {
+                    // Note: we do GC.KeepAlive on a temporary since 'value' could be overwritten before we could actually call that.
+                    value = valueTmp;
+                    GC.KeepAlive(valueTmp);
+                    return true;
+                }
+                else
+                {
+                    // We may as well dispose early if possible, since we're clearly done with it (the value has died).
+                    entry.Dispose();
+                }
             }
-            else
-            {
-                // We may as well dispose early if possible, since we're clearly done with it (the value has died).
-                entry.Dispose();
-            }
-        }
 
-        value = null;
-        return false;
+            value = null;
+            return false;
+        }
+        catch
+        {
+            HandleFailure();
+            throw;
+        }
+        finally
+        {
+            GC.KeepAlive(this);
+        }
     }
 
     /// <summary>
@@ -235,6 +250,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
         finally
         {
             GC.KeepAlive(value);
+            GC.KeepAlive(this);
         }
     }
 
@@ -292,6 +308,10 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
             HandleFailure();
             throw;
         }
+        finally
+        {
+            GC.KeepAlive(this);
+        }
     }
 
     /// <summary>
@@ -345,6 +365,10 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
             HandleFailure();
             throw;
         }
+        finally
+        {
+            GC.KeepAlive(this);
+        }
     }
 
     /// <summary>
@@ -357,7 +381,9 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// </summary>
     public bool Contains(TKey key, TValue value, IEqualityComparer<TValue>? comparer = null)
     {
-        return TryGetValue(key, out var current) && comparer?.Equals(value, current) != false;
+        bool result = TryGetValue(key, out var current) && (comparer ?? EqualityComparer<TValue>.Default).Equals(value, current);
+        GC.KeepAlive(current); // Ensure the value can't get collected until we're ready to return, as we may be returning true.
+        return result;
     }
 
     /// <summary>
@@ -377,9 +403,13 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     {
         // Note: we attempt to dispose the entries here also
         ThrowIfDisposed();
-        foreach (var kvp in _lookup)
+        try
         {
-            kvp.Value.Dispose();
+            foreach (var kvp in _lookup) kvp.Value.Dispose();
+        }
+        finally
+        {
+            GC.KeepAlive(this);
         }
     }
 
@@ -393,9 +423,14 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
         {
             ThrowIfDisposed();
             if (kvp.Value.Value.TryGetTarget(out var value))
+            {
+                GC.KeepAlive(this);
                 yield return new KeyValuePair<TKey, TValue>(kvp.Key, value);
+            }
             else
+            {
                 kvp.Value.Dispose();
+            }
         }
     }
 

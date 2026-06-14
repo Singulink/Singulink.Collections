@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 // NOTE: for correct usage, ensure you follow what WeakList does.
-// NOTE: only the constructor and CleanOut method are intended to be used outside of the namespace.
+// NOTE: only the APIs marked public are intended to be used outside of the namespace.
 
 namespace Singulink.Collections.WeakCollectionHelpers;
 
@@ -48,7 +48,7 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
 
     // Note: we require the caller to be holding the lock (or for no new allocations to occur concurrently otherwise) for this method to be safe.
     // Note: this method is not possible to use safely on non-locking collections.
-    internal void CleanOut()
+    public void CleanOut()
     {
         // Clean out resources:
 #if NET
