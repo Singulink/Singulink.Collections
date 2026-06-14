@@ -171,6 +171,32 @@ public class LifetimeTests
     }
 
     [TestMethod]
+    public void AliveValueInUndisposedListDoesNotLeakUnreferencedList()
+    {
+        var (listWeakRef, nodeWeakRef, internalNodeWeakRef, internalNodeHelperWeakRef, o) = Helpers.NotInlined(() =>
+        {
+            var list = new WeakList<object>();
+            object value = new();
+            var node = list.AddLast(value);
+            var internalNodeWeakRef = new WeakReference<object?>(Helpers.GetInternalNode(node));
+            var internalNodeHelperWeakRef = new WeakReference<object?>(Helpers.GetInternalNodeFinalizeHelper(node));
+
+            // Note: the list is neither cleared nor disposed - it is allowed to die naturally via the finalizer while the value stays alive.
+            GC.KeepAlive(value);
+            return (new WeakReference<object>(list), new WeakReference<object?>(node), internalNodeWeakRef, internalNodeHelperWeakRef, value);
+        });
+
+        Helpers.ForceGC();
+
+        listWeakRef.TryGetTarget(out _).ShouldBeFalse();
+        nodeWeakRef.TryGetTarget(out _).ShouldBeFalse();
+        internalNodeWeakRef.TryGetTarget(out _).ShouldBeFalse();
+        internalNodeHelperWeakRef.TryGetTarget(out _).ShouldBeFalse();
+
+        GC.KeepAlive(o);
+    }
+
+    [TestMethod]
     public void ValueKeepsNodeAlive()
     {
         WeakList<object> list = new();
