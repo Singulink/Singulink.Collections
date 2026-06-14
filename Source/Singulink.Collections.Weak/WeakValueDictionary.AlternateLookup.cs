@@ -118,8 +118,8 @@ partial class WeakValueDictionary<TKey, TValue>
                         {
                             bool removed = false;
 
-                            // Try to remove this key & value pair. If we fail to remove it, then we need to try again, since it could be the case that there's a
-                            // new value this should succeed for.
+                            // Try to remove this key & value pair. If we fail to remove it, then we need to try again, since it could be the case that there's
+                            // a new value this should succeed for.
                             if (_dictionary._lookup.TryRemove(new KeyValuePair<TKey, Node>(actualKeyTmp, node)))
                             {
                                 node.Dispose();

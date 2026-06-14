@@ -187,7 +187,9 @@ public sealed partial class WeakList<T>
 
                 // Handle a removed node if needed by running the outer loop again:
                 if (currentNode is { _isRemoved: true }) continue;
-                Debug.Assert(currentNode is not null, "Current node should not be null, since we're not disposed and thus going left must lead to the pseudo-node before we hit null.");
+                Debug.Assert(
+                    currentNode is not null,
+                    "Current node should not be null, since we're not disposed and thus going left must lead to the pseudo-node before we hit null.");
 
                 // Determine if we want to add before or not:
                 // Note: if we had to move due to a removed node, we need special handling.

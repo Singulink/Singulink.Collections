@@ -332,8 +332,8 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
                         bool removed = false;
                         if (comparer?.Equals(value, valueTmp) != false)
                         {
-                            // Try to remove this key & value pair. If we fail to remove it, then we need to try again, since it could be the case that there's a
-                            // new value this should succeed for.
+                            // Try to remove this key & value pair. If we fail to remove it, then we need to try again, since it could be the case that there's
+                            // a new value this should succeed for.
                             if (_lookup.TryRemove(new KeyValuePair<TKey, Node>(key, node)))
                             {
                                 node.Dispose();

@@ -21,7 +21,8 @@ internal sealed class CleanupHelper<T, TNode, TContainer, TNodeHelpers>(WeakHand
             {
                 foreach (var handle in list.List)
                 {
-                    if (WeakReferenceHelpers.TryGetValue(handle) is { } node && node._impl.GetTarget<InternalNode<T, TNode, TContainer, TNodeHelpers>>() is { } n)
+                    if (WeakReferenceHelpers.TryGetValue(handle) is { } node &&
+                        node._impl.GetTarget<InternalNode<T, TNode, TContainer, TNodeHelpers>>() is { } n)
                     {
                         n.EarlyDispose(node, list.Locker, isDisposed: true);
                     }

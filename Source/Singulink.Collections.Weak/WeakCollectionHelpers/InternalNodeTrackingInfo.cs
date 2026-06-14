@@ -5,7 +5,8 @@ namespace Singulink.Collections.WeakCollectionHelpers;
 #pragma warning disable SA1401 // Fields should be private
 
 #if NET
-internal sealed class InternalNodeTrackingInfo<T, TNode, TContainer, TNodeHelpers>(LinkedList<WeakReference<InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>>> list, Lock locker)
+internal sealed class InternalNodeTrackingInfo<T, TNode, TContainer, TNodeHelpers>
+    (LinkedList<WeakReference<InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>>> list, Lock locker)
     where T : class
     where TNode : class
     where TContainer : class

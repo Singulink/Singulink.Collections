@@ -22,9 +22,14 @@ partial class WeakValueDictionary<TKey, TValue>
             public ref NodeState<TValue, Node, WeakValueDictionary<TKey, TValue>, NodeHelpers> GetNodeState(Node node) => ref node._impl;
             public void DeleteHelper(WeakValueDictionary<TKey, TValue> container, Node node) => container.DeleteHelper(node);
             public bool IsDisposed(WeakValueDictionary<TKey, TValue> container) => Volatile.Read(ref container._lookup) is null;
-            public ref ContainerValues<TValue, Node, WeakValueDictionary<TKey, TValue>, NodeHelpers> GetContainerValues(WeakValueDictionary<TKey, TValue> container) => ref container._containerValues;
             public Lock GetLocker(WeakValueDictionary<TKey, TValue> container) => throw new NotImplementedException();
             public bool HasLocker => false;
+
+            public ref ContainerValues<TValue, Node, WeakValueDictionary<TKey, TValue>, NodeHelpers> GetContainerValues(
+                WeakValueDictionary<TKey, TValue> container)
+            {
+                return ref container._containerValues;
+            }
         }
 
         // Node state:
@@ -37,7 +42,11 @@ partial class WeakValueDictionary<TKey, TValue>
         public WeakReference<TValue> Value { get; }
 
         // Private constructor:
-        internal Node(TKey key, TValue value, InternalNode<TValue, Node, WeakValueDictionary<TKey, TValue>, NodeHelpers> internalNode, WeakValueDictionary<TKey, TValue> list)
+        internal Node(
+            TKey key,
+            TValue value,
+            InternalNode<TValue, Node, WeakValueDictionary<TKey, TValue>, NodeHelpers> internalNode,
+            WeakValueDictionary<TKey, TValue> list)
         {
             Key = key;
             Value = new(value);

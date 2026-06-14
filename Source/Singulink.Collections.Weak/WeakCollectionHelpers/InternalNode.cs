@@ -47,7 +47,8 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
     {
         var trackingInfo = _trackingInfoHandle.GetNotNullTarget<InternalNodeTrackingInfo<T, TNode, TContainer, TNodeHelpers>>();
 
-        if (_finalizeHelperNode.TryGetTarget<LinkedListNode<WeakReference<InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>>>>() is { } finalizeHelperNode)
+        if (_finalizeHelperNode.TryGetTarget<LinkedListNode<WeakReference<InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>>>>()
+            is { } finalizeHelperNode)
         {
             lock (trackingInfo.Locker) Monitor.Enter(trackingInfo!);
             GC.KeepAlive(finalizeHelperNode);
@@ -111,8 +112,8 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
                             {
                                 perValueList.Remove(cwtNode);
 
-                                // If the value is still alive and this was its last node, evict the now-empty per-value entry from the CWT so it does not linger
-                                // until the value is collected (it survives Clear() / Remove() otherwise).
+                                // If the value is still alive and this was its last node, evict the now-empty per-value entry from the CWT so it does not
+                                // linger until the value is collected (it survives Clear() / Remove() otherwise).
                                 // Note: if the value is already dead, the CWT entry will already automatically remove itself at some point.
                                 if (value is not null && perValueList is { Count: 0 })
                                 {

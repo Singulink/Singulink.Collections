@@ -183,7 +183,10 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     /// Helper method for testing and for internal use.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private readonly InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>? GetInternalNodeHelper() => WeakReferenceHelpers.TryGetValue(_internalNodeHelper);
+    private readonly InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>? GetInternalNodeHelper()
+    {
+        return WeakReferenceHelpers.TryGetValue(_internalNodeHelper);
+    }
 
     /// <summary>
     /// Helper for allocating the node and related resources.
@@ -199,11 +202,20 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     /// For locking collections, the caller must hold the lock to call this method.
     /// </para>
     /// <para>
-    /// This method requires the caller to hold the lock if it is a locking collection, or to ensure the collection is kept alive until after the list is fully linked in otherwise.
+    /// This method requires the caller to hold the lock if it is a locking collection, or to ensure the collection is kept alive until after the list is fully
+    /// linked in otherwise.
+    /// </para>
+    /// <para>
+    /// For lock-free collections: if there are custom fields on the node type that are not initialized before calling this method, it is the caller's
+    /// responsibility to ensure they cannot have their writes re-ordered improperly such that another thread can view the incorrect value.
     /// </para>
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Alloc(T value, TNode node, InternalNode<T, TNode, TContainer, TNodeHelpers> internalNode, ref ContainerValues<T, TNode, TContainer, TNodeHelpers> containerValues)
+    public void Alloc(
+        T value,
+        TNode node,
+        InternalNode<T, TNode, TContainer, TNodeHelpers> internalNode,
+        ref ContainerValues<T, TNode, TContainer, TNodeHelpers> containerValues)
     {
         InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers> internalNodeHelper = new();
         internalNode._node = WeakHandle.Alloc(node);
@@ -212,11 +224,9 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
 #if NET
         internalNode._dependentHandle = new DependentHandle(value, internalNodeHelper);
         internalNode._trackingInfoHandle = StrongHandle.Alloc(containerValues._internalNodes);
-
-        LinkedListNode<WeakReference<InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>>> internalNodesNode;
         if (default(TNodeHelpers).HasLocker)
         {
-            internalNodesNode = containerValues._internalNodes.List.AddLast(_internalNodeHelper);
+            internalNode._finalizeHelperNode = WeakHandle.Alloc(containerValues._internalNodes.List.AddLast(_internalNodeHelper));
         }
         else
         {
@@ -225,10 +235,8 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
             // - We stop concurrent cleanup helper removal by keeping the collection alive until after this code.
             // - Therefore, there are no cases where it could be modified concurrently, and we have appropriate barriers from the lock to ensure consistency.
             // However, a non-locking collection could have removals occuring concurrently, therefore we need to lock the usage of this list always.
-            lock (containerValues._internalNodes.Locker) internalNodesNode = containerValues._internalNodes.List.AddLast(_internalNodeHelper);
+            lock (containerValues._internalNodes.Locker) internalNode._finalizeHelperNode = WeakHandle.Alloc(containerValues._internalNodes.List.AddLast(_internalNodeHelper));
         }
-
-        internalNode._finalizeHelperNode = WeakHandle.Alloc(internalNodesNode);
 #else
         internalNode._value = WeakHandle.Alloc(value);
         Debug.Assert(containerValues._cwt != null, "CWT should not be null here, as the container is not disposed.");
@@ -245,6 +253,12 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
         }
 #endif
         GC.KeepAlive(node);
+
+        // Probably we could be fine without a write barrier if we are careful about how we set up our fields, but it is safer to have a write barrier at the
+        // end of this, to ensure that we can re-order any code above in any way and not need to worry about it. The main reason it could be fine without it is
+        // that field accesses can't be re-ordered after a write of the object that contains them.
+        // Note: this is only necessary on the lock-free collections, as the locking ones have are in a lock that provides a write barrier on release.
+        // Note: we are guaranteed a write barrier by the Monitor.Exit / exit of lock above, which we use to achieve the above.
     }
 
     /// <summary>
@@ -266,7 +280,8 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     }
 
     /// <summary>
-    /// Helper method to check that the finalize helper handle is zero currently - this allows checking that the code was called from the finalizer in a likely correct state (sanity check only).
+    /// Helper method to check that the finalize helper handle is zero currently - this allows checking that the code was called from the finalizer in a likely
+    /// correct state (sanity check only).
     /// </summary>
     /// <remarks>
     /// This method does not support non-locking collections.
