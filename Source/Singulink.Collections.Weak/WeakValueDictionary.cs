@@ -99,7 +99,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     }
 
     /// <summary>
-    /// Gets the number of entries in the internal data structure. This value can change at any time, and additionaly may be overcounting the real amount of
+    /// Gets the number of entries in the internal data structure. This value can change at any time, and additionally may be overcounting the real amount of
     /// live entries, since it does not exclude entries whose values have been collected where the entry has not yet been collected.
     /// </summary>
     public int UnsafeCount
@@ -222,6 +222,11 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
             // Note: it is important that our lambda is able to handle multiple calls.
             else if (_lookup.AddOrUpdate(key, node, (_, old) =>
             {
+                // If we had a previous node (from this method being called more than once), we can dispose it (rather than forcing finalizer thread to).
+                // Nodes are never re-used, so we know that if it is no longer the current node we're replacing, then it is out of the dictionary and safe
+                // to dispose (they are safe for multiple disposal across multiple threads).
+                toDispose?.Dispose();
+
                 // Check if it is representing an alive value.
                 if (old.Value.TryGetTarget(out var valueTmp))
                 {
