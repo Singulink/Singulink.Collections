@@ -65,7 +65,7 @@ partial class WeakValueDictionary<TKey, TValue>
         _lookup = null;
         Thread.MemoryBarrier();
 
-        // Suppress finalizer for this list now, as we've cleaned up everything:
+        // Suppress finalizer for this list now, as we have already set the field to null (which is all the finalizer does):
         GC.SuppressFinalize(this);
     }
 

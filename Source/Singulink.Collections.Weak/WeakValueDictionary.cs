@@ -133,8 +133,12 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
                 Node? previousNode = null;
                 _lookup.AddOrUpdate(key, newNode, (_, oldNode) =>
                 {
-                    // Update our previous state:
+                    // If we had a previous node (from this method being called more than once), we can dispose it (rather than forcing finalizer thread to).
+                    // Nodes are never re-used, so we know that if it is no longer the current node we're replacing, then it is out of the dictionary and safe
+                    // to dispose (they are safe for multiple disposal across multiple threads).
                     previousNode?.Dispose();
+
+                    // Update our previous state:
                     previousNode = oldNode;
 
                     // Return the value we want to use:
@@ -215,6 +219,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
             }
 
             // Try replacing an entry if it's not representing an alive value
+            // Note: it is important that our lambda is able to handle multiple calls.
             else if (_lookup.AddOrUpdate(key, node, (_, old) =>
             {
                 // Check if it is representing an alive value.
@@ -365,7 +370,6 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
                     }
                 }
 
-                value = null;
                 return false;
             }
         }
