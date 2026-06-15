@@ -24,7 +24,7 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     // Strong reference to the InternalNode.
     private InternalNode<T, TNode, TContainer, TNodeHelpers>? _internalNode;
 
-    // Since we store the list here directly, we need to hold a weak ref back to Node from InternalNode:
+    // Since we store the container here directly, we need to hold a weak ref back to Node from InternalNode:
     internal readonly TContainer _container;
 
     /// <summary>
@@ -196,13 +196,13 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     /// Callers must have already checked for disposal.
     /// </para>
     /// <para>
-    /// Callers must GC.KeepAlive the value until after it is fully link into the collection.
+    /// Callers must GC.KeepAlive the value until after it is fully linked into the collection.
     /// </para>
     /// <para>
     /// For locking collections, the caller must hold the lock to call this method.
     /// </para>
     /// <para>
-    /// This method requires the caller to hold the lock if it is a locking collection, or to ensure the collection is kept alive until after the list is fully
+    /// This method requires the caller to hold the lock if it is a locking collection, or to ensure the collection is kept alive until after the node is fully
     /// linked in otherwise.
     /// </para>
     /// <para>

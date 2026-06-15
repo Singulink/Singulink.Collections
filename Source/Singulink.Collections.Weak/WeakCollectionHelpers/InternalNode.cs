@@ -8,7 +8,7 @@ namespace Singulink.Collections.WeakCollectionHelpers;
 #pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
 #pragma warning disable SA1401 // Fields should be private
 
-// This part is spun out of Node to ensure that the list isn't kept alive by InternalNodeFinalizeHelper, and it's spun off from InternalNodeFinalizeHelper
+// This part is spun out of Node to ensure that the container isn't kept alive by InternalNodeFinalizeHelper, and it's spun off from InternalNodeFinalizeHelper
 // to ensure we can dispose & access it at any time (including before InternalNodeFinalizeHelper is disposed).
 internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
     where T : class
@@ -29,7 +29,7 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
     // that keeps this instance alive so that we can remove it if we dispose.
     internal WeakHandle _cwtNode; // Type of value is LinkedListNode<InternalNodeFinalizeHelper>.
 
-    // Store the value (note: we have to use a weak reference, as it could contain a ref back to the list or Node):
+    // Store the value (note: we have to use a weak reference, as it could contain a ref back to the container or Node):
     // Note: we use WeakHandle here to avoid needing to allocate a separate WeakReference object - otherwise it'd be WeakReference<T>?.
     // Note: we don't need this value on .NET, since we have it in the DependentHandle.
     internal WeakHandle _value; // Type of value is T.
@@ -49,7 +49,7 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
             is { } finalizeHelperNode)
         {
             // Note: we only need to take the lock here for non-locking collections, as for locking collections, we can only reach this codepath on an alive
-            // list that will be kept alive by the caller (due to them having the lock); thus we cannot run simultaneously to the cleanup helper.
+            // container that will be kept alive by the caller (due to them having the lock); thus we cannot run simultaneously to the cleanup helper.
 
             bool entered = !default(TNodeHelpers).HasLocker;
             object? lockOn = null;
@@ -161,7 +161,7 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
         }
         else
         {
-            // Mark as removed even though list is disposed - callers may still check IsRemoved:
+            // Mark as removed even though container is disposed - callers may still check IsRemoved:
             _finalizeAttemptCount = -1;
 
             // Dispose these in here, as we don't pass out "wasDisposed" to callers, which means they can't check for that (which is fine to leave to
@@ -194,7 +194,7 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
             // If we don't have the node, we can't call RemoveFromContainer, so we just finalize our unmanaged resources:
             if (node is null) return true;
 
-            // Remove the node from the list:
+            // Remove the node from the container:
             hasNodeValue = true;
             if (!RemoveFromContainer(node, ref implHandle, previousHandle, disposing))
             {
@@ -229,7 +229,7 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
         return true;
     }
 
-    // Helper for all the places where we want to quickly dispose the internal node from the list (e.g., for disposing the list):
+    // Helper for all the places where we want to quickly dispose the internal node from the container (e.g., for disposing the list):
     internal void EarlyDispose(InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers> internalNodeHelper, Lock? locker, bool isDisposed)
     {
         var impl = new StrongHandle(Interlocked.Exchange(ref internalNodeHelper._impl.Handle, IntPtr.Zero));

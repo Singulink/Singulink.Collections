@@ -18,7 +18,7 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
 {
 #if !NET
     // No DependentHandle type on .NET Standard, so we store the values in a CWT instead:
-    // IMPORTANT: InternalNodeFinalizeHelper must not hold a strong reference to the CWT or WeakList, otherwise it will leak
+    // IMPORTANT: InternalNodeFinalizeHelper must not hold a strong reference to the CWT or the container, otherwise it will leak
     // due to https://github.com/dotnet/runtime/issues/12255.
     // NOTE: uses of the linked lists are expected to lock on the list. This is important, since otherwise we can run into race conditions. E.g., if we just
     // checked it's empty, we will want to remove it from the cwt, but it may have become used again between when we checked it and when we tried to remove it.
@@ -29,9 +29,9 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
     // NOTE!!! For correctness, it's crucial that no finalizer accesses any managed values except through weak references, as otherwise they may be partially
     // null-ed out already by the time the finalizer runs, leading to bugs - therefore, we carefully ensure we do all of that through weak references, while
     // still ensuring that the finalizers can run & collect everything.
-    // We use this side-data structure on .NET (not standard) to allow us to still clean up nodes when the collection is collected.
-    // The way it works is that the collection hold a strong ref to the list, and so does the internal node, but the helper only holds it as weak. That way,
-    // while the collection is alive, it can modify the list, but once it's collected, the helper can find any InternalNodes that are still alive (if any),
+    // We use this side-data structure on .NET (not standard) to allow us to still clean up nodes when the container is collected.
+    // The way it works is that the container holds a strong ref to the list, and so does the internal node, but the helper only holds it as weak. That way,
+    // while the container is alive, it can modify the container, but once it's collected, the helper can find any InternalNodes that are still alive (if any),
     // since they hold also hold a strong ref to the list; but it does not need to hold a strong reference to the linked list, which would be problematic.
 #if NET
     internal readonly InternalNodeTrackingInfo<T, TNode, TContainer, TNodeHelpers> _internalNodes;

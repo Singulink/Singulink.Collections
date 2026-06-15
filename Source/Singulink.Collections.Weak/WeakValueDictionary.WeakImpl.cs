@@ -46,12 +46,12 @@ partial class WeakValueDictionary<TKey, TValue>
             TKey key,
             TValue value,
             InternalNode<TValue, Node, WeakValueDictionary<TKey, TValue>, NodeHelpers> internalNode,
-            WeakValueDictionary<TKey, TValue> list)
+            WeakValueDictionary<TKey, TValue> dictionary)
         {
             Key = key;
             Value = new(value);
-            _impl = new(internalNode, list);
-            _impl.Alloc(value, this, internalNode, ref list._containerValues);
+            _impl = new(internalNode, dictionary);
+            _impl.Alloc(value, this, internalNode, ref dictionary._containerValues);
         }
 
         // Helper properties and methods that just wrap the ones on NodeState:
@@ -65,7 +65,7 @@ partial class WeakValueDictionary<TKey, TValue>
         _lookup = null;
         Thread.MemoryBarrier();
 
-        // Suppress finalizer for this list now, as we have already set the field to null (which is all the finalizer does):
+        // Suppress finalizer for this dictionary now, as we have already set the field to null (which is all the finalizer does):
         GC.SuppressFinalize(this);
     }
 
