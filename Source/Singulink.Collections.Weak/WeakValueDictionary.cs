@@ -12,8 +12,8 @@ namespace Singulink.Collections;
 #pragma warning disable CS0436 // Type conflicts with imported type
 
 /// <summary>
-/// Represents a collection of keys and weakly referenced values. If this collection is accessed concurrently from multiple threads (even in a read-only manner)
-/// then all accesses must be synchronized with a full lock.
+/// Represents a collection of keys and weakly referenced values. This type is also automatically safe for concurrent access, and will automatically remove dead
+/// objects from the collection.
 /// </summary>
 public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
     where TKey : notnull
