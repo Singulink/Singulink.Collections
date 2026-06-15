@@ -38,7 +38,8 @@ public class AlternateLookupTests
     [TestMethod]
     public void TryGetAlternateLookupFailsWithUnsupportingComparer()
     {
-        var dictionary = new WeakValueDictionary<string, object>(EqualityComparer<string>.Create(StringComparer.Ordinal.Equals, StringComparer.Ordinal.GetHashCode));
+        var dictionary = new WeakValueDictionary<string, object>(
+            EqualityComparer<string>.Create(StringComparer.Ordinal.Equals, StringComparer.Ordinal.GetHashCode));
 
         dictionary.TryGetAlternateLookup<ReadOnlySpan<char>>(out _).ShouldBeFalse();
     }
@@ -62,7 +63,8 @@ public class AlternateLookupTests
     [TestMethod]
     public void GetAlternateLookupThrowsWithUnsupportingComparer()
     {
-        var dictionary = new WeakValueDictionary<string, object>(EqualityComparer<string>.Create(StringComparer.Ordinal.Equals, StringComparer.Ordinal.GetHashCode));
+        var dictionary = new WeakValueDictionary<string, object>(
+            EqualityComparer<string>.Create(StringComparer.Ordinal.Equals, StringComparer.Ordinal.GetHashCode));
 
         Should.Throw<InvalidOperationException>(() => dictionary.GetAlternateLookup<ReadOnlySpan<char>>());
     }
