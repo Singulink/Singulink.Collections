@@ -99,8 +99,8 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     }
 
     /// <summary>
-    /// Gets the number of entries in the internal data structure. This value will be different than the actual count if any of the values were garbage
-    /// collected but still have internal entries in the dictionary that have not been cleaned.
+    /// Gets the number of entries in the internal data structure. This value can change at any time, and additionaly may be overcounting the real amount of
+    /// live entries, since it does not exclude entries whose values have been collected where the entry has not yet been collected.
     /// </summary>
     public int UnsafeCount
     {
@@ -128,18 +128,21 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
             ThrowIfDisposed();
             try
             {
-                // Try to get the previous value so we can dispose it (rather than letting it finalize), if possible.
-                // Despite being more calls, this is more optimal overall, as it avoids an unnecessary finalization.
-                // However, it's not required for correctness, so if we don't get it straight away, then we just write normally.
+                // Add or update the value for this key.
                 var newNode = AllocNode(key, value);
-                if (_lookup.TryGetValue(key, out var oldNode) && _lookup.TryUpdate(key, newNode, oldNode))
+                Node? previousNode = null;
+                _lookup.AddOrUpdate(key, newNode, (_, oldNode) =>
                 {
-                    oldNode.Dispose();
-                    return;
-                }
+                    // Update our previous state:
+                    previousNode?.Dispose();
+                    previousNode = oldNode;
 
-                // Just overwrite unconditionally.
-                _lookup[key] = newNode;
+                    // Return the value we want to use:
+                    return newNode;
+                });
+
+                // Dispose the previous one:
+                previousNode?.Dispose();
             }
             catch
             {
@@ -286,18 +289,23 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
         {
             if (_lookup.TryRemove(key, out var node))
             {
+                bool result = false;
                 if (node.Value.TryGetTarget(out var valueTmp))
                 {
                     // Note: we do GC.KeepAlive on a temporary since 'value' could be overwritten before we could actually call that.
                     value = valueTmp;
                     GC.KeepAlive(valueTmp);
-                    return true;
+                    result = true;
                 }
                 else
                 {
-                    // We may as well dispose early if possible, since we're clearly done with it (the value has died).
-                    node.Dispose();
+                    value = null;
                 }
+
+                // Dispose the node now that it has been removed from the dictionary, so its weak tracking state is cleaned up immediately rather than lingering
+                // until the value is eventually collected (or, for an already-dead value, finalized).
+                node.Dispose();
+                return result;
             }
 
             value = null;
@@ -320,6 +328,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     public bool Remove(TKey key, TValue value, IEqualityComparer<TValue>? comparer = null)
     {
         ThrowIfDisposed();
+        comparer ??= EqualityComparer<TValue>.Default;
         try
         {
             while (true)
@@ -330,7 +339,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
                     {
                         // Check if they are equal.
                         bool removed = false;
-                        if (comparer?.Equals(value, valueTmp) != false)
+                        if (comparer.Equals(value, valueTmp))
                         {
                             // Try to remove this key & value pair. If we fail to remove it, then we need to try again, since it could be the case that there's
                             // a new value this should either succeed or fail for (it is indeterminate).

@@ -1,6 +1,7 @@
 ﻿#if NET9_0_OR_GREATER
 
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using Singulink.Collections.Utilities;
@@ -53,10 +54,11 @@ partial class WeakValueDictionary<TKey, TValue>
         {
             _dictionary = dictionary;
             _altLookup = altLookup;
+            Debug.Assert(_dictionary.Comparer is IAlternateEqualityComparer<TAlternateKey, TKey>, "The dictionary's comparer is of the wrong type.");
         }
 
         /// <summary>
-        /// Gets the value associated with the specified alternate key.
+        /// Gets or sets the value associated with the specified alternate key.
         /// </summary>
         public TValue this[TAlternateKey key]
         {
@@ -67,6 +69,42 @@ partial class WeakValueDictionary<TKey, TValue>
 
                 return value;
             }
+            set
+            {
+                // Get a key either by looking up an existing one or by just allocating:
+                _dictionary.ThrowIfDisposed();
+                var actualKey = _altLookup.TryGetValue(key, out var oldKey, out _) ? oldKey : Comparer.Create(key);
+
+                // Just call into the non-alternate API with this key now:
+                _dictionary[actualKey] = value;
+            }
+        }
+
+        /// <summary>
+        /// Adds the specified alternate key and value to the dictionary.
+        /// </summary>
+        public bool TryAdd(TAlternateKey key, TValue value)
+        {
+            // Try to find an existing key on a node that isn't meant to be alive any more:
+            _dictionary.ThrowIfDisposed();
+            if (_altLookup.TryGetValue(key, out var actualKey, out var oldNode))
+            {
+                if (oldNode.Value.TryGetTarget(out var oldValue))
+                {
+                    // If we got a value, then we can't add this key.
+                    // Otherwise, we can re-use the key value in our API call to _dictionary.TryAdd.
+                    GC.KeepAlive(oldValue);
+                    return false;
+                }
+            }
+            else
+            {
+                // Otherwise initialize actualKey to a value we can call into the main API with:
+                actualKey = Comparer.Create(key);
+            }
+
+            // Just call into the non-alternate API with this key now:
+            return _dictionary.TryAdd(actualKey, value);
         }
 
         /// <summary>
