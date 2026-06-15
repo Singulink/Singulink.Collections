@@ -370,5 +370,163 @@ public class AlternateLookupTests
             lookup.TryAdd("key".AsSpan(), null!);
         });
     }
+
+    [TestMethod]
+    public void ComparerPropertyReturnsAlternateComparerForCustomComparer()
+    {
+        var dictionary = new WeakValueDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        var lookup = dictionary.GetAlternateLookup<ReadOnlySpan<char>>();
+
+        lookup.Comparer.ShouldBeSameAs(StringComparer.OrdinalIgnoreCase);
+    }
+
+    [TestMethod]
+    public void CustomComparerUsedForTryGetValue()
+    {
+        var dictionary = new WeakValueDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        object value = new();
+        dictionary.TryAdd("key", value);
+
+        var lookup = dictionary.GetAlternateLookup<ReadOnlySpan<char>>();
+
+        // A differently-cased span should match the stored key under the case-insensitive comparer.
+        lookup.TryGetValue("KEY".AsSpan(), out object? current).ShouldBeTrue();
+        current.ShouldBeSameAs(value);
+
+        GC.KeepAlive(value);
+    }
+
+    [TestMethod]
+    public void CustomComparerUsedForTryGetValueOutActualKey()
+    {
+        var dictionary = new WeakValueDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        object value = new();
+        dictionary.TryAdd("key", value);
+
+        var lookup = dictionary.GetAlternateLookup<ReadOnlySpan<char>>();
+
+        // The actual key returned should be the originally stored key, not the differently-cased lookup span.
+        lookup.TryGetValue("KEY".AsSpan(), out string? actualKey, out object? current).ShouldBeTrue();
+        actualKey.ShouldBe("key");
+        current.ShouldBeSameAs(value);
+
+        GC.KeepAlive(value);
+    }
+
+    [TestMethod]
+    public void CustomComparerUsedForIndexerGet()
+    {
+        var dictionary = new WeakValueDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        object value = new();
+        dictionary.TryAdd("key", value);
+
+        var lookup = dictionary.GetAlternateLookup<ReadOnlySpan<char>>();
+
+        lookup["KEY".AsSpan()].ShouldBeSameAs(value);
+
+        GC.KeepAlive(value);
+    }
+
+    [TestMethod]
+    public void CustomComparerUsedForContainsKey()
+    {
+        var dictionary = new WeakValueDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        object value = new();
+        dictionary.TryAdd("key", value);
+
+        var lookup = dictionary.GetAlternateLookup<ReadOnlySpan<char>>();
+
+        lookup.ContainsKey("KEY".AsSpan()).ShouldBeTrue();
+
+        GC.KeepAlive(value);
+    }
+
+    [TestMethod]
+    public void CustomComparerUsedForContainsKeyOutActualKey()
+    {
+        var dictionary = new WeakValueDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        object value = new();
+        dictionary.TryAdd("key", value);
+
+        var lookup = dictionary.GetAlternateLookup<ReadOnlySpan<char>>();
+
+        lookup.ContainsKey("KEY".AsSpan(), out string? actualKey).ShouldBeTrue();
+        actualKey.ShouldBe("key");
+
+        GC.KeepAlive(value);
+    }
+
+    [TestMethod]
+    public void CustomComparerUsedForRemove()
+    {
+        var dictionary = new WeakValueDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        object value = new();
+        dictionary.TryAdd("key", value);
+
+        var lookup = dictionary.GetAlternateLookup<ReadOnlySpan<char>>();
+
+        lookup.Remove("KEY".AsSpan()).ShouldBeTrue();
+        dictionary.ContainsKey("key").ShouldBeFalse();
+
+        GC.KeepAlive(value);
+    }
+
+    [TestMethod]
+    public void CustomComparerUsedForRemoveOutActualKeyAndValue()
+    {
+        var dictionary = new WeakValueDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        object value = new();
+        dictionary.TryAdd("key", value);
+
+        var lookup = dictionary.GetAlternateLookup<ReadOnlySpan<char>>();
+
+        lookup.Remove("KEY".AsSpan(), out string? actualKey, out object? removed).ShouldBeTrue();
+        actualKey.ShouldBe("key");
+        removed.ShouldBeSameAs(value);
+        dictionary.ContainsKey("key").ShouldBeFalse();
+
+        GC.KeepAlive(value);
+    }
+
+    [TestMethod]
+    public void CustomComparerUsedForIndexerSetOverwrite()
+    {
+        var dictionary = new WeakValueDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        object value1 = new();
+        object value2 = new();
+        dictionary.TryAdd("key", value1);
+
+        var lookup = dictionary.GetAlternateLookup<ReadOnlySpan<char>>();
+
+        // Setting through a differently-cased span should overwrite the existing entry rather than add a second one.
+        lookup["KEY".AsSpan()] = value2;
+
+        dictionary.UnsafeCount.ShouldBe(1);
+        dictionary.TryGetValue("key", out object? current).ShouldBeTrue();
+        current.ShouldBeSameAs(value2);
+
+        GC.KeepAlive(value1);
+        GC.KeepAlive(value2);
+    }
+
+    [TestMethod]
+    public void CustomComparerUsedForTryAddDuplicateKey()
+    {
+        var dictionary = new WeakValueDictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        object value1 = new();
+        object value2 = new();
+        dictionary.TryAdd("key", value1);
+
+        var lookup = dictionary.GetAlternateLookup<ReadOnlySpan<char>>();
+
+        // A differently-cased span should be treated as a duplicate key under the case-insensitive comparer.
+        lookup.TryAdd("KEY".AsSpan(), value2).ShouldBeFalse();
+
+        dictionary.TryGetValue("key", out object? current).ShouldBeTrue();
+        current.ShouldBeSameAs(value1);
+
+        GC.KeepAlive(value1);
+        GC.KeepAlive(value2);
+    }
 }
 #endif
