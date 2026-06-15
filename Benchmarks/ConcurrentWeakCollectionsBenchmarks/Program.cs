@@ -132,7 +132,7 @@ public class Benchs
     [Benchmark]
     public void DryRun() { }
 #else
-    [Params(0, 1, 3, 10, 30, 100, 300, 1000, 3000, 10000)]
+    [Params(0, 1, 3, 10, 100, 1000, 10000)]
     public int N { get; set; }
 
     private readonly Random _random = new();
