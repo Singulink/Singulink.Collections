@@ -135,8 +135,12 @@ public class Benchs
     [Params(0, 1, 3, 10, 100, 1000, 10000)]
     public int N { get; set; }
 
+    // A key deliberately outside the pre-populated range (0..N-1) so single-op dictionary benchmarks don't disturb the existing entries.
+    private const int SpareKey = -1;
+
     private readonly Random _random = new();
     private WeakList<object> _list = null!;
+    private WeakValueDictionary<int, object> _dictionary = null!;
     private readonly object _value = new();
     private object[] _values = null!;
     private WeakList<object>.Node[] _nodes = null!;
@@ -149,6 +153,9 @@ public class Benchs
         _nodes = new WeakList<object>.Node[N];
         int i = 0;
         foreach (object x in _values) _nodes[i++] = _list.AddLast(x);
+
+        _dictionary = [];
+        for (int k = 0; k < N; k++) _dictionary.TryAdd(k, _values[k]);
     }
 
     [GlobalCleanup]
@@ -160,7 +167,7 @@ public class Benchs
     }
 
     [Benchmark]
-    public void AddRemoveNodeAtStart()
+    public void WeakList_AddRemoveNodeAtStart()
     {
         WeakList<object> list = _list;
         var node = list.AddFirst(_value);
@@ -168,7 +175,7 @@ public class Benchs
     }
 
     [Benchmark]
-    public void AddRemoveNodeAtEnd()
+    public void WeakList_AddRemoveNodeAtEnd()
     {
         WeakList<object> list = _list;
         var node = list.AddLast(_value);
@@ -182,7 +189,7 @@ public class Benchs
 #endif
 
     [Benchmark]
-    public void AddRemoveNodeRandomPosition()
+    public void WeakList_AddRemoveNodeRandomPosition()
     {
         // Note: we're using unsafe code here to ensure we're not measuring the array access bounds checks also.
         WeakList<object> list = _list;
@@ -198,7 +205,7 @@ public class Benchs
     }
 
     [Benchmark]
-    public void AddRemoveNodeRandomPositionEach()
+    public void WeakList_AddRemoveNodeRandomPositionEach()
     {
         // Note: we're using unsafe code here to ensure we're not measuring the array access bounds checks also.
         // Note: we're not preserving the order properly in _nodes for this method, but that is fine for this benchmark (others will re-instantiate it).
@@ -226,7 +233,7 @@ public class Benchs
     }
 
     [Benchmark]
-    public void Enumerate()
+    public void WeakList_Enumerate()
     {
         WeakList<object> list = _list;
 #pragma warning disable IDE0059 // Unnecessary assignment of a value
@@ -237,7 +244,7 @@ public class Benchs
     }
 
     [Benchmark]
-    public void CreateAddNodesClearDispose()
+    public void WeakList_CreateAddNodesClearDispose()
     {
         WeakList<object> list = new();
 
@@ -263,7 +270,7 @@ public class Benchs
     }
 
     [Benchmark]
-    public void CreateAddPreexistingNodesClearDispose()
+    public void WeakList_CreateAddPreexistingNodesClearDispose()
     {
         WeakList<object> list = new();
 
@@ -285,7 +292,7 @@ public class Benchs
     }
 
     [Benchmark]
-    public void CreateAddNodesDispose()
+    public void WeakList_CreateAddNodesDispose()
     {
         WeakList<object> list = new();
 
@@ -309,7 +316,7 @@ public class Benchs
     }
 
     [Benchmark]
-    public void CreateAddPreexistingNodesDispose()
+    public void WeakList_CreateAddPreexistingNodesDispose()
     {
         WeakList<object> list = new();
 
@@ -329,7 +336,7 @@ public class Benchs
     }
 
     [Benchmark]
-    public void CreateAddNodesGCAutoClean()
+    public void WeakList_CreateAddNodesGCAutoClean()
     {
         WeakList<object> list = new();
 
@@ -351,7 +358,7 @@ public class Benchs
     }
 
     [Benchmark]
-    public void CreateAddPreexistingNodesGCAutoClean()
+    public void WeakList_CreateAddPreexistingNodesGCAutoClean()
     {
         WeakList<object> list = new();
 
@@ -369,7 +376,7 @@ public class Benchs
     }
 
     [Benchmark]
-    public void CreateAddSelfGCAutoClean()
+    public void WeakList_CreateAddSelfGCAutoClean()
     {
         WeakList<object> list = new();
 
@@ -388,6 +395,83 @@ public class Benchs
         }
 
         GC.KeepAlive(values);
+    }
+
+    [Benchmark]
+    public object? WeakValueDictionary_TryGetValue()
+    {
+        if (N == 0) return null;
+        int idx = _random.Next(0, N);
+        return _dictionary.TryGetValue(idx, out object result) ? result : null;
+    }
+
+    [Benchmark]
+    public object? WeakValueDictionary_TryGetValueFailing()
+    {
+        return _dictionary.TryGetValue(SpareKey, out object result) ? result : null;
+    }
+
+    [Benchmark]
+    public object? WeakValueDictionary_IndexerSetUnset()
+    {
+        var dictionary = _dictionary;
+        dictionary[SpareKey] = _value;
+        return dictionary.Remove(SpareKey, out object result) ? result : null;
+    }
+
+    [Benchmark]
+    public object? WeakValueDictionary_TryAddRemove()
+    {
+        var dictionary = _dictionary;
+        dictionary.TryAdd(SpareKey, _value);
+        return dictionary.Remove(SpareKey, out object result) ? result : null;
+    }
+
+    [Benchmark]
+    public void WeakValueDictionary_CreateAddClearGCAutoClean()
+    {
+        var dictionary = new WeakValueDictionary<int, object>();
+
+        int n = N;
+        object[] values = _values;
+        if (n > 0) _ = values[n - 1];
+
+        for (int i = 0; i < n; i++)
+        {
+            dictionary.TryAdd(i, values[i] = new object());
+        }
+
+        dictionary.Clear();
+
+        GC.KeepAlive(values);
+    }
+
+    [Benchmark]
+    public void WeakValueDictionary_CreateAddNoClearGCAutoClean()
+    {
+        var dictionary = new WeakValueDictionary<int, object>();
+
+        int n = N;
+        object[] values = _values;
+        if (n > 0) _ = values[n - 1];
+
+        for (int i = 0; i < n; i++)
+        {
+            dictionary.TryAdd(i, values[i] = new object());
+        }
+
+        GC.KeepAlive(values);
+    }
+
+    [Benchmark]
+    public void WeakValueDictionary_Enumerate()
+    {
+        var dictionary = _dictionary;
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
+        foreach (object x in dictionary)
+#pragma warning restore IDE0059 // Unnecessary assignment of a value
+        {
+        }
     }
 #endif
 }
