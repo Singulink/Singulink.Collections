@@ -26,12 +26,10 @@ BenchmarkRunner.Run<Benchs>(args: args);
         _ = ((Func<object>)([MethodImpl(MethodImplOptions.NoInlining)] () => new long[2000]))();
 #elif NET8_0
         _ = ((Func<object>)([MethodImpl(MethodImplOptions.NoInlining)] () => new long[3000]))();
-#elif NET6_0
-        _ = ((Func<object>)([MethodImpl(MethodImplOptions.NoInlining)] () => new long[4000]))();
 #elif NETSTANDARD2_1_OR_GREATER
-        _ = ((Func<object>)([MethodImpl(MethodImplOptions.NoInlining)] () => new long[5000]))();
+        _ = ((Func<object>)([MethodImpl(MethodImplOptions.NoInlining)] () => new long[4000]))();
 #elif NETSTANDARD
-        _ = ((Func<object>)([MethodImpl(MethodImplOptions.NoInlining)] () => new long[6000]))();
+        _ = ((Func<object>)([MethodImpl(MethodImplOptions.NoInlining)] () => new long[5000]))();
 #endif
 
     This allows validating that it is indeed running with the correct build of the library, as the allocated memory is substantially larger than what would
@@ -64,10 +62,6 @@ public class MyConfig : ManualConfig
         AddJob(baseJob
             .WithRuntime(CoreRuntime.Core80)
             .WithId(".NET 8.0"));
-
-        AddJob(baseJob
-            .WithRuntime(CoreRuntime.Core60)
-            .WithId(".NET 6.0"));
 #endif
 
         AddJob(baseJob
@@ -101,7 +95,7 @@ public class MyConfig : ManualConfig
         }
 #endif
 
-        WithOrderer(new JobOrderer(".NET 10.0", ".NET 9.0", ".NET 8.0", ".NET 6.0", ".NET 10.0 (.NET Standard 2.1)", ".NET 10.0 (.NET Standard 2.0)", ".NET Framework 4.8"));
+        WithOrderer(new JobOrderer(".NET 10.0", ".NET 9.0", ".NET 8.0", ".NET 10.0 (.NET Standard 2.1)", ".NET 10.0 (.NET Standard 2.0)", ".NET Framework 4.8"));
 
         HideColumns(Column.Runtime);
         HideColumns(Column.Arguments);
