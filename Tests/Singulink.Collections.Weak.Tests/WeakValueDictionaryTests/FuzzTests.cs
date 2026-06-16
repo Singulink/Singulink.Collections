@@ -140,7 +140,7 @@ public class FuzzTests
         Random r = new(seed);
         var weakDictionary = new WeakValueDictionary<int, object>();
         var kept = new Dictionary<int, object>(); // Keys whose current value we hold a strong reference to (guaranteed live).
-        var dying = new List<int>(); // Keys whose current value has no strong reference and may be collected.
+        var dying = new HashSet<int>(); // Keys whose current value has no strong reference and may be collected.
         const int Operations = 2000;
         const int MaxKeys = 50;
         const int GcInterval = 500;
@@ -168,10 +168,7 @@ public class FuzzTests
 
             // Any value we let die must never be handed back once it has actually been collected.
             foreach (int key in dying)
-            {
-                if (!weakDictionary.TryGetValue(key, out _))
-                    weakDictionary.TryGetValue(key, out _).ShouldBeFalse();
-            }
+                weakDictionary.TryGetValue(key, out _).ShouldBeFalse();
 
             // Enumeration must expose every guaranteed-live entry (and, by design, never yields collected values).
             var snapshot = weakDictionary.ToList();
