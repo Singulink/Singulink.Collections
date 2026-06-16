@@ -20,7 +20,9 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     where TKey : notnull
     where TValue : class
 {
-    // The actual dictionary that we use
+    // The actual dictionary that we use.
+    // IMPORTANT: whenever we remove or overwrite an entry in here, we are responsible for calling Dispose() on the node we displaced. If we don't, the node
+    // (and its weak-tracking memory) is leaked for as long as the value stays alive instead of being reclaimed when we remove it.
     private ConcurrentDictionary<TKey, Node>? _lookup;
 
     // These are the values we need for our weak tracking support.
@@ -133,6 +135,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
                 Node? previousNode = null;
                 lookup.AddOrUpdate(key, newNode, (_, oldNode) =>
                 {
+                    // We must call Dispose() on the node we overwrite, otherwise it is leaked for as long as its value stays alive.
                     // If we had a previous node (from this method being called more than once), we can dispose it (rather than forcing finalizer thread to).
                     // Nodes are never re-used, so we know that if it is no longer the current node we're replacing, then it is out of the dictionary and safe
                     // to dispose (they are safe for multiple disposal across multiple threads).
@@ -145,7 +148,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
                     return newNode;
                 });
 
-                // Dispose the previous one:
+                // Dispose the node we overwrote, otherwise it is leaked for as long as its value stays alive.
                 previousNode?.Dispose();
             }
             catch when (!nonFailureException)
@@ -184,6 +187,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
                 else
                 {
                     // We may as well dispose early if possible, since we're clearly done with it (the value has died).
+                    // Note: this one is non-critical, as its value is already dead (and hence all the stuff will die eventually).
                     entry.Dispose();
                 }
             }
@@ -234,6 +238,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
             // Note: it is important that our lambda is able to handle multiple calls.
             else if (lookup.AddOrUpdate(key, node, (_, old) =>
             {
+                // We must call Dispose() on any node we displace below, otherwise it is leaked for as long as its value stays alive.
                 // If we had a previous node (from this method being called more than once), we can dispose it (rather than forcing finalizer thread to).
                 // Nodes are never re-used, so we know that if it is no longer the current node we're replacing, then it is out of the dictionary and safe
                 // to dispose (they are safe for multiple disposal across multiple threads).
@@ -255,6 +260,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
                 }
             }) == node)
             {
+                // Dispose the node we displaced, otherwise it is leaked for as long as its value stays alive.
                 toDispose?.Dispose();
                 return true;
             }
@@ -262,7 +268,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
             // Otherwise, we failed to add it.
             else
             {
-                // Dispose now, since we failed to add it.
+                // We never put this node into the dictionary, so dispose it now, otherwise it is leaked for as long as the value stays alive.
                 node.Dispose();
                 return false;
             }
@@ -324,8 +330,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
                     value = null;
                 }
 
-                // Dispose the node now that it has been removed from the dictionary, so its weak tracking state is cleaned up immediately rather than lingering
-                // until the value is eventually collected (or, for an already-dead value, finalized).
+                // We removed the node from the dictionary, so we must call Dispose() on it, otherwise it is leaked for as long as its value stays alive.
                 node.Dispose();
                 return result;
             }
@@ -381,6 +386,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
                             // a new value this should either succeed or fail for (it is indeterminate).
                             if (lookup.TryRemove(new KeyValuePair<TKey, Node>(key, node)))
                             {
+                                // We removed the node, so we must call Dispose() on it, otherwise it is leaked for as long as its value stays alive.
                                 node.Dispose();
                                 removed = true;
                             }
@@ -397,6 +403,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
                     else
                     {
                         // We may as well dispose early if possible, since we're clearly done with it (the value has died).
+                        // Note: this one is non-critical, as its value is already dead (and hence all the stuff will die eventually).
                         node.Dispose();
                     }
                 }
@@ -448,7 +455,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// </remarks>
     public void Clear()
     {
-        // Note: we attempt to dispose the entries here also
+        // Note: we attempt to dispose the entries here also.
         ThrowIfDisposed(out var lookup);
         try
         {
@@ -476,6 +483,8 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
             }
             else
             {
+                // We may as well dispose early if possible, since we're clearly done with it (the value has died).
+                // Note: this one is non-critical, as its value is already dead (and hence all the stuff will die eventually).
                 kvp.Value.Dispose();
             }
         }

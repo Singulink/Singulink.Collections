@@ -146,6 +146,7 @@ partial class WeakValueDictionary<TKey, TValue>
                             // a new value this should succeed for.
                             if (lookup.TryRemove(new KeyValuePair<TKey, Node>(actualKeyTmp, node)))
                             {
+                                // We removed the node, so we must call Dispose() on it, otherwise it is leaked for as long as its value stays alive.
                                 node.Dispose();
                             }
                             else
@@ -163,6 +164,7 @@ partial class WeakValueDictionary<TKey, TValue>
                         else
                         {
                             // We may as well dispose early if possible, since we're clearly done with it (the value has died).
+                            // Note: this one is non-critical, as its value is already dead (and hence all the stuff will die eventually).
                             node.Dispose();
                         }
                     }
@@ -208,6 +210,7 @@ partial class WeakValueDictionary<TKey, TValue>
                     else
                     {
                         // We may as well dispose early if possible, since we're clearly done with it (the value has died).
+                        // Note: this one is non-critical, as its value is already dead (and hence all the stuff will die eventually).
                         entry.Dispose();
                     }
                 }
