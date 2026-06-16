@@ -47,10 +47,10 @@ public sealed partial class WeakList<T>
             }
 
             [DoesNotReturn]
-            public void ThrowDisposed() => throw new NotImplementedException();
-            public ref bool GetDisableAllocations(WeakList<T> container) => throw new NotImplementedException();
-            public ref LinkedList<Node>? GetNodeHelperList(WeakList<T> container) => throw new NotImplementedException();
-            public ref LinkedListNode<Node>? GetNodeHelperNode(Node node) => throw new NotImplementedException();
+            public void ThrowDisposed() => throw new NotSupportedException("Only supported on non-locking collections.");
+            public ref bool GetDisableAllocations(WeakList<T> container) => throw new NotSupportedException("Only supported on non-locking collections.");
+            public ref LinkedList<Node>? GetNodeHelperList(WeakList<T> container) => throw new NotSupportedException("Only supported on non-locking collections.");
+            public ref LinkedListNode<Node>? GetNodeHelperNode(Node node) => throw new NotSupportedException("Only supported on non-locking collections.");
         }
 
         // Node state:

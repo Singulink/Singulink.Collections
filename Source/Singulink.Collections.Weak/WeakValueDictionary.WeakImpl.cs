@@ -54,7 +54,7 @@ partial class WeakValueDictionary<TKey, TValue>
                 return ref container._containerValues;
             }
 
-            public Lock GetLocker(WeakValueDictionary<TKey, TValue> container) => throw new NotImplementedException();
+            public Lock GetLocker(WeakValueDictionary<TKey, TValue> container) => throw new NotSupportedException("Only supported on locking collections.");
         }
 
         // Node state:

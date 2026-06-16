@@ -117,8 +117,8 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
             default(TNodeHelpers).GetNodeState(node).CleanUpForHandleFailureOrDispose();
         }
 
-        // Suppress finalizer for this list now (if it has one - otherwise, this does nothing), as we've cleaned up everything:
-        GC.SuppressFinalize(this);
-        GC.KeepAlive(this);
+        // Suppress finalizer for this collection now (if it has one - otherwise, this does nothing), as we've cleaned up everything:
+        GC.SuppressFinalize(container);
+        GC.KeepAlive(container);
     }
 }
