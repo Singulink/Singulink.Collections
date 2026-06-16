@@ -464,6 +464,46 @@ public class Benchs
     }
 
     [Benchmark]
+    public void WeakValueDictionary_CreateAddClearDispose()
+    {
+        var dictionary = new WeakValueDictionary<int, object>();
+
+        int n = N;
+        object[] values = _values;
+        if (n > 0) _ = values[n - 1];
+
+        for (int i = 0; i < n; i++)
+        {
+            dictionary.TryAdd(i, values[i] = new object());
+        }
+
+        dictionary.Clear();
+
+        GC.KeepAlive(values);
+
+        dictionary.Dispose();
+    }
+
+    [Benchmark]
+    public void WeakValueDictionary_CreateAddDispose()
+    {
+        var dictionary = new WeakValueDictionary<int, object>();
+
+        int n = N;
+        object[] values = _values;
+        if (n > 0) _ = values[n - 1];
+
+        for (int i = 0; i < n; i++)
+        {
+            dictionary.TryAdd(i, values[i] = new object());
+        }
+
+        GC.KeepAlive(values);
+
+        dictionary.Dispose();
+    }
+
+    [Benchmark]
     public void WeakValueDictionary_Enumerate()
     {
         var dictionary = _dictionary;

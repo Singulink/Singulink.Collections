@@ -38,12 +38,17 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
     internal readonly CleanupHelper<T, TNode, TContainer, TNodeHelpers> _cleanupHelper;
 #endif
 
-    public ContainerValues()
+    public ContainerValues(TContainer container)
     {
 #if NET
         _internalNodes = new([]);
         _cleanupHelper = new(WeakHandle.Alloc(_internalNodes));
 #endif
+        if (!default(TNodeHelpers).HasLocker)
+        {
+            default(TNodeHelpers).GetDisableAllocations(container) = false;
+            default(TNodeHelpers).GetNodeHelperList(container) = [];
+        }
     }
 
     // Note: we require the caller to be holding the lock (or for no new allocations to occur concurrently otherwise) for this method to be safe.
@@ -67,5 +72,53 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
         GC.KeepAlive(_cwt); // Ensure the CWT lives to here at least.
         _cwt = null;
 #endif
+    }
+
+    // This method is the implementation for the dispose logic for non-locking collections (only).
+    public void Dispose(TContainer container)
+    {
+        // Firstly, we need to acquire the lock and ensure no new nodes are being allocated:
+#if NET
+        lock (_internalNodes)
+#else
+        var cwt = _cwt;
+        if (cwt == null) return;
+        lock (cwt)
+#endif
+        {
+            // Check if we're already disposed:
+            ref bool disableAllocations = ref default(TNodeHelpers).GetDisableAllocations(container);
+            if (disableAllocations)
+            {
+                return;
+            }
+
+            // Mark as disposing
+            disableAllocations = true;
+        }
+
+        // Now, get the list of nodes we still have and set it to null (do this inside the lock so we can allow the existing cleanups to work as expected):
+        ref var listField = ref default(TNodeHelpers).GetNodeHelperList(container);
+        var list = listField;
+        Debug.Assert(list != null, "List should not be null here.");
+        lock (list)
+        {
+            // Mark as null - this allows any other cleanups to just skip this step immediately.
+            listField = null;
+        }
+
+        // Call to CleanOut - we call this as an implementation detail (after the above things), as it's not safe for callers to do this directly:
+        CleanOut();
+
+        // Dispose all nodes that may still be alive (note: it is critical that no other threads access this list for mutation anymore):
+        foreach (var node in list)
+        {
+            // Again, we call CleanUpForHandleFailureOrDispose as an implementation detail.
+            default(TNodeHelpers).GetNodeState(node).CleanUpForHandleFailureOrDispose();
+        }
+
+        // Suppress finalizer for this list now (if it has one - otherwise, this does nothing), as we've cleaned up everything:
+        GC.SuppressFinalize(this);
+        GC.KeepAlive(this);
     }
 }

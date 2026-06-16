@@ -415,6 +415,84 @@ public class LifetimeTests
     }
 
     [TestMethod]
+    public void DisposeAllowsEntryToDie()
+    {
+        var dictionary = new WeakValueDictionary<int, object>();
+
+        var (value, nodeWeakRef, internalNodeWeakRef, internalNodeHelperWeakRef) = Helpers.NotInlined(dictionary, (dictionary) =>
+        {
+            object value = new();
+            dictionary.TryAdd(1, value);
+            object node = Helpers.GetNode(dictionary, 1)!;
+            var internalNodeWeakRef = new WeakReference<object?>(Helpers.GetInternalNode(dictionary, node));
+            var internalNodeHelperWeakRef = new WeakReference<object?>(Helpers.GetInternalNodeFinalizeHelper(dictionary, node));
+            dictionary.Dispose();
+            return (value, new WeakReference<object?>(node), internalNodeWeakRef, internalNodeHelperWeakRef);
+        });
+
+        Helpers.ForceGC();
+
+        nodeWeakRef.TryGetTarget(out _).ShouldBeFalse();
+        internalNodeWeakRef.TryGetTarget(out _).ShouldBeFalse();
+        internalNodeHelperWeakRef.TryGetTarget(out _).ShouldBeFalse();
+
+        GC.KeepAlive(dictionary);
+        GC.KeepAlive(value);
+    }
+
+    [TestMethod]
+    public void AliveValueInDisposedDictionaryDoesNotLeakUnreferencedDictionary()
+    {
+        var (dictionaryWeakRef, nodeWeakRef, internalNodeWeakRef, internalNodeHelperWeakRef, value) = Helpers.NotInlined(() =>
+        {
+            var dictionary = new WeakValueDictionary<int, object>();
+            object value = new();
+            dictionary.TryAdd(1, value);
+            object node = Helpers.GetNode(dictionary, 1)!;
+            var internalNodeWeakRef = new WeakReference<object?>(Helpers.GetInternalNode(dictionary, node));
+            var internalNodeHelperWeakRef = new WeakReference<object?>(Helpers.GetInternalNodeFinalizeHelper(dictionary, node));
+            dictionary.Dispose();
+            GC.KeepAlive(value);
+            return (new WeakReference<object>(dictionary), new WeakReference<object?>(node), internalNodeWeakRef, internalNodeHelperWeakRef, value);
+        });
+
+        Helpers.ForceGC();
+
+        dictionaryWeakRef.TryGetTarget(out _).ShouldBeFalse();
+        nodeWeakRef.TryGetTarget(out _).ShouldBeFalse();
+        internalNodeWeakRef.TryGetTarget(out _).ShouldBeFalse();
+        internalNodeHelperWeakRef.TryGetTarget(out _).ShouldBeFalse();
+
+        GC.KeepAlive(value);
+    }
+
+    [TestMethod]
+    public void DisposeEvictsCwtEntriesWhileValuesStayAlive()
+    {
+        var dictionary = new WeakValueDictionary<int, object>();
+        var values = new List<object>();
+
+        for (int i = 0; i < 100; i++)
+        {
+            object value = new();
+            values.Add(value);
+            dictionary.TryAdd(i, value);
+        }
+
+        foreach (object value in values)
+            Helpers.CwtContainsValue(dictionary, value)?.ShouldBeTrue();
+
+        dictionary.Dispose();
+
+        // Disposing the dictionary should evict the per-value CWT entries immediately even though the values are still alive.
+        foreach (object value in values)
+            Helpers.CwtContainsValue(dictionary, value)?.ShouldBeFalse();
+
+        GC.KeepAlive(values);
+        GC.KeepAlive(dictionary);
+    }
+
+    [TestMethod]
     [Retry(99)] // We could get unlucky and have a GC occur that stops us from capturing the resurrected instance - this should make that effectively impossible
     public void ResurrectedDictionaryThrowsOnUse()
     {

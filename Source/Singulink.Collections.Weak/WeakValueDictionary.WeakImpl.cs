@@ -19,17 +19,42 @@ partial class WeakValueDictionary<TKey, TValue>
         // Our callbacks for NodeState to use
         internal readonly struct NodeHelpers : INodeHelpers<TValue, Node, WeakValueDictionary<TKey, TValue>, NodeHelpers>
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public ref NodeState<TValue, Node, WeakValueDictionary<TKey, TValue>, NodeHelpers> GetNodeState(Node node) => ref node._impl;
-            public void DeleteHelper(WeakValueDictionary<TKey, TValue> container, Node node) => container.DeleteHelper(node);
-            public bool IsDisposed(WeakValueDictionary<TKey, TValue> container) => Volatile.Read(ref container._lookup) is null;
-            public Lock GetLocker(WeakValueDictionary<TKey, TValue> container) => throw new NotImplementedException();
-            public bool HasLocker => false;
 
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void DeleteHelper(WeakValueDictionary<TKey, TValue> container, Node node) => container.DeleteHelper(node);
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool IsDisposed(WeakValueDictionary<TKey, TValue> container) => container._disableAllocations;
+
+            public bool HasLocker
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get => false;
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public ref bool GetDisableAllocations(WeakValueDictionary<TKey, TValue> container) => ref container._disableAllocations;
+
+            [DoesNotReturn]
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void ThrowDisposed() => Throw.IfDisposed(true, typeof(WeakValueDictionary<TKey, TValue>));
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public ref LinkedList<Node>? GetNodeHelperList(WeakValueDictionary<TKey, TValue> container) => ref container._nodeHelperList;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public ref LinkedListNode<Node>? GetNodeHelperNode(Node node) => ref node._nodeHelperNode;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public ref ContainerValues<TValue, Node, WeakValueDictionary<TKey, TValue>, NodeHelpers> GetContainerValues(
                 WeakValueDictionary<TKey, TValue> container)
             {
                 return ref container._containerValues;
             }
+
+            public Lock GetLocker(WeakValueDictionary<TKey, TValue> container) => throw new NotImplementedException();
         }
 
         // Node state:
@@ -41,6 +66,9 @@ partial class WeakValueDictionary<TKey, TValue>
         // Value
         public WeakReference<TValue> Value { get; }
 
+        // Field for use by WeakCollectionHelpers:
+        private LinkedListNode<Node>? _nodeHelperNode;
+
         // Private constructor:
         internal Node(
             TKey key,
@@ -51,7 +79,7 @@ partial class WeakValueDictionary<TKey, TValue>
             Key = key;
             Value = new(value);
             _impl = new(internalNode, dictionary);
-            _impl.Alloc(value, this, internalNode, ref dictionary._containerValues);
+            _impl.Alloc(value, this, internalNode, dictionary);
         }
 
         // Helper properties and methods that just wrap the ones on NodeState:
@@ -62,11 +90,8 @@ partial class WeakValueDictionary<TKey, TValue>
     private void HandleFailure()
     {
         // Mark disposed:
-        _lookup = null;
+        Dispose();
         Thread.MemoryBarrier();
-
-        // Suppress finalizer for this dictionary now, as we have already set the field to null (which is all the finalizer does):
-        GC.SuppressFinalize(this);
     }
 
     // Helper to allocate a node - doesn't link it into the dictionary.
@@ -83,4 +108,8 @@ partial class WeakValueDictionary<TKey, TValue>
     {
         _lookup?.TryRemove(new KeyValuePair<TKey, Node>(node.Key, node));
     }
+
+    // Fields for use by WeakCollectionHelpers:
+    private bool _disableAllocations;
+    private LinkedList<Node>? _nodeHelperList;
 }

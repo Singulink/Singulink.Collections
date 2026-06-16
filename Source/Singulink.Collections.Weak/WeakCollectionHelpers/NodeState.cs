@@ -209,14 +209,19 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     /// For lock-free collections: if there are custom fields on the node type that are not initialized before calling this method, it is the caller's
     /// responsibility to ensure they cannot have their writes re-ordered improperly such that another thread can view the incorrect value.
     /// </para>
+    /// <para>
+    /// For non-locking collections, this API can throw <see cref="ObjectDisposedException" />, which the caller should be prepared to handle (e.g., by
+    /// releasing any unmanaged resources and rethrowing).
+    /// </para>
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Alloc(
         T value,
         TNode node,
         InternalNode<T, TNode, TContainer, TNodeHelpers> internalNode,
-        ref ContainerValues<T, TNode, TContainer, TNodeHelpers> containerValues)
+        TContainer container)
     {
+        ref var containerValues = ref default(TNodeHelpers).GetContainerValues(container);
         InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers> internalNodeHelper = new();
         internalNode._node = WeakHandle.Alloc(node);
         internalNodeHelper._impl = StrongHandle.Alloc(internalNode);
@@ -235,24 +240,94 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
             // - We stop concurrent cleanup helper removal by keeping the collection alive until after this code.
             // - Therefore, there are no cases where it could be modified concurrently, and we have appropriate barriers from the lock to ensure consistency.
             // However, a non-locking collection could have removals occuring concurrently, therefore we need to lock the usage of this list always.
+            bool continueAllocating = true;
             lock (containerValues._internalNodes)
             {
-                internalNode._finalizeHelperNode = WeakHandle.Alloc(containerValues._internalNodes.List.AddLast(_internalNodeHelper));
+                // Firstly, check if we are not meant to be allocating any more (disposed), and if so, prepare to release handles / similar and throw:
+                if (default(TNodeHelpers).GetDisableAllocations(container))
+                {
+                    continueAllocating = false;
+                }
+
+                // Otherwise, allocate
+                else
+                {
+                    var trackingList = default(TNodeHelpers).GetNodeHelperList(container);
+                    Debug.Assert(trackingList != null, "Tracking list should not be null here, as the container is not disposed.");
+                    lock (trackingList)
+                    {
+                        default(TNodeHelpers).GetNodeHelperNode(node) = trackingList.AddLast(node);
+                    }
+
+                    internalNode._finalizeHelperNode = WeakHandle.Alloc(containerValues._internalNodes.List.AddLast(_internalNodeHelper));
+                }
+            }
+
+            // Handle if we're not continuing with allocating:
+            if (!continueAllocating)
+            {
+                internalNode._node.Dispose();
+                internalNodeHelper._impl.Dispose();
+                internalNode._dependentHandle.Dispose();
+                internalNode._trackingInfoHandle.Dispose();
+                GC.SuppressFinalize(internalNodeHelper);
+                GC.KeepAlive(internalNodeHelper);
+                default(TNodeHelpers).ThrowDisposed();
             }
         }
 #else
         internalNode._value = WeakHandle.Alloc(value);
-        Debug.Assert(containerValues._cwt != null, "CWT should not be null here, as the container is not disposed.");
-        var list = containerValues._cwt.GetValue(value, static _ => []);
-        bool entered = !default(TNodeHelpers).HasLocker; // We need to lock on the linked list, if we don't have the container lock.
-        if (entered) Monitor.Enter(list);
-        try
+        var cwt = containerValues._cwt;
+        if (default(TNodeHelpers).HasLocker)
         {
+            Debug.Assert(cwt != null, "CWT should not be null here, as the container is not disposed.");
+            var list = cwt.GetValue(value, static _ => []);
             internalNode._cwtNode = WeakHandle.Alloc(list.AddLast(internalNodeHelper));
         }
-        finally
+        else
         {
-            if (entered) Monitor.Exit(list);
+            // We need to lock on the cwt & linked list, if we don't have the container lock.
+            bool continueAllocating = true;
+            if (cwt is null)
+            {
+                continueAllocating = false;
+            }
+            else
+            {
+                lock (cwt)
+                {
+                    if (default(TNodeHelpers).GetDisableAllocations(container))
+                    {
+                        continueAllocating = false;
+                    }
+                    else
+                    {
+                        var trackingList = default(TNodeHelpers).GetNodeHelperList(container);
+                        Debug.Assert(trackingList != null, "Tracking list should not be null here, as the container is not disposed.");
+                        lock (trackingList)
+                        {
+                            default(TNodeHelpers).GetNodeHelperNode(node) = trackingList.AddLast(node);
+                        }
+
+                        var list = cwt.GetValue(value, static _ => []);
+                        lock (list)
+                        {
+                            internalNode._cwtNode = WeakHandle.Alloc(list.AddLast(internalNodeHelper));
+                        }
+                    }
+                }
+            }
+
+            // Handle if we're not continuing with allocating:
+            if (!continueAllocating)
+            {
+                internalNode._node.Dispose();
+                internalNodeHelper._impl.Dispose();
+                internalNode._value.Dispose();
+                GC.SuppressFinalize(internalNodeHelper);
+                GC.KeepAlive(internalNodeHelper);
+                default(TNodeHelpers).ThrowDisposed();
+            }
         }
 #endif
         GC.KeepAlive(node);
@@ -275,7 +350,8 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
         // Finalizer is not critical here, other than our handles & marking removed, so clean those up and then suppress:
         if (GetInternalNodeHelper() is { } helper)
         {
-            _internalNode?.EarlyDispose(helper, default(TNodeHelpers).GetLocker(_container), true);
+            Lock? locker = default(TNodeHelpers).HasLocker ? default(TNodeHelpers).GetLocker(_container) : null;
+            _internalNode?.EarlyDispose(helper, locker, true);
         }
 
         // Set node finalizer to null:

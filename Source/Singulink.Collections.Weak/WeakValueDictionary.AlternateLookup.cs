@@ -20,8 +20,8 @@ partial class WeakValueDictionary<TKey, TValue>
     public AlternateLookup<TAlternateKey> GetAlternateLookup<TAlternateKey>()
         where TAlternateKey : notnull, allows ref struct
     {
-        ThrowIfDisposed();
-        return new AlternateLookup<TAlternateKey>(this, _lookup.GetAlternateLookup<TAlternateKey>());
+        ThrowIfDisposed(out var lookup);
+        return new AlternateLookup<TAlternateKey>(this, lookup.GetAlternateLookup<TAlternateKey>());
     }
 
     /// <inheritdoc cref="GetAlternateLookup{TAlternateKey}"/>
@@ -29,9 +29,9 @@ partial class WeakValueDictionary<TKey, TValue>
         [MaybeNullWhen(false)] out AlternateLookup<TAlternateKey> lookup)
         where TAlternateKey : notnull, allows ref struct
     {
-        ThrowIfDisposed();
+        ThrowIfDisposed(out var implLookup);
 
-        if (_lookup.TryGetAlternateLookup<TAlternateKey>(out var altLookup))
+        if (implLookup.TryGetAlternateLookup<TAlternateKey>(out var altLookup))
         {
             lookup = new AlternateLookup<TAlternateKey>(this, altLookup);
             return true;
@@ -72,7 +72,7 @@ partial class WeakValueDictionary<TKey, TValue>
             set
             {
                 // Get a key either by looking up an existing one or by just allocating:
-                _dictionary.ThrowIfDisposed();
+                _dictionary.ThrowIfDisposed(out _);
                 var actualKey = _altLookup.TryGetValue(key, out var oldKey, out _) ? oldKey : Comparer.Create(key);
 
                 // Just call into the non-alternate API with this key now:
@@ -86,7 +86,7 @@ partial class WeakValueDictionary<TKey, TValue>
         public bool TryAdd(TAlternateKey key, TValue value)
         {
             // Try to find an existing key on a node that isn't meant to be alive any more:
-            _dictionary.ThrowIfDisposed();
+            _dictionary.ThrowIfDisposed(out _);
             if (_altLookup.TryGetValue(key, out var actualKey, out var oldNode))
             {
                 if (oldNode.Value.TryGetTarget(out var oldValue))
@@ -118,34 +118,22 @@ partial class WeakValueDictionary<TKey, TValue>
         public WeakValueDictionary<TKey, TValue> Dictionary => _dictionary;
 
         /// <inheritdoc cref="ContainsKey(TAlternateKey, out TKey)"/>/>
-        public bool ContainsKey(TAlternateKey key)
-        {
-            _dictionary.ThrowIfDisposed();
-            return TryGetValue(key, out _);
-        }
+        public bool ContainsKey(TAlternateKey key) => TryGetValue(key, out _);
 
         /// <summary>
         /// Returns a value indicating whether the dictionary contains the specified alternate key.
         /// </summary>
-        public bool ContainsKey(TAlternateKey key, [MaybeNullWhen(false)] out TKey actualKey)
-        {
-            _dictionary.ThrowIfDisposed();
-            return TryGetValue(key, out actualKey, out _);
-        }
+        public bool ContainsKey(TAlternateKey key, [MaybeNullWhen(false)] out TKey actualKey) => TryGetValue(key, out actualKey, out _);
 
         /// <inheritdoc cref="Remove(TAlternateKey, out TKey, out TValue)"/>
-        public bool Remove(TAlternateKey key)
-        {
-            _dictionary.ThrowIfDisposed();
-            return Remove(key, out _, out _);
-        }
+        public bool Remove(TAlternateKey key) => Remove(key, out _, out _);
 
         /// <summary>
         /// Removes the value with the specified alternate key from the dictionary.
         /// </summary>
         public bool Remove(TAlternateKey key, [MaybeNullWhen(false)] out TKey actualKey, [MaybeNullWhen(false)] out TValue value)
         {
-            _dictionary.ThrowIfDisposed();
+            _dictionary.ThrowIfDisposed(out var lookup);
             try
             {
                 while (true)
@@ -156,7 +144,7 @@ partial class WeakValueDictionary<TKey, TValue>
                         {
                             // Try to remove this key & value pair. If we fail to remove it, then we need to try again, since it could be the case that there's
                             // a new value this should succeed for.
-                            if (_dictionary._lookup.TryRemove(new KeyValuePair<TKey, Node>(actualKeyTmp, node)))
+                            if (lookup.TryRemove(new KeyValuePair<TKey, Node>(actualKeyTmp, node)))
                             {
                                 node.Dispose();
                             }
@@ -203,7 +191,7 @@ partial class WeakValueDictionary<TKey, TValue>
         /// </summary>
         public bool TryGetValue(TAlternateKey key, [MaybeNullWhen(false)] out TKey actualKey, [MaybeNullWhen(false)] out TValue value)
         {
-            _dictionary.ThrowIfDisposed();
+            _dictionary.ThrowIfDisposed(out _);
 
             try
             {

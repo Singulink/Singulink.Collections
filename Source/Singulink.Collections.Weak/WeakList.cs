@@ -65,7 +65,7 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     {
         _head = new(null, this) { _isPseudoNode = true };
         _tail = _head;
-        _containerValues = new();
+        _containerValues = new(this);
         _locker = new();
     }
 

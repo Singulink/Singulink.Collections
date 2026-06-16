@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime;
 using System.Runtime.CompilerServices;
 
@@ -24,12 +25,32 @@ public sealed partial class WeakList<T>
         // Our callbacks for NodeState to use
         internal readonly struct NodeHelpers : INodeHelpers<T, Node, WeakList<T>, NodeHelpers>
         {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public ref NodeState<T, Node, WeakList<T>, NodeHelpers> GetNodeState(Node node) => ref node._impl;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void DeleteHelper(WeakList<T> container, Node node) => container.DeleteHelper(node);
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool IsDisposed(WeakList<T> container) => container._head is null;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public ref ContainerValues<T, Node, WeakList<T>, NodeHelpers> GetContainerValues(WeakList<T> container) => ref container._containerValues;
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public Lock GetLocker(WeakList<T> container) => container._locker;
-            public bool HasLocker => true;
+
+            public bool HasLocker
+            {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get => true;
+            }
+
+            [DoesNotReturn]
+            public void ThrowDisposed() => throw new NotImplementedException();
+            public ref bool GetDisableAllocations(WeakList<T> container) => throw new NotImplementedException();
+            public ref LinkedList<Node>? GetNodeHelperList(WeakList<T> container) => throw new NotImplementedException();
+            public ref LinkedListNode<Node>? GetNodeHelperNode(Node node) => throw new NotImplementedException();
         }
 
         // Node state:
@@ -53,7 +74,7 @@ public sealed partial class WeakList<T>
             if (state is { } s)
             {
                 _impl = new(s.InternalNode, list);
-                _impl.Alloc(s.Value, this, s.InternalNode, ref list._containerValues);
+                _impl.Alloc(s.Value, this, s.InternalNode, list);
             }
             else
             {

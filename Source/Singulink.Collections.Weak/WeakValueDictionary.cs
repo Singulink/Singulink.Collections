@@ -2,20 +2,21 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-
+using System.Runtime.CompilerServices;
 using Singulink.Collections.Utilities;
 using Singulink.Collections.WeakCollectionHelpers;
 
 namespace Singulink.Collections;
 
-#pragma warning disable IDE0028 // Simplify collection initialization
 #pragma warning disable CS0436 // Type conflicts with imported type
+#pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
+#pragma warning disable IDE0028 // Simplify collection initialization
 
 /// <summary>
 /// Represents a collection of keys and weakly referenced values. This type is also automatically safe for concurrent access, and will automatically remove dead
 /// objects from the collection.
 /// </summary>
-public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>
+public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>, IDisposable
     where TKey : notnull
     where TValue : class
 {
@@ -38,7 +39,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     public WeakValueDictionary(IEqualityComparer<TKey>? comparer)
     {
         _lookup = new(comparer);
-        _containerValues = new();
+        _containerValues = new(this);
     }
 
     /// <summary>
@@ -47,17 +48,18 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     ~WeakValueDictionary()
     {
         // We want to block usage after potential resurrection (as it could be dangerous), as it could be actively problematic, so mark as disposed now:
-        // NOTE: we do not expose a dispose method directly, as it would be unsafe (since we do not perform suitable locking around stuff).
-        // However, it is unsafe to use the collection after resurrection, so we still need to track it based on that, so we still track disposal internally.
-        _lookup = null;
+        _disableAllocations = true;
         Thread.MemoryBarrier();
     }
 
-    // Helper to assert not disposed in Debug mode (doesn't check in Release mode, but still gives nullable analysis info):
-    [MemberNotNull(nameof(_lookup))]
-    private void ThrowIfDisposed()
+    // Helper to throw if disposed and get the non-null lookup at the same time:
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private void ThrowIfDisposed(out ConcurrentDictionary<TKey, Node> lookup)
     {
-        Throw.IfDisposed(_lookup == null, typeof(WeakValueDictionary<TKey, TValue>));
+        Throw.IfDisposed(_disableAllocations, typeof(WeakValueDictionary<TKey, TValue>));
+        var result = _lookup;
+        Throw.IfDisposed(result == null, typeof(WeakValueDictionary<TKey, TValue>));
+        lookup = result;
     }
 
     /// <summary>
@@ -67,8 +69,8 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     {
         get
         {
-            ThrowIfDisposed();
-            var result = _lookup.Comparer;
+            ThrowIfDisposed(out var lookup);
+            var result = lookup.Comparer;
             GC.KeepAlive(this);
             return result;
         }
@@ -77,26 +79,12 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// <summary>
     /// Gets the keys in the dictionary.
     /// </summary>
-    public IEnumerable<TKey> Keys
-    {
-        get
-        {
-            ThrowIfDisposed();
-            return this.Select((x) => x.Key);
-        }
-    }
+    public IEnumerable<TKey> Keys => this.Select((x) => x.Key);
 
     /// <summary>
     /// Gets the values in the dictionary.
     /// </summary>
-    public IEnumerable<TValue> Values
-    {
-        get
-        {
-            ThrowIfDisposed();
-            return this.Select((x) => x.Value);
-        }
-    }
+    public IEnumerable<TValue> Values => this.Select((x) => x.Value);
 
     /// <summary>
     /// Gets the number of entries in the internal data structure. This value can change at any time, and additionally may be overcounting the real amount of
@@ -106,8 +94,8 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     {
         get
         {
-            ThrowIfDisposed();
-            return _lookup.Count;
+            ThrowIfDisposed(out var lookup);
+            return lookup.Count;
         }
     }
 
@@ -125,13 +113,25 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
         }
         set
         {
-            ThrowIfDisposed();
+            ThrowIfDisposed(out var lookup);
+            bool nonFailureException = false;
             try
             {
+                // Allocate a node for this.
+                Node newNode;
+                try
+                {
+                    newNode = AllocNode(key, value);
+                }
+                catch (ObjectDisposedException)
+                {
+                    nonFailureException = true;
+                    throw;
+                }
+
                 // Add or update the value for this key.
-                var newNode = AllocNode(key, value);
                 Node? previousNode = null;
-                _lookup.AddOrUpdate(key, newNode, (_, oldNode) =>
+                lookup.AddOrUpdate(key, newNode, (_, oldNode) =>
                 {
                     // If we had a previous node (from this method being called more than once), we can dispose it (rather than forcing finalizer thread to).
                     // Nodes are never re-used, so we know that if it is no longer the current node we're replacing, then it is out of the dictionary and safe
@@ -148,7 +148,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
                 // Dispose the previous one:
                 previousNode?.Dispose();
             }
-            catch
+            catch when (!nonFailureException)
             {
                 HandleFailure();
                 throw;
@@ -169,10 +169,10 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// <returns><see langword="true"/> if the dictionary contains a value with the specified key, otherwise <see langword="false"/>.</returns>
     public bool TryGetValue(TKey key, [NotNullWhen(true)] out TValue? value)
     {
-        ThrowIfDisposed();
+        ThrowIfDisposed(out var lookup);
         try
         {
-            if (_lookup.TryGetValue(key, out var entry))
+            if (lookup.TryGetValue(key, out var entry))
             {
                 if (entry.Value.TryGetTarget(out var valueTmp))
                 {
@@ -207,20 +207,32 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// </summary>
     public bool TryAdd(TKey key, TValue value)
     {
-        ThrowIfDisposed();
+        ThrowIfDisposed(out var lookup);
+        bool nonFailureException = false;
         try
         {
+            // Allocate a node for this.
+            Node node;
+            try
+            {
+                node = AllocNode(key, value);
+            }
+            catch (ObjectDisposedException)
+            {
+                nonFailureException = true;
+                throw;
+            }
+
             // Try TryAdd first
-            var node = AllocNode(key, value);
             Node? toDispose = null;
-            if (_lookup.TryAdd(key, node))
+            if (lookup.TryAdd(key, node))
             {
                 return true;
             }
 
             // Try replacing an entry if it's not representing an alive value
             // Note: it is important that our lambda is able to handle multiple calls.
-            else if (_lookup.AddOrUpdate(key, node, (_, old) =>
+            else if (lookup.AddOrUpdate(key, node, (_, old) =>
             {
                 // If we had a previous node (from this method being called more than once), we can dispose it (rather than forcing finalizer thread to).
                 // Nodes are never re-used, so we know that if it is no longer the current node we're replacing, then it is out of the dictionary and safe
@@ -255,7 +267,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
                 return false;
             }
         }
-        catch
+        catch when (!nonFailureException)
         {
             HandleFailure();
             throw;
@@ -294,10 +306,10 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// <returns><see langword="true"/> if the item was found and removed, otherwise <see langword="false"/>.</returns>
     public bool Remove(TKey key, [MaybeNullWhen(false)] out TValue value)
     {
-        ThrowIfDisposed();
+        ThrowIfDisposed(out var lookup);
         try
         {
-            if (_lookup.TryRemove(key, out var node))
+            if (lookup.TryRemove(key, out var node))
             {
                 bool result = false;
                 if (node.Value.TryGetTarget(out var valueTmp))
@@ -337,23 +349,37 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// </summary>
     public bool Remove(TKey key, TValue value, IEqualityComparer<TValue>? comparer = null)
     {
-        ThrowIfDisposed();
+        ThrowIfDisposed(out var lookup);
         comparer ??= EqualityComparer<TValue>.Default;
+        bool nonFailureException = false;
         try
         {
             while (true)
             {
-                if (_lookup.TryGetValue(key, out var node))
+                if (lookup.TryGetValue(key, out var node))
                 {
                     if (node.Value.TryGetTarget(out var valueTmp))
                     {
                         // Check if they are equal.
                         bool removed = false;
-                        if (comparer.Equals(value, valueTmp))
+                        bool isEqual;
+                        try
+                        {
+                            isEqual = comparer.Equals(value, valueTmp);
+                        }
+                        catch
+                        {
+                            nonFailureException = true;
+                            GC.KeepAlive(valueTmp);
+                            throw;
+                        }
+
+                        // If equal:
+                        if (isEqual)
                         {
                             // Try to remove this key & value pair. If we fail to remove it, then we need to try again, since it could be the case that there's
                             // a new value this should either succeed or fail for (it is indeterminate).
-                            if (_lookup.TryRemove(new KeyValuePair<TKey, Node>(key, node)))
+                            if (lookup.TryRemove(new KeyValuePair<TKey, Node>(key, node)))
                             {
                                 node.Dispose();
                                 removed = true;
@@ -378,7 +404,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
                 return false;
             }
         }
-        catch
+        catch when (!nonFailureException)
         {
             HandleFailure();
             throw;
@@ -423,10 +449,10 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     public void Clear()
     {
         // Note: we attempt to dispose the entries here also
-        ThrowIfDisposed();
+        ThrowIfDisposed(out var lookup);
         try
         {
-            foreach (var kvp in _lookup) kvp.Value.Dispose();
+            foreach (var kvp in lookup) kvp.Value.Dispose();
         }
         finally
         {
@@ -439,10 +465,10 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// </summary>
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
     {
-        ThrowIfDisposed();
-        foreach (var kvp in _lookup)
+        ThrowIfDisposed(out var lookup);
+        foreach (var kvp in lookup)
         {
-            ThrowIfDisposed();
+            ThrowIfDisposed(out _);
             if (kvp.Value.Value.TryGetTarget(out var value))
             {
                 GC.KeepAlive(this);
@@ -459,4 +485,13 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// Returns an enumerator that iterates through the key/value pairs in the dictionary.
     /// </summary>
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    /// <summary>
+    /// Disposes the <see cref="WeakValueDictionary{TKey, TValue}" />, removing all entries and preventing further use.
+    /// </summary>
+    public void Dispose()
+    {
+        _containerValues.Dispose(this);
+        _lookup = null;
+    }
 }

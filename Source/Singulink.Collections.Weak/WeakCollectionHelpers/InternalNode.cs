@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Runtime;
 
-// NOTE: this class is only intended to be used within the implementation of this namespace.
+// NOTE: this class is only intended to be used within the implementation of this namespace (except the constructor).
 
 namespace Singulink.Collections.WeakCollectionHelpers;
 
@@ -100,6 +100,28 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
 
                     // Free node's reference to internal node finalizer helper:
                     default(TNodeHelpers).GetNodeState(node)._internalNodeHelper = null;
+
+                    // Remove from the tracking list (if applicable):
+                    if (!default(TNodeHelpers).HasLocker)
+                    {
+                        ref var trackingListField = ref default(TNodeHelpers).GetNodeHelperList(container);
+                        var trackingList = trackingListField;
+                        if (trackingList != null)
+                        {
+                            lock (trackingList)
+                            {
+                                if (trackingListField != null)
+                                {
+                                    var nodeHelperNode = default(TNodeHelpers).GetNodeHelperNode(node);
+                                    if (nodeHelperNode != null && nodeHelperNode.List != null)
+                                    {
+                                        trackingList.Remove(nodeHelperNode);
+                                        default(TNodeHelpers).GetNodeHelperNode(node) = null;
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 finally
                 {
