@@ -17,8 +17,14 @@ namespace Singulink.Collections;
 /// objects from the collection.
 /// </summary>
 /// <remarks>
+/// <para>
 /// Using a type or custom comparer that throws from <see cref="IEqualityComparer{T}.Equals(T, T)"/> or <see cref="IEqualityComparer{T}.GetHashCode(T)"/> is not
 /// supported and may make the collection unusable after such an exception.
+/// </para>
+/// <para>
+/// In some cases, keys may be re-used even when the value is logically dead. This may be detectable if you compare the values with an equality comparer that is
+/// not compatible with the one used for this dictionary (by default, <see cref="EqualityComparer{T}.Default"/>).
+/// </para>
 /// </remarks>
 public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>, IDisposable
     where TKey : notnull
