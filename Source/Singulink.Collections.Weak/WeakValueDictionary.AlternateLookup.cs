@@ -117,7 +117,7 @@ partial class WeakValueDictionary<TKey, TValue>
         /// </summary>
         public WeakValueDictionary<TKey, TValue> Dictionary => _dictionary;
 
-        /// <inheritdoc cref="ContainsKey(TAlternateKey, out TKey)"/>/>
+        /// <inheritdoc cref="ContainsKey(TAlternateKey, out TKey)"/>
         public bool ContainsKey(TAlternateKey key) => TryGetValue(key, out _);
 
         /// <summary>
