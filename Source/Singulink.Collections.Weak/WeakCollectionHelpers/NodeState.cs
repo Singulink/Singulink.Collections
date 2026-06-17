@@ -294,9 +294,7 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
             }
             else
             {
-                var allocationLock = default(TNodeHelpers).GetAllocationLock(container);
-                allocationLock.Enter();
-                try
+                lock (default(TNodeHelpers).GetAllocationLock(container))
                 {
                     if (default(TNodeHelpers).GetDisableAllocations(container))
                     {
@@ -304,27 +302,17 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
                     }
                     else
                     {
-                        bool firstAttempt = true;
+                        var trackingList = default(TNodeHelpers).GetNodeHelperList(container);
+                        Debug.Assert(trackingList != null, "Tracking list should not be null here, as the container is not disposed.");
+                        lock (default(TNodeHelpers).GetNodeHelperListLock(container))
+                        {
+                            default(TNodeHelpers).GetNodeHelperNode(node) = trackingList.AddLast(node);
+                        }
+
+                        // The amount of times this can loop should be bounded. We have the allocation lock, and the only ways it can loop are if we get new
+                        // lists or if the lists are removed, the former cannot happen, and the latter can only happen once.
                         while (true)
                         {
-                            if (firstAttempt)
-                            {
-                                firstAttempt = false;
-                            }
-                            else
-                            {
-                                // If this is our second attempt (or later), give other threads a chance to acquire the allocation lock (we don't want to hold
-                                // it indefinitely):
-                                allocationLock.Exit();
-                                allocationLock.Enter();
-                                if (default(TNodeHelpers).GetDisableAllocations(container))
-                                {
-                                    continueAllocating = false;
-                                    break;
-                                }
-                            }
-
-                            // Do the operation:
                             var list = cwt.GetValue(value, static _ => []);
                             lock (list)
                             {
@@ -336,21 +324,7 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
                                 break;
                             }
                         }
-
-                        if (continueAllocating)
-                        {
-                            var trackingList = default(TNodeHelpers).GetNodeHelperList(container);
-                            Debug.Assert(trackingList != null, "Tracking list should not be null here, as the container is not disposed.");
-                            lock (default(TNodeHelpers).GetNodeHelperListLock(container))
-                            {
-                                default(TNodeHelpers).GetNodeHelperNode(node) = trackingList.AddLast(node);
-                            }
-                        }
                     }
-                }
-                finally
-                {
-                    allocationLock.Exit();
                 }
             }
 
