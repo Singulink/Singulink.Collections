@@ -23,7 +23,8 @@ namespace Singulink.Collections;
 /// </para>
 /// <para>
 /// In some cases, keys may be re-used even when the value is logically dead. This may be detectable if you compare the values with an equality comparer that is
-/// not compatible with the one used for this dictionary (by default, <see cref="EqualityComparer{T}.Default"/>).
+/// not compatible with the one used for this dictionary (by default, <see cref="EqualityComparer{T}.Default"/>). If you need to not have this behaviour, you
+/// can lock on all accesses yourself, and call <see cref="Remove(TKey)"/> or <c>AlternateLookup.Remove(TAlternateKey)</c> before adding or updating entries.
 /// </para>
 /// </remarks>
 public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>, IDisposable
