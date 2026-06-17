@@ -10,6 +10,8 @@ namespace Singulink.Collections.WeakCollectionHelpers;
 #pragma warning disable IDE0028 // Simplify collection initialization
 
 // Per-container state embedded inside the concrete container type.
+// Note: the difference between a locking and non-locking collection is that the locking one has its own lock and holds it for the duration of all underlying
+// collection adjustments and all calls into this namespace (that require locking).
 internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
     where T : class
     where TNode : class
@@ -52,7 +54,7 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
         }
     }
 
-    // Note: we require the caller to be holding the lock (or for no new allocations to occur concurrently otherwise) for this method to be safe.
+    // Note: we require the caller to be holding the lock (or for no new allocations/removals to occur concurrently otherwise) for this method to be safe.
     // Note: this method is not possible to use safely on non-locking collections.
     public void CleanOut()
     {
@@ -108,8 +110,23 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
             listField = null;
         }
 
-        // Call to CleanOut - we call this as an implementation detail (after the above things), as it's not safe for callers to do this directly:
-        CleanOut();
+        // Clean out resources:
+#if NET
+        lock (_internalNodes.Locker) _internalNodes.List.Clear();
+        _cleanupHelper.ListRef.Dispose();
+        GC.SuppressFinalize(_cleanupHelper);
+        GC.KeepAlive(_cleanupHelper);
+        GC.KeepAlive(_internalNodes);
+#else
+
+        // Note: on .NET Standard 2.0, there's no CWT.Clear(), so we just null it out and let the GC clean it up.
+#if NETSTANDARD2_1_OR_GREATER
+        Debug.Assert(_cwt is not null, "CWT should not be null here.");
+        _cwt.Clear();
+#endif
+        GC.KeepAlive(_cwt); // Ensure the CWT lives to here at least.
+        _cwt = null;
+#endif
 
         // Dispose all nodes that may still be alive (note: it is critical that no other threads access this list for mutation anymore):
         foreach (var node in list)

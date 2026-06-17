@@ -294,7 +294,9 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
             }
             else
             {
-                lock (default(TNodeHelpers).GetAllocationLock(container))
+                var allocationLock = default(TNodeHelpers).GetAllocationLock(container);
+                allocationLock.Enter();
+                try
                 {
                     if (default(TNodeHelpers).GetDisableAllocations(container))
                     {
@@ -302,19 +304,53 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
                     }
                     else
                     {
-                        var trackingList = default(TNodeHelpers).GetNodeHelperList(container);
-                        Debug.Assert(trackingList != null, "Tracking list should not be null here, as the container is not disposed.");
-                        lock (default(TNodeHelpers).GetNodeHelperListLock(container))
+                        bool firstAttempt = true;
+                        while (true)
                         {
-                            default(TNodeHelpers).GetNodeHelperNode(node) = trackingList.AddLast(node);
+                            if (firstAttempt)
+                            {
+                                firstAttempt = false;
+                            }
+                            else
+                            {
+                                // If this is our second attempt (or later), give other threads a chance to acquire the allocation lock (we don't want to hold
+                                // it indefinitely):
+                                allocationLock.Exit();
+                                allocationLock.Enter();
+                                if (default(TNodeHelpers).GetDisableAllocations(container))
+                                {
+                                    continueAllocating = false;
+                                    break;
+                                }
+                            }
+
+                            // Do the operation:
+                            var list = cwt.GetValue(value, static _ => []);
+                            lock (list)
+                            {
+                                // The list may have changed by the time it took us to acquire its lock, but now we have the lock, we can check:
+                                if (!cwt.TryGetValue(value, out var currentList) || currentList != list) continue;
+
+                                // Save into the spot in our cwt value
+                                internalNode._cwtNode = WeakHandle.Alloc(list.AddLast(internalNodeHelper));
+                                break;
+                            }
                         }
 
-                        var list = cwt.GetValue(value, static _ => []);
-                        lock (list)
+                        if (continueAllocating)
                         {
-                            internalNode._cwtNode = WeakHandle.Alloc(list.AddLast(internalNodeHelper));
+                            var trackingList = default(TNodeHelpers).GetNodeHelperList(container);
+                            Debug.Assert(trackingList != null, "Tracking list should not be null here, as the container is not disposed.");
+                            lock (default(TNodeHelpers).GetNodeHelperListLock(container))
+                            {
+                                default(TNodeHelpers).GetNodeHelperNode(node) = trackingList.AddLast(node);
+                            }
                         }
                     }
+                }
+                finally
+                {
+                    allocationLock.Exit();
                 }
             }
 
@@ -335,7 +371,7 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
         // Probably we could be fine without a write barrier if we are careful about how we set up our fields, but it is safer to have a write barrier at the
         // end of this, to ensure that we can re-order any code above in any way and not need to worry about it. The main reason it could be fine without it is
         // that field accesses can't be re-ordered after a write of the object that contains them.
-        // Note: this is only necessary on the lock-free collections, as the locking ones have are in a lock that provides a write barrier on release.
+        // Note: this is only necessary on the lock-free collections, as the locking ones are in a lock that provides a write barrier on release.
         // Note: we are guaranteed a write barrier by the Monitor.Exit / exit of lock above, which we use to achieve the above.
     }
 
@@ -343,7 +379,7 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     /// The method to call to clean out the node for 'HandleFailureOrDispose' methods.
     /// </summary>
     /// <remarks>
-    /// This method does not support non-locking collections.
+    /// This method does not support non-locking collections (except by the internal implementation as an implementation detail in some cases).
     /// </remarks>
     public void CleanUpForHandleFailureOrDispose()
     {

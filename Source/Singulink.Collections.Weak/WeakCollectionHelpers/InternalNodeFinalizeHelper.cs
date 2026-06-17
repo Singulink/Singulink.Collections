@@ -13,8 +13,7 @@ internal sealed class InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelp
     where TNodeHelpers : struct, INodeHelpers<T, TNode, TContainer, TNodeHelpers>
 {
     // Note: we cannot store the container as a strong reference in this type with the current implementation - the Node stores such a reference.
-    // Our reference to the container - note, it's important that this is a weak reference as we directly reference it from InternalNode, then we will leak the
-    // whole container due to https://github.com/dotnet/runtime/issues/12255.
+    // Our reference to the InternalNode (not Node).
     internal StrongHandle _impl; // The type of value is InternalNode.
 
     ~InternalNodeFinalizeHelper()

@@ -36,13 +36,8 @@ internal struct StrongHandle(IntPtr handle)
 
     public readonly void SetTarget(object? target)
     {
-#if NET10_0_OR_GREATER
         var handle = AsGCHandle();
         handle.Target = target;
-#else
-        var handle = AsGCHandle();
-        handle.Target = target;
-#endif
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

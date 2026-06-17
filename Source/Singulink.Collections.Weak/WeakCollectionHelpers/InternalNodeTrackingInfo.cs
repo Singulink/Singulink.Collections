@@ -19,8 +19,8 @@ internal sealed class InternalNodeTrackingInfo<T, TNode, TContainer, TNodeHelper
 
     // The lock that non-locking collections use to coordinate allocation/removal of tracking info (locking collections use their own container lock instead).
     // We only allocate the Lock object for non-locking collections; access it via the Locker property.
-    // Note: locking collections still carry this (null) reference field, so they pay 8 bytes per whole collection - we don't currently don't try to elide the
-    // field itself (e.g., via a subclass), as that isn't worth the complexity.
+    // Note: locking collections still carry this (null) reference field, so they pay 8 bytes per whole collection - we don't currently try to elide the field
+    // itself (e.g., via a subclass), as that isn't worth the complexity.
     private readonly Lock? _locker = default(TNodeHelpers).HasLocker ? null : new();
 
     // The lock for non-locking collections. Only valid to access on non-locking collections (where it is always non-null).

@@ -16,6 +16,10 @@ namespace Singulink.Collections;
 /// Represents a collection of keys and weakly referenced values. This type is also automatically safe for concurrent access, and will automatically remove dead
 /// objects from the collection.
 /// </summary>
+/// <remarks>
+/// Using a type or custom comparer that throws from <see cref="IEqualityComparer{T}.Equals(T, T)"/> or <see cref="IEqualityComparer{T}.GetHashCode(T)"/> is not
+/// supported and may make the collection unusable after such an exception.
+/// </remarks>
 public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>, IDisposable
     where TKey : notnull
     where TValue : class
@@ -97,7 +101,9 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
         get
         {
             ThrowIfDisposed(out var lookup);
-            return lookup.Count;
+            int result = lookup.Count;
+            GC.KeepAlive(this);
+            return result;
         }
     }
 

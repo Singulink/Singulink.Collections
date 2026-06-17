@@ -83,7 +83,7 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
         // Try to enter the lock now:
         var container = default(TNodeHelpers).GetNodeState(node)._container;
         bool entered = true;
-        bool wasDisposed = default(TNodeHelpers).HasLocker ? default(TNodeHelpers).IsDisposed(container) : false;
+        bool wasDisposed = false; // Default to false for non-locking collections - locking collections overwrite on next statement.
         using var scope = default(TNodeHelpers).HasLocker
             ? (_finalizeAttemptCount < 5 && !disposing)
                 ? LockScope.TryEnterLock<T, TNode, TContainer, TNodeHelpers>(container, out wasDisposed, out entered)

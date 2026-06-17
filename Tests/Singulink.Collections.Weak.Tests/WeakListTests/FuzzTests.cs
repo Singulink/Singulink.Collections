@@ -46,14 +46,14 @@ public class FuzzTests
                         actualList.Add(newValue);
                         nodes.Add(newNode);
                         break;
-                    case 3:
+                    case 2:
                         idx = r.Next(actualList.Count);
                         var refNode = nodes[idx];
                         newNode = weakList.AddBefore(refNode, newValue);
                         actualList.Insert(idx, newValue);
                         nodes.Insert(idx, newNode);
                         break;
-                    case 4:
+                    case 3:
                         idx = r.Next(actualList.Count);
                         refNode = nodes[idx];
                         newNode = weakList.AddAfter(refNode, newValue);
