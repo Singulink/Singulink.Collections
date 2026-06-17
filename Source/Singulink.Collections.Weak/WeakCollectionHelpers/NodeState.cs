@@ -214,7 +214,6 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     /// releasing any unmanaged resources and rethrowing).
     /// </para>
     /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Alloc(
         T value,
         TNode node,
