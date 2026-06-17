@@ -72,17 +72,11 @@ partial class WeakValueDictionary<TKey, TValue>
             set
             {
                 // Get a key either by looking up an existing one or by just allocating:
-                // Note: if the value is dead, that means the key is actually removed, and thus we should re-create it regardless.
                 _dictionary.ThrowIfDisposed(out _);
-                TValue? oldValue = null;
-                var actualKey =
-                    (_altLookup.TryGetValue(key, out var oldKey, out var oldNode) && oldNode.Value.TryGetTarget(out oldValue))
-                        ? oldKey
-                        : Comparer.Create(key);
+                var actualKey = _altLookup.TryGetValue(key, out var oldKey, out _) ? oldKey : Comparer.Create(key);
 
                 // Just call into the non-alternate API with this key now:
                 _dictionary[actualKey] = value;
-                GC.KeepAlive(oldValue);    
             }
         }
 
@@ -93,11 +87,15 @@ partial class WeakValueDictionary<TKey, TValue>
         {
             // Try to find an existing key on a node that isn't meant to be alive any more:
             _dictionary.ThrowIfDisposed(out _);
-            if (_altLookup.TryGetValue(key, out var actualKey, out var oldNode) && oldNode.Value.TryGetTarget(out var oldValue))
+            if (_altLookup.TryGetValue(key, out var actualKey, out var oldNode))
             {
-                // The old value still is in the dictionary, so we can't add the key.
-                GC.KeepAlive(oldValue);
-                return false;
+                if (oldNode.Value.TryGetTarget(out var oldValue))
+                {
+                    // If we got a value, then we can't add this key.
+                    // Otherwise, we can re-use the key value in our API call to _dictionary.TryAdd.
+                    GC.KeepAlive(oldValue);
+                    return false;
+                }
             }
             else
             {
