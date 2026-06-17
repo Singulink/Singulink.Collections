@@ -48,6 +48,14 @@ partial class WeakValueDictionary<TKey, TValue>
             public ref LinkedListNode<Node>? GetNodeHelperNode(Node node) => ref node._nodeHelperNode;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Lock GetNodeHelperListLock(WeakValueDictionary<TKey, TValue> container) => container._nodeHelperListLock;
+
+#if !NET
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public Lock GetAllocationLock(WeakValueDictionary<TKey, TValue> container) => container._allocationLock;
+#endif
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public ref ContainerValues<TValue, Node, WeakValueDictionary<TKey, TValue>, NodeHelpers> GetContainerValues(
                 WeakValueDictionary<TKey, TValue> container)
             {
@@ -112,4 +120,11 @@ partial class WeakValueDictionary<TKey, TValue>
     // Fields for use by WeakCollectionHelpers:
     private bool _disableAllocations;
     private LinkedList<Node>? _nodeHelperList;
+
+    // Locks for use by WeakCollectionHelpers (non-locking collection only - WeakValueDictionary has no single container-wide lock, so these coordinate the
+    // specific tracking structures the weak helpers mutate):
+    private readonly Lock _nodeHelperListLock = new();
+#if !NET
+    private readonly Lock _allocationLock = new();
+#endif
 }

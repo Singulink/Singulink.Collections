@@ -52,12 +52,12 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
             // container that will be kept alive by the caller (due to them having the lock); thus we cannot run simultaneously to the cleanup helper.
 
             bool entered = !default(TNodeHelpers).HasLocker;
-            object? lockOn = null;
+            Lock? locker = null;
 
             if (entered)
             {
-                lockOn = _trackingInfoHandle.GetNotNullTarget<InternalNodeTrackingInfo<T, TNode, TContainer, TNodeHelpers>>();
-                Monitor.Enter(lockOn);
+                locker = _trackingInfoHandle.GetNotNullTarget<InternalNodeTrackingInfo<T, TNode, TContainer, TNodeHelpers>>().Locker;
+                locker.Enter();
             }
 
             try
@@ -66,7 +66,7 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
             }
             finally
             {
-                if (entered) Monitor.Exit(lockOn!);
+                if (entered) locker!.Exit();
             }
 
             GC.KeepAlive(finalizeHelperNode);
@@ -108,7 +108,7 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
                         var trackingList = trackingListField;
                         if (trackingList != null)
                         {
-                            lock (trackingList)
+                            lock (default(TNodeHelpers).GetNodeHelperListLock(container))
                             {
                                 if (trackingListField != null)
                                 {

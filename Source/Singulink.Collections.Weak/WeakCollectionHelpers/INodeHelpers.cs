@@ -46,9 +46,9 @@ internal interface INodeHelpers<T, TNode, TContainer, TNodeHelpers>
     /// Gets a reference to the flag that the weak collection helpers can use to disable future allocations. This is ONLY applicable to non-locking collections.
     /// </summary>
     /// <remarks>
-    /// Implementation detail notes: This should be checked in the allocation routine, and be accessed always under the appropriate lock (on .NET standard, that
-    /// is holding the lock around <c>_cwt</c> (which should be held for the duration of linking into that), and on .NET that is holding the lock on the
-    /// <c>InternalNodeTrackingInfo</c> instance (similarly, we should be holding this for the duration of linking into that)).
+    /// Implementation detail notes: This should be checked in the allocation routine, and be accessed always under the appropriate allocation-coordination lock
+    /// (on .NET standard, that is the lock from <c>GetAllocationLock</c>, which should be held for the duration of linking into the conditional weak table, and
+    /// on .NET that is the <c>InternalNodeTrackingInfo</c> instance's locker (similarly, we should be holding this for the duration of linking into that)).
     /// </remarks>
     ref bool GetDisableAllocations(TContainer container);
 
@@ -62,8 +62,8 @@ internal interface INodeHelpers<T, TNode, TContainer, TNodeHelpers>
     /// Gets a reference to the helper linked list field for a given container instance. This is ONLY applicable to non-locking collections.
     /// </summary>
     /// <remarks>
-    /// Implementation detail notes: This list and its nodes should only be modified or read under the lock of its own instance. Additions to this list must
-    /// only occur when we are not disabling allocations and are also holding the appropriate locks to ensure that.
+    /// Implementation detail notes: This list and its nodes should only be modified or read under the lock from <see cref="GetNodeHelperListLock"/>. Additions
+    /// to this list must only occur when we are not disabling allocations and are also holding the appropriate locks to ensure that.
     /// </remarks>
     ref LinkedList<TNode>? GetNodeHelperList(TContainer container);
 
@@ -71,4 +71,16 @@ internal interface INodeHelpers<T, TNode, TContainer, TNodeHelpers>
     /// Gets a reference to the helper linked list node field for a given node instance. This is ONLY applicable to non-locking collections.
     /// </summary>
     ref LinkedListNode<TNode>? GetNodeHelperNode(TNode node);
+
+    /// <summary>
+    /// Gets the lock that coordinates access to the node helper tracking list. This is ONLY applicable to non-locking collections.
+    /// </summary>
+    Lock GetNodeHelperListLock(TContainer container);
+
+#if !NET
+    /// <summary>
+    /// Gets the lock that coordinates allocation against the conditional weak table. This is ONLY applicable to non-locking collections.
+    /// </summary>
+    Lock GetAllocationLock(TContainer container);
+#endif
 }

@@ -451,7 +451,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
     /// Removes all keys and values from the dictionary.
     /// </summary>
     /// <remarks>
-    /// This operation is not atomic, each value is removed one at a time in a way that is not special.
+    /// This method removes all nodes one-by-one; using <see cref="Dispose" /> is faster if you do not need to reuse the dictionary instance.
     /// </remarks>
     public void Clear()
     {

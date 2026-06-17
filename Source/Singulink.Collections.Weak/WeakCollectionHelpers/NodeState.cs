@@ -241,7 +241,7 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
             // - Therefore, there are no cases where it could be modified concurrently, and we have appropriate barriers from the lock to ensure consistency.
             // However, a non-locking collection could have removals occuring concurrently, therefore we need to lock the usage of this list always.
             bool continueAllocating = true;
-            lock (containerValues._internalNodes)
+            lock (containerValues._internalNodes.Locker)
             {
                 // Firstly, check if we are not meant to be allocating any more (disposed), and if so, prepare to release handles / similar and throw:
                 if (default(TNodeHelpers).GetDisableAllocations(container))
@@ -254,7 +254,7 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
                 {
                     var trackingList = default(TNodeHelpers).GetNodeHelperList(container);
                     Debug.Assert(trackingList != null, "Tracking list should not be null here, as the container is not disposed.");
-                    lock (trackingList)
+                    lock (default(TNodeHelpers).GetNodeHelperListLock(container))
                     {
                         default(TNodeHelpers).GetNodeHelperNode(node) = trackingList.AddLast(node);
                     }
@@ -294,7 +294,7 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
             }
             else
             {
-                lock (cwt)
+                lock (default(TNodeHelpers).GetAllocationLock(container))
                 {
                     if (default(TNodeHelpers).GetDisableAllocations(container))
                     {
@@ -304,7 +304,7 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
                     {
                         var trackingList = default(TNodeHelpers).GetNodeHelperList(container);
                         Debug.Assert(trackingList != null, "Tracking list should not be null here, as the container is not disposed.");
-                        lock (trackingList)
+                        lock (default(TNodeHelpers).GetNodeHelperListLock(container))
                         {
                             default(TNodeHelpers).GetNodeHelperNode(node) = trackingList.AddLast(node);
                         }

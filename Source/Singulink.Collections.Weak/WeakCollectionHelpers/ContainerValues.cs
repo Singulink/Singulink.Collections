@@ -20,9 +20,10 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
     // No DependentHandle type on .NET Standard, so we store the values in a CWT instead:
     // IMPORTANT: InternalNodeFinalizeHelper must not hold a strong reference to the CWT or the container, otherwise it will leak
     // due to https://github.com/dotnet/runtime/issues/12255.
-    // NOTE: uses of the linked lists are expected to lock on the list. This is important, since otherwise we can run into race conditions. E.g., if we just
-    // checked it's empty, we will want to remove it from the cwt, but it may have become used again between when we checked it and when we tried to remove it.
-    // We can either lock on the container to achieve this, or we can just lock on the linked list itself (needs to be consistent though).
+    // NOTE: uses of the per-value linked lists are expected to lock on the list. This is important, since otherwise we can run into race conditions. E.g., if
+    // we just checked it's empty, we will want to remove it from the cwt, but it may have become used again between when we checked it and when we tried to
+    // remove it. We lock directly on each per-value LinkedList instance for this (rather than on a dedicated Lock); using a dedicated Lock here would require
+    // additional complexity for something that is only going to be used on .NET Standard anyway.
     internal ConditionalWeakTable<T, LinkedList<InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>>>? _cwt = new();
 #endif
 
@@ -79,11 +80,11 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
     {
         // Firstly, we need to acquire the lock and ensure no new nodes are being allocated:
 #if NET
-        lock (_internalNodes)
+        lock (_internalNodes.Locker)
 #else
         var cwt = _cwt;
         if (cwt == null) return;
-        lock (cwt)
+        lock (default(TNodeHelpers).GetAllocationLock(container))
 #endif
         {
             // Check if we're already disposed:
@@ -101,7 +102,7 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
         ref var listField = ref default(TNodeHelpers).GetNodeHelperList(container);
         var list = listField;
         Debug.Assert(list != null, "List should not be null here.");
-        lock (list)
+        lock (default(TNodeHelpers).GetNodeHelperListLock(container))
         {
             // Mark as null - this allows any other cleanups to just skip this step immediately.
             listField = null;

@@ -51,6 +51,10 @@ public sealed partial class WeakList<T>
             public ref bool GetDisableAllocations(WeakList<T> container) => throw new NotSupportedException("Only supported on non-locking collections.");
             public ref LinkedList<Node>? GetNodeHelperList(WeakList<T> container) => throw new NotSupportedException("Only supported on non-locking collections.");
             public ref LinkedListNode<Node>? GetNodeHelperNode(Node node) => throw new NotSupportedException("Only supported on non-locking collections.");
+            public Lock GetNodeHelperListLock(WeakList<T> container) => throw new NotSupportedException("Only supported on non-locking collections.");
+#if !NET
+            public Lock GetAllocationLock(WeakList<T> container) => throw new NotSupportedException("Only supported on non-locking collections.");
+#endif
         }
 
         // Node state:
