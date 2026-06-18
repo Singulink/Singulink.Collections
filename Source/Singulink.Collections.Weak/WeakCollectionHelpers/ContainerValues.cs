@@ -22,11 +22,7 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
     // No DependentHandle type on .NET Standard, so we store the values in a CWT instead:
     // IMPORTANT: InternalNodeFinalizeHelper must not hold a strong reference to the CWT or the container, otherwise it will leak
     // due to https://github.com/dotnet/runtime/issues/12255.
-    // NOTE: uses of the per-value linked lists are expected to lock on the list. This is important, since otherwise we can run into race conditions. E.g., if
-    // we just checked it's empty, we will want to remove it from the cwt, but it may have become used again between when we checked it and when we tried to
-    // remove it. We lock directly on each per-value LinkedList instance for this (rather than on a dedicated Lock); using a dedicated Lock here would require
-    // additional complexity for something that is only going to be used on .NET Standard anyway.
-    internal ConditionalWeakTable<T, LinkedList<InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>>>? _cwt = new();
+    internal ConditionalWeakTableListWrapper<T, InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>> _cwt = new();
 #endif
 
     // NOTE!!! For correctness, it's crucial that no finalizer accesses any managed values except through weak references, as otherwise they may be partially
@@ -66,14 +62,8 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
         GC.KeepAlive(_cleanupHelper);
         GC.KeepAlive(_internalNodes);
 #else
-
-        // Note: on .NET Standard 2.0, there's no CWT.Clear(), so we just null it out and let the GC clean it up.
-#if NETSTANDARD2_1_OR_GREATER
-        Debug.Assert(_cwt is not null, "CWT should not be null here.");
         _cwt.Clear();
-#endif
         GC.KeepAlive(_cwt); // Ensure the CWT lives to here at least.
-        _cwt = null;
 #endif
     }
 
@@ -85,7 +75,6 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
         lock (_internalNodes.Locker)
 #else
         var cwt = _cwt;
-        if (cwt == null) return;
         lock (default(TNodeHelpers).GetAllocationLock(container))
 #endif
         {
@@ -118,14 +107,8 @@ internal struct ContainerValues<T, TNode, TContainer, TNodeHelpers>
         GC.KeepAlive(_cleanupHelper);
         GC.KeepAlive(_internalNodes);
 #else
-
-        // Note: on .NET Standard 2.0, there's no CWT.Clear(), so we just null it out and let the GC clean it up.
-#if NETSTANDARD2_1_OR_GREATER
-        Debug.Assert(_cwt is not null, "CWT should not be null here.");
         _cwt.Clear();
-#endif
         GC.KeepAlive(_cwt); // Ensure the CWT lives to here at least.
-        _cwt = null;
 #endif
 
         // Dispose all nodes that may still be alive (note: it is critical that no other threads access this list for mutation anymore):

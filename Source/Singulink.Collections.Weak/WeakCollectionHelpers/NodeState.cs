@@ -279,50 +279,26 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
         var cwt = containerValues._cwt;
         if (default(TNodeHelpers).HasLocker)
         {
-            Debug.Assert(cwt != null, "CWT should not be null here, as the container is not disposed.");
-            var list = cwt.GetValue(value, static _ => []);
-            internalNode._cwtNode = WeakHandle.Alloc(list.AddLast(internalNodeHelper));
+            internalNode._cwtNode = WeakHandle.Alloc(cwt.AddNoLock(value, internalNodeHelper));
         }
         else
         {
             // We need to lock on the cwt & linked list, if we don't have the container lock.
             bool continueAllocating = true;
-            if (cwt is null)
+            lock (default(TNodeHelpers).GetAllocationLock(container))
             {
-                continueAllocating = false;
-            }
-            else
-            {
-                lock (default(TNodeHelpers).GetAllocationLock(container))
+                if (default(TNodeHelpers).GetDisableAllocations(container))
                 {
-                    if (default(TNodeHelpers).GetDisableAllocations(container))
+                    continueAllocating = false;
+                }
+                else
+                {
+                    internalNode._cwtNode = WeakHandle.Alloc(cwt.Add(value, internalNodeHelper));
+                    var trackingList = default(TNodeHelpers).GetNodeHelperList(container);
+                    Debug.Assert(trackingList != null, "Tracking list should not be null here, as the container is not disposed.");
+                    lock (default(TNodeHelpers).GetNodeHelperListLock(container))
                     {
-                        continueAllocating = false;
-                    }
-                    else
-                    {
-                        var trackingList = default(TNodeHelpers).GetNodeHelperList(container);
-                        Debug.Assert(trackingList != null, "Tracking list should not be null here, as the container is not disposed.");
-                        lock (default(TNodeHelpers).GetNodeHelperListLock(container))
-                        {
-                            default(TNodeHelpers).GetNodeHelperNode(node) = trackingList.AddLast(node);
-                        }
-
-                        // The amount of times this can loop should be bounded. We have the allocation lock, and the only ways it can loop are if we get new
-                        // lists or if the lists are removed, the former cannot happen, and the latter can only happen once.
-                        while (true)
-                        {
-                            var list = cwt.GetValue(value, static _ => []);
-                            lock (list)
-                            {
-                                // The list may have changed by the time it took us to acquire its lock, but now we have the lock, we can check:
-                                if (!cwt.TryGetValue(value, out var currentList) || currentList != list) continue;
-
-                                // Save into the spot in our cwt value
-                                internalNode._cwtNode = WeakHandle.Alloc(list.AddLast(internalNodeHelper));
-                                break;
-                            }
-                        }
+                        default(TNodeHelpers).GetNodeHelperNode(node) = trackingList.AddLast(node);
                     }
                 }
             }

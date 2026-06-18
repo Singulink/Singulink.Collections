@@ -77,10 +77,11 @@ internal static class Helpers
             = _ImplField.FieldType.GetField("_internalNode", BindingFlags.NonPublic | BindingFlags.Instance)!;
         public static readonly FieldInfo _ContainerValuesField
             = typeof(WeakList<T>).GetField("_containerValues", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        public static readonly FieldInfo? _CwtField
+        public static readonly FieldInfo? _CwtWrapperField
             = _ContainerValuesField.FieldType.GetField("_cwt", BindingFlags.NonPublic | BindingFlags.Instance);
-        public static readonly MethodInfo? _CwtTryGetValueMethod
-            = _CwtField?.FieldType.GetMethod("TryGetValue");
+        public static readonly Type[]? _CwtWrapperGenericArgs = _CwtWrapperField?.FieldType.GetGenericArguments();
+        public static readonly MethodInfo? _CwtWrapperHasAnyMethod
+            = _CwtWrapperField?.FieldType.GetMethod("HasAny", [_CwtWrapperGenericArgs![0]]);
     }
 
     private static class WeakValueDictionaryHelpers<TKey, TValue>
@@ -100,10 +101,11 @@ internal static class Helpers
             = _ImplField.FieldType.GetMethod("GetInternalNodeHelper", BindingFlags.NonPublic | BindingFlags.Instance)!;
         public static readonly FieldInfo _InternalNodeField
             = _ImplField.FieldType.GetField("_internalNode", BindingFlags.NonPublic | BindingFlags.Instance)!;
-        public static readonly FieldInfo? _CwtField
+        public static readonly FieldInfo? _CwtWrapperField
             = _ContainerValuesField.FieldType.GetField("_cwt", BindingFlags.NonPublic | BindingFlags.Instance);
-        public static readonly MethodInfo? _CwtTryGetValueMethod
-            = _CwtField?.FieldType.GetMethod("TryGetValue");
+        public static readonly Type[]? _CwtWrapperGenericArgs = _CwtWrapperField?.FieldType.GetGenericArguments();
+        public static readonly MethodInfo? _CwtWrapperHasAnyMethod
+            = _CwtWrapperField?.FieldType.GetMethod("HasAny", [_CwtWrapperGenericArgs![0]]);
     }
 
     public static object? GetInternalNode<T>(WeakList<T>.Node node) where T : class
@@ -147,35 +149,37 @@ internal static class Helpers
         return WeakValueDictionaryHelpers<TKey, TValue>._GetInternalNodeHelperMethod.Invoke(impl, []);
     }
 
+    // NOTE: this method is dangerous to call if there can be concurrent mutations to the collection; hence you should always call it with a ForceGC beforehand
+    // and GC.KeepAlive's afterwards for any values you want to keep alive.
     public static bool? CwtContainsValue<T>(WeakList<T> list, T value) where T : class
     {
-        if (WeakListHelpers<T>._CwtField is null)
-            return null; // .NET path uses DependentHandle; there is no CWT.
+        if (WeakListHelpers<T>._CwtWrapperField is null)
+            return null; // .NET path uses DependentHandle; there is no wrapper.
 
-        object? cwt = WeakListHelpers<T>._CwtField.GetValue(WeakListHelpers<T>._ContainerValuesField.GetValue(list));
+        object? cwtWrapper = WeakListHelpers<T>._CwtWrapperField.GetValue(WeakListHelpers<T>._ContainerValuesField.GetValue(list));
 
-        if (cwt is null)
+        if (cwtWrapper is null)
             return false;
 
-        object?[] args = [value, null];
-        return (bool)WeakListHelpers<T>._CwtTryGetValueMethod!.Invoke(cwt, args)!;
+        return (bool)WeakListHelpers<T>._CwtWrapperHasAnyMethod!.Invoke(cwtWrapper, [value])!;
     }
 
+    // This API does not have the same correctness concerns as the WeakList version, since WVD is non-locking and thus it uses the lock on the wrapper for all
+    // mutations; however, to get useful results you likely want to use it under similar conditions.
     public static bool? CwtContainsValue<TKey, TValue>(WeakValueDictionary<TKey, TValue> dictionary, TValue value)
         where TKey : notnull
         where TValue : class
     {
-        if (WeakValueDictionaryHelpers<TKey, TValue>._CwtField is null)
-            return null; // .NET path uses DependentHandle; there is no CWT.
+        if (WeakValueDictionaryHelpers<TKey, TValue>._CwtWrapperField is null)
+            return null; // .NET path uses DependentHandle; there is no wrapper.
 
-        object? cwt = WeakValueDictionaryHelpers<TKey, TValue>._CwtField.GetValue(
+        object? cwtWrapper = WeakValueDictionaryHelpers<TKey, TValue>._CwtWrapperField.GetValue(
             WeakValueDictionaryHelpers<TKey, TValue>._ContainerValuesField.GetValue(dictionary));
 
-        if (cwt is null)
+        if (cwtWrapper is null)
             return false;
 
-        object?[] args = [value, null];
-        return (bool)WeakValueDictionaryHelpers<TKey, TValue>._CwtTryGetValueMethod!.Invoke(cwt, args)!;
+        return (bool)WeakValueDictionaryHelpers<TKey, TValue>._CwtWrapperHasAnyMethod!.Invoke(cwtWrapper, [value])!;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

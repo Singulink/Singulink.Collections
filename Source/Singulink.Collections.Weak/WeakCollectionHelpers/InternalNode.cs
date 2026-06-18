@@ -27,7 +27,7 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
 #if !NET
     // No DependentHandle type on .NET Standard, so we just use a normal WeakReference in here & use a CWT as backing store, and keep track of the node
     // that keeps this instance alive so that we can remove it if we dispose.
-    internal WeakHandle _cwtNode; // Type of value is LinkedListNode<InternalNodeFinalizeHelper>.
+    internal WeakHandle _cwtNode; // Type of value is ConditionalWeakTableWrapper<T, InternalNodeFinalizeHelper>.Entry.
 
     // Store the value (note: we have to use a weak reference, as it could contain a ref back to the container or Node):
     // Note: we use WeakHandle here to avoid needing to allocate a separate WeakReference object - otherwise it'd be WeakReference<T>?.
@@ -139,33 +139,16 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
 
                     // Ensure removed from CWT tracking stuff (the remove logic might have missed it, since we're not necessarily alive anymore, so it
                     // might not be able to look up these lists):
-                    if (_cwtNode.TryGetTarget<LinkedListNode<InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>>>() is { } cwtNode)
+                    var cwt = default(TNodeHelpers).GetContainerValues(container)._cwt;
+                    if (value is { } && _cwtNode.TryGetTarget<ConditionalWeakTableListWrapper<T, InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>>.Entry>() is { } cwtNode)
                     {
-                        // Note: removing the node nulls cwtNode.List, so capture the per-value list first.
-                        var perValueList = cwtNode.List;
-                        if (perValueList != null)
-                        {
-                            // We need to lock on the linked list here, if we aren't already holding the container lock.
-                            bool entered2 = !default(TNodeHelpers).HasLocker;
-                            if (entered2) Monitor.Enter(perValueList);
-                            try
-                            {
-                                perValueList.Remove(cwtNode);
-
-                                // If the value is still alive and this was its last node, evict the now-empty per-value entry from the CWT so it does not
-                                // linger until the value is collected (it survives Clear() / Remove() otherwise).
-                                // Note: if the value is already dead, the CWT entry will already automatically remove itself at some point.
-                                if (value is not null && perValueList is { Count: 0 })
-                                {
-                                    var cwt = default(TNodeHelpers).GetContainerValues(container)._cwt;
-                                    if (cwt != null && cwt.TryGetValue(value, out var actualList) && actualList == perValueList) cwt.Remove(value);
-                                }
-                            }
-                            finally
-                            {
-                                if (entered2) Monitor.Exit(perValueList);
-                            }
-                        }
+                        if (default(TNodeHelpers).HasLocker) cwt.TryRemoveNoLock(value, cwtNode);
+                        else cwt.TryRemove(value, cwtNode);
+                    }
+                    else
+                    {
+                        if (default(TNodeHelpers).HasLocker) cwt.ShrinkIfNeededNoLock();
+                        else cwt.ShrinkIfNeeded();
                     }
 
                     _cwtNode.Dispose();
