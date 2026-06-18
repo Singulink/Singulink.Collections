@@ -131,7 +131,7 @@ public class FuzzTests
 
     [DynamicData(nameof(WeakFuzzTestData))]
     [TestMethod]
-    public void WeakCollectionFuzzTest(int seed)
+    public void WeakCollectionBehaviorFuzzTest(int seed)
     {
         // This fuzzes the weak collection behaviour itself: we perform a bunch of random operations while deliberately allowing some values to die in the
         // background, then periodically force a GC and assert the core invariants of a weak value dictionary:
@@ -145,8 +145,8 @@ public class FuzzTests
         const int MaxKeys = 50;
         const int GcInterval = 500;
 
-        // Allocates a value inside a non-inlined helper so that it isn't accidentally rooted by a leftover stack/register reference, adds it to the dictionary,
-        // and returns a weak reference for tracking whether it has been collected.
+        // Allocates a value inside a non-inlined helper so that it isn't accidentally rooted by a leftover stack/register reference, and adds it to the
+        // dictionary.
         void AddDyingValue(int key)
         {
             Helpers.NotInlined((dictionary: weakDictionary, key), static state =>
