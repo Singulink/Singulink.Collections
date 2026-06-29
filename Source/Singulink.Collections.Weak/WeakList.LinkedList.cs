@@ -46,7 +46,8 @@ public sealed partial class WeakList<T>
             bool isTail = nextNode is null;
 
             // If it's meant to be the new tail node, update that:
-            if (isTail) _tail = newNode;
+            if (isTail)
+                _tail = newNode;
 
             // Note: it's impossible for prevNode to be null, since we never insert before the pseudo-node.
             Debug.Assert(prevNode is not null, "Previous node must not be null when inserting near a node.");
@@ -78,8 +79,11 @@ public sealed partial class WeakList<T>
         // If n is null, return the first node if we have one:
         DebugAssertNotDisposed();
         isRemovedNode = false;
-        if (n is null && _size > 0) return _head._next;
-        else if (n is null) return null;
+
+        if (n is null && _size > 0)
+            return _head._next;
+        else if (n is null)
+            return null;
 
         // Check if node has been removed as the caller needs to handle it specially:
         if (n is { _isRemoved: true })
@@ -99,8 +103,12 @@ public sealed partial class WeakList<T>
         // If n is null, return the last node if we have one:
         DebugAssertNotDisposed();
         isRemovedNode = false;
-        if (n is null && _size > 0) return _tail;
-        if (n is null) return null;
+
+        if (n is null && _size > 0)
+            return _tail;
+
+        if (n is null)
+            return null;
 
         // Check if node has been removed as the caller needs to handle it specially:
         if (n is { _isRemoved: true })
@@ -137,7 +145,8 @@ public sealed partial class WeakList<T>
         try
         {
             // Check if already removed.
-            if (node._isRemoved) return;
+            if (node._isRemoved)
+                return;
 
             // Get previous & next nodes:
             var prevNode = node._prev;
@@ -151,7 +160,8 @@ public sealed partial class WeakList<T>
             nextNode?._prev = prevNode;
 
             // If we removed the tail node, the previous node becomes the new tail (it's the last live node, or the pseudo-node if the list is now empty).
-            if (nextNode is null) _tail = prevNode;
+            if (nextNode is null)
+                _tail = prevNode;
 
             // Destroy the node (note: we leave prev & next links as they are so enumeration can continue):
             FinishDestroyNode(node);
@@ -174,9 +184,13 @@ public sealed partial class WeakList<T>
             // If we can tell we have a removed node without locking, handle now:
             if (currentNode is { _isRemoved: true })
             {
-                if (!allowNearRemovedNode) return null;
+                if (!allowNearRemovedNode)
+                    return null;
+
                 movedAlready = true;
-                do currentNode = currentNode._prev;
+
+                do
+                    currentNode = currentNode._prev;
                 while (currentNode is { _isRemoved: true });
             }
 
@@ -186,7 +200,9 @@ public sealed partial class WeakList<T>
                 Throw.IfDisposed(wasDisposed, typeof(WeakList<T>));
 
                 // Handle a removed node if needed by running the outer loop again:
-                if (currentNode is { _isRemoved: true }) continue;
+                if (currentNode is { _isRemoved: true })
+                    continue;
+
                 Debug.Assert(
                     currentNode is not null,
                     "Current node should not be null, since we're not disposed and thus going left must lead to the pseudo-node before we hit null.");
@@ -194,7 +210,9 @@ public sealed partial class WeakList<T>
                 // Determine if we want to add before or not:
                 // Note: if we had to move due to a removed node, we need special handling.
                 bool addBeforeLocal = addBefore;
-                if (movedAlready) addBeforeLocal = false;
+
+                if (movedAlready)
+                    addBeforeLocal = false;
 
                 // Add the node:
                 return InsertNearHelper(value, currentNode, addBefore: addBeforeLocal);
@@ -209,9 +227,12 @@ public sealed partial class WeakList<T>
         var enumerator = GetEnumerator();
         while (enumerator.MoveNext())
         {
-            if (enumerator.WasAddedDuringEnumeration) continue;
+            if (enumerator.WasAddedDuringEnumeration)
+                continue;
+
             var current = enumerator.CurrentNode;
             var currentValue = enumerator.Current;
+
             if (comparer.Equals(currentValue, existingValue))
             {
                 using var scope = EnterLock(out bool wasDisposed);
@@ -251,7 +272,8 @@ public sealed partial class WeakList<T>
         _tail = null;
 
         // Exit the lock held by this thread now so that other threads can proceed:
-        while (_locker.IsHeldByCurrentThread) _locker.Exit();
+        while (_locker.IsHeldByCurrentThread)
+            _locker.Exit();
 
         // Clean out our container values
         _containerValues.CleanOut();

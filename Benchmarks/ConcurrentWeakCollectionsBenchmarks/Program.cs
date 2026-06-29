@@ -152,10 +152,14 @@ public class Benchs
         _values = [.. Enumerable.Range(0, N).Select(_ => new object())];
         _nodes = new WeakList<object>.Node[N];
         int i = 0;
-        foreach (object x in _values) _nodes[i++] = _list.AddLast(x);
+
+        foreach (object x in _values)
+            _nodes[i++] = _list.AddLast(x);
 
         _dictionary = [];
-        for (int k = 0; k < N; k++) _dictionary.TryAdd(k, _values[k]);
+
+        for (int k = 0; k < N; k++)
+            _dictionary.TryAdd(k, _values[k]);
     }
 
     [GlobalCleanup]
@@ -196,11 +200,18 @@ public class Benchs
         int idx = _random.Next(0, N + 1);
         WeakList<object>.Node? node;
         ref var node0 = ref GetArrayDataReference(_nodes);
-        if (N == 0) node = _random.Next(2) == 0 ? list.AddFirst(_value) : list.AddLast(_value);
-        else if (idx == N) node = list.AddAfter(Unsafe.Add(ref node0, (uint)(N - 1)), _value);
-        else if (idx == 0) node = list.AddBefore(node0, _value);
-        else if (_random.Next(2) == 0) node = list.AddBefore(Unsafe.Add(ref node0, (uint)idx), _value);
-        else node = list.AddAfter(Unsafe.Add(ref node0, (uint)(idx - 1)), _value);
+
+        if (N == 0)
+            node = _random.Next(2) == 0 ? list.AddFirst(_value) : list.AddLast(_value);
+        else if (idx == N)
+            node = list.AddAfter(Unsafe.Add(ref node0, (uint)(N - 1)), _value);
+        else if (idx == 0)
+            node = list.AddBefore(node0, _value);
+        else if (_random.Next(2) == 0)
+            node = list.AddBefore(Unsafe.Add(ref node0, (uint)idx), _value);
+        else
+            node = list.AddAfter(Unsafe.Add(ref node0, (uint)(idx - 1)), _value);
+
         list.Remove(node);
     }
 
@@ -211,7 +222,10 @@ public class Benchs
         // Note: we're not preserving the order properly in _nodes for this method, but that is fine for this benchmark (others will re-instantiate it).
         WeakList<object> list = _list;
         int n = N;
-        if (n == 0) return;
+
+        if (n == 0)
+            return;
+
         int idx = _random.Next(0, n);
         ref var nodeSlot = ref Unsafe.Add(ref GetArrayDataReference(_nodes), (uint)idx)!;
         object oldValue = Unsafe.Add(ref GetArrayDataReference(_values), (uint)idx)!;
@@ -228,8 +242,11 @@ public class Benchs
         otherNodeIndex += otherNodeIndex >= idx ? 1 : 0; // This particular construction is handled by roslyn to not branch, which reduces potential variation.
         var otherNode = Unsafe.Add(ref GetArrayDataReference(_nodes), (uint)otherNodeIndex);
         list.Remove(nodeSlot);
-        if (_random.Next(2) == 0) nodeSlot = list.AddBefore(otherNode, oldValue);
-        else nodeSlot = list.AddAfter(otherNode, oldValue);
+
+        if (_random.Next(2) == 0)
+            nodeSlot = list.AddBefore(otherNode, oldValue);
+        else
+            nodeSlot = list.AddAfter(otherNode, oldValue);
     }
 
     [Benchmark]
@@ -251,6 +268,7 @@ public class Benchs
         int n = N;
         var nodes = _nodes;
         object[] values = _values;
+
         if (n > 0)
         {
             _ = nodes[n - 1];
@@ -277,7 +295,9 @@ public class Benchs
         int n = N;
         var nodes = _nodes;
         object value = _value;
-        if (n > 0) _ = nodes[n - 1];
+
+        if (n > 0)
+            _ = nodes[n - 1];
 
         for (int i = 0; i < n; i++)
         {
@@ -299,6 +319,7 @@ public class Benchs
         int n = N;
         var nodes = _nodes;
         object[] values = _values;
+
         if (n > 0)
         {
             _ = nodes[n - 1];
@@ -323,7 +344,9 @@ public class Benchs
         int n = N;
         var nodes = _nodes;
         object value = _value;
-        if (n > 0) _ = nodes[n - 1];
+
+        if (n > 0)
+            _ = nodes[n - 1];
 
         for (int i = 0; i < n; i++)
         {
@@ -343,6 +366,7 @@ public class Benchs
         int n = N;
         var nodes = _nodes;
         object[] values = _values;
+
         if (n > 0)
         {
             _ = nodes[n - 1];
@@ -365,7 +389,9 @@ public class Benchs
         int n = N;
         var nodes = _nodes;
         object value = _value;
-        if (n > 0) _ = nodes[n - 1];
+
+        if (n > 0)
+            _ = nodes[n - 1];
 
         for (int i = 0; i < n; i++)
         {
@@ -383,6 +409,7 @@ public class Benchs
         int n = N;
         var nodes = _nodes;
         object[] values = _values;
+
         if (n > 0)
         {
             _ = nodes[n - 1];
@@ -400,7 +427,9 @@ public class Benchs
     [Benchmark]
     public object? WeakValueDictionary_TryGetValue()
     {
-        if (N == 0) return null;
+        if (N == 0)
+            return null;
+
         int idx = _random.Next(0, N);
         return _dictionary.TryGetValue(idx, out object result) ? result : null;
     }
@@ -434,7 +463,9 @@ public class Benchs
 
         int n = N;
         object[] values = _values;
-        if (n > 0) _ = values[n - 1];
+
+        if (n > 0)
+            _ = values[n - 1];
 
         for (int i = 0; i < n; i++)
         {
@@ -453,7 +484,9 @@ public class Benchs
 
         int n = N;
         object[] values = _values;
-        if (n > 0) _ = values[n - 1];
+
+        if (n > 0)
+            _ = values[n - 1];
 
         for (int i = 0; i < n; i++)
         {
@@ -470,7 +503,9 @@ public class Benchs
 
         int n = N;
         object[] values = _values;
-        if (n > 0) _ = values[n - 1];
+
+        if (n > 0)
+            _ = values[n - 1];
 
         for (int i = 0; i < n; i++)
         {
@@ -491,7 +526,9 @@ public class Benchs
 
         int n = N;
         object[] values = _values;
-        if (n > 0) _ = values[n - 1];
+
+        if (n > 0)
+            _ = values[n - 1];
 
         for (int i = 0; i < n; i++)
         {

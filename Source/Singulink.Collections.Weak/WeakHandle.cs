@@ -19,7 +19,10 @@ internal struct WeakHandle(IntPtr handle)
     private readonly GCHandle AsGCHandle()
     {
         IntPtr handle = Handle;
-        if (handle == IntPtr.Zero) return default;
+
+        if (handle == IntPtr.Zero)
+            return default;
+
         return GCHandle.FromIntPtr(handle);
     }
 #endif
@@ -48,13 +51,19 @@ internal struct WeakHandle(IntPtr handle)
     public readonly T? TryGetTarget<T>() where T : class?
     {
         var handle = AsGCHandle();
-        if (!handle.IsAllocated) return null;
+
+        if (!handle.IsAllocated)
+            return null;
+
         object? result;
+
 #if NET10_0_OR_GREATER
-        if (!handle.TryGetTarget(out result)) result = null;
+        if (!handle.TryGetTarget(out result))
+            result = null;
 #else
         result = handle.Target;
 #endif
+
         Debug.Assert(result is T or null, "Stored target should be of the correct type or null.");
         return Unsafe.As<T?>(result);
     }
@@ -64,6 +73,7 @@ internal struct WeakHandle(IntPtr handle)
     {
         // Try to get from per-thread cache:
         var perThreadCache = _perThreadCache;
+
         if (perThreadCache is not null && (uint)perThreadCache.Count > 0)
         {
             Debug.Assert(perThreadCache.Count > 0 && perThreadCache.Count <= PerThreadWeakHandleHolder.NumHandles, "Index should be in range.");
@@ -85,6 +95,7 @@ internal struct WeakHandle(IntPtr handle)
 #if NET
             ReadOnlySpan<IntPtr> values = MemoryMarshal.CreateReadOnlySpan(ref shared.Handle0, SharedWeakHandleHolder.NumHandles);
             int potentialIndex = values.IndexOfAnyExcept(IntPtr.Zero);
+
             if (potentialIndex >= 0)
             {
                 Debug.Assert(potentialIndex < SharedWeakHandleHolder.NumHandles, "Index should be in range.");
@@ -95,6 +106,7 @@ internal struct WeakHandle(IntPtr handle)
                 ref IntPtr handleRef = ref Unsafe.Add(ref shared.Handle0, i);
 #endif
                 handleValue = Interlocked.Exchange(ref handleRef, IntPtr.Zero);
+
                 if (handleValue != IntPtr.Zero)
                 {
                     var handle = new WeakHandle(handleValue);
@@ -124,6 +136,7 @@ internal struct WeakHandle(IntPtr handle)
             // Check if per-thread cache has a slot available:
 
             var perThreadCache = _perThreadCache;
+
             if (perThreadCache is null)
             {
                 perThreadCache = new PerThreadWeakHandleHolder();
@@ -150,6 +163,7 @@ internal struct WeakHandle(IntPtr handle)
 #if NET
                 Span<IntPtr> values = MemoryMarshal.CreateSpan(ref shared.Handle0, SharedWeakHandleHolder.NumHandles);
                 int potentialIndex = values.IndexOf(IntPtr.Zero);
+
                 if (potentialIndex >= 0)
                 {
                     handle.SetTarget(null);
@@ -162,6 +176,7 @@ internal struct WeakHandle(IntPtr handle)
                     ref IntPtr handleRef = ref Unsafe.Add(ref shared.Handle0, i);
 #endif
                     IntPtr oldValue = Interlocked.CompareExchange(ref handleRef, handleValue, IntPtr.Zero);
+
                     if (oldValue == IntPtr.Zero)
                     {
                         GC.KeepAlive(shared);
@@ -215,6 +230,7 @@ internal struct WeakHandle(IntPtr handle)
             for (int i = 0; i < NumHandles; i++)
             {
                 IntPtr handleValue = Unsafe.Add(ref Handle0, i);
+
                 if (handleValue != IntPtr.Zero)
                 {
                     var handle = new WeakHandle(handleValue);

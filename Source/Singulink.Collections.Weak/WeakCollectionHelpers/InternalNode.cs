@@ -66,7 +66,8 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
             }
             finally
             {
-                if (entered) locker!.Exit();
+                if (entered)
+                    locker!.Exit();
             }
 
             GC.KeepAlive(finalizeHelperNode);
@@ -89,6 +90,7 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
                 ? LockScope.TryEnterLock<T, TNode, TContainer, TNodeHelpers>(container, out wasDisposed, out entered)
                 : LockScope.EnterLock<T, TNode, TContainer, TNodeHelpers>(container, out wasDisposed)
             : default;
+
         if (!wasDisposed)
         {
             if (entered)
@@ -106,6 +108,7 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
                     {
                         ref var trackingListField = ref default(TNodeHelpers).GetNodeHelperList(container);
                         var trackingList = trackingListField;
+
                         if (trackingList != null)
                         {
                             lock (default(TNodeHelpers).GetNodeHelperListLock(container))
@@ -113,6 +116,7 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
                                 if (trackingListField != null)
                                 {
                                     var nodeHelperNode = default(TNodeHelpers).GetNodeHelperNode(node);
+
                                     if (nodeHelperNode != null && nodeHelperNode.List != null)
                                     {
                                         trackingList.Remove(nodeHelperNode);
@@ -140,15 +144,20 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
                     // Ensure removed from CWT tracking stuff (the remove logic might have missed it, since we're not necessarily alive anymore, so it
                     // might not be able to look up these lists):
                     var cwt = default(TNodeHelpers).GetContainerValues(container)._cwt;
+
                     if (value is { } && _cwtNode.TryGetTarget<ConditionalWeakTableListWrapper<T, InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers>>.Entry>() is { } cwtNode)
                     {
-                        if (default(TNodeHelpers).HasLocker) cwt.TryRemoveNoLock(value, cwtNode);
-                        else cwt.TryRemove(value, cwtNode);
+                        if (default(TNodeHelpers).HasLocker)
+                            cwt.TryRemoveNoLock(value, cwtNode);
+                        else
+                            cwt.TryRemove(value, cwtNode);
                     }
                     else
                     {
-                        if (default(TNodeHelpers).HasLocker) cwt.ShrinkIfNeededNoLock();
-                        else cwt.ShrinkIfNeeded();
+                        if (default(TNodeHelpers).HasLocker)
+                            cwt.ShrinkIfNeededNoLock();
+                        else
+                            cwt.ShrinkIfNeeded();
                     }
 
                     _cwtNode.Dispose();
@@ -197,10 +206,12 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
             node ??= _node.TryGetTarget<TNode>();
 
             // If we don't have the node, we can't call RemoveFromContainer, so we just finalize our unmanaged resources:
-            if (node is null) return true;
+            if (node is null)
+                return true;
 
             // Remove the node from the container:
             hasNodeValue = true;
+
             if (!RemoveFromContainer(node, ref implHandle, previousHandle, disposing))
             {
                 releaseHandle = false;
@@ -238,6 +249,7 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
     internal void EarlyDispose(InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers> internalNodeHelper, Lock? locker, bool isDisposed)
     {
         var impl = new StrongHandle(Interlocked.Exchange(ref internalNodeHelper._impl.Handle, IntPtr.Zero));
+
         if (impl.Handle != IntPtr.Zero)
         {
             Debug.Assert(isDisposed || locker is null || locker.IsHeldByCurrentThread, "Lock should be held by current thread.");

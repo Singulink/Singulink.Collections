@@ -20,7 +20,10 @@ internal sealed class CleanupHelper<T, TNode, TContainer, TNodeHelpers>(WeakHand
             // Note: we only need the lock on non-locking collections. On locking collections, we already know that this cannot run concurrently with new node
             // allocations nor with removals, since they require the lock, which keeps the collection alive.
             bool entered = !default(TNodeHelpers).HasLocker;
-            if (entered) list.Locker.Enter();
+
+            if (entered)
+                list.Locker.Enter();
+
             try
             {
                 foreach (var handle in list.List)
@@ -34,7 +37,8 @@ internal sealed class CleanupHelper<T, TNode, TContainer, TNodeHelpers>(WeakHand
             }
             finally
             {
-                if (entered) list.Locker.Exit();
+                if (entered)
+                    list.Locker.Exit();
             }
 
             GC.KeepAlive(list);

@@ -32,7 +32,9 @@ internal sealed class Lock
 
         public void Dispose()
         {
-            if (_locker is null) return;
+            if (_locker is null)
+                return;
+
             Monitor.Exit(_locker);
             _locker = null;
         }

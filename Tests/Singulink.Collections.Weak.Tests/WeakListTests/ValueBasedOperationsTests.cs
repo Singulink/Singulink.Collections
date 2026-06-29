@@ -257,6 +257,7 @@ public class ValueBasedOperationsTests
         var result = list.Find((x) =>
         {
             callCount++;
+
             if (x == value1)
             {
                 list.Remove(node2);
@@ -1017,6 +1018,7 @@ public class ValueBasedOperationsTests
             (x, y) =>
             {
                 bool wouldBeEqual = x == y;
+
                 if (wouldBeEqual && node2 is not null)
                 {
                     list.Remove(node2);

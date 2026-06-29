@@ -9,8 +9,12 @@ internal static class WeakReferenceHelpers
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static TValue? TryGetValue<TValue>(WeakReference<TValue>? wr) where TValue : class
     {
-        if (wr is null) return null;
-        if (!wr.TryGetTarget(out var result)) return null;
+        if (wr is null)
+            return null;
+
+        if (!wr.TryGetTarget(out var result))
+            return null;
+
         return result;
     }
 }

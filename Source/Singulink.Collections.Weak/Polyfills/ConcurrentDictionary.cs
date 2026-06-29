@@ -423,6 +423,7 @@ namespace System.Collections.Concurrent
                     if (tables != _tables)
                     {
                         tables = _tables;
+
                         if (!ReferenceEquals(comparer, tables._comparer))
                         {
                             comparer = tables._comparer;
@@ -441,6 +442,7 @@ namespace System.Collections.Concurrent
                             if (matchValue)
                             {
                                 bool valuesMatch = EqualityComparer<TValue>.Default.Equals(oldValue!, curr._value);
+
                                 if (!valuesMatch)
                                 {
                                     value = default;
@@ -493,6 +495,7 @@ namespace System.Collections.Concurrent
             Tables tables = _tables;
 
             IEqualityComparer<TKey>? comparer = tables._comparer;
+
             if (typeof(TKey).IsValueType && // comparer can only be null for value types; enable JIT to eliminate entire if block for ref types
                 comparer is null)
             {
@@ -620,6 +623,7 @@ namespace System.Collections.Concurrent
                     if (tables != _tables)
                     {
                         tables = _tables;
+
                         if (!ReferenceEquals(comparer, tables._comparer))
                         {
                             comparer = tables._comparer;
@@ -633,6 +637,7 @@ namespace System.Collections.Concurrent
                     for (Node? node = bucket; node is not null; node = node._next)
                     {
                         Debug.Assert((prev is null && node == bucket) || prev!._next == node);
+
                         if (hashcode == node._hashcode && NodeEqualsKey(comparer, node, key))
                         {
                             if (valueComparer.Equals(node._value, comparisonValue))
@@ -731,6 +736,7 @@ namespace System.Collections.Concurrent
                 AcquireAllLocks(ref locksAcquired);
 
                 int count = GetCountNoLocks();
+
                 if (array.Length - count < index)
                 {
                     throw new ArgumentException("The index is equal to or greater than the length of the array, or the number of elements in the dictionary is greater than the available space from index to the end of the destination array.");
@@ -758,6 +764,7 @@ namespace System.Collections.Concurrent
                 AcquireAllLocks(ref locksAcquired);
 
                 int count = GetCountNoLocks();
+
                 if (count == 0)
                 {
                     return [];
@@ -873,6 +880,7 @@ namespace System.Collections.Concurrent
                     Debug.Assert(buckets is not null);
 
                     int i = _i + 1;
+
                     if ((uint)i >= (uint)buckets.Length)
                     {
                         return false;
@@ -915,6 +923,7 @@ namespace System.Collections.Concurrent
                     if (tables != _tables)
                     {
                         tables = _tables;
+
                         if (!ReferenceEquals(comparer, tables._comparer))
                         {
                             comparer = tables._comparer;
@@ -928,6 +937,7 @@ namespace System.Collections.Concurrent
                     for (Node? node = bucket; node is not null; node = node._next)
                     {
                         Debug.Assert((prev is null && node == bucket) || prev!._next == node);
+
                         if (hashcode == node._hashcode && NodeEqualsKey(comparer, node, key))
                         {
                             // The key was found in the dictionary. If updates are allowed, update the value for that key.
@@ -946,6 +956,7 @@ namespace System.Collections.Concurrent
                                 else
                                 {
                                     var newNode = new Node(node._key, value, hashcode, node._next);
+
                                     if (prev is null)
                                     {
                                         Volatile.Write(ref bucket, newNode);
@@ -1274,6 +1285,7 @@ namespace System.Collections.Concurrent
                 {
                     // key exists, try to update
                     TValue newValue = updateValueFactory(key, oldValue, factoryArgument);
+
                     if (TryUpdateInternal(tables, key, hashcode, newValue, oldValue))
                     {
                         return newValue;
@@ -1291,6 +1303,7 @@ namespace System.Collections.Concurrent
                 if (tables != _tables)
                 {
                     tables = _tables;
+
                     if (!ReferenceEquals(comparer, tables._comparer))
                     {
                         comparer = tables._comparer;
@@ -1347,6 +1360,7 @@ namespace System.Collections.Concurrent
                 {
                     // key exists, try to update
                     TValue newValue = updateValueFactory(key, oldValue);
+
                     if (TryUpdateInternal(tables, key, hashcode, newValue, oldValue))
                     {
                         return newValue;
@@ -1364,6 +1378,7 @@ namespace System.Collections.Concurrent
                 if (tables != _tables)
                 {
                     tables = _tables;
+
                     if (!ReferenceEquals(comparer, tables._comparer))
                     {
                         comparer = tables._comparer;
@@ -1413,6 +1428,7 @@ namespace System.Collections.Concurrent
                 {
                     // key exists, try to update
                     TValue newValue = updateValueFactory(key, oldValue);
+
                     if (TryUpdateInternal(tables, key, hashcode, newValue, oldValue))
                     {
                         return newValue;
@@ -1430,6 +1446,7 @@ namespace System.Collections.Concurrent
                 if (tables != _tables)
                 {
                     tables = _tables;
+
                     if (!ReferenceEquals(comparer, tables._comparer))
                     {
                         comparer = tables._comparer;
@@ -1812,6 +1829,7 @@ namespace System.Collections.Concurrent
         {
             if (array is null)
                 throw new ArgumentNullException(nameof(array));
+
             if (index < 0)
                 throw new ArgumentOutOfRangeException(nameof(index), $"{nameof(index)} ('{index}') must be a non-negative value.");
 
@@ -1821,6 +1839,7 @@ namespace System.Collections.Concurrent
                 AcquireAllLocks(ref locksAcquired);
 
                 int count = GetCountNoLocks();
+
                 if (array.Length - count < index)
                 {
                     throw new ArgumentException("The index is equal to or greater than the length of the array, or the number of elements in the dictionary is greater than the available space from index to the end of the destination array.");
@@ -1922,6 +1941,7 @@ namespace System.Collections.Concurrent
                     if (GetCountNoLocks() < tables._buckets.Length / 4)
                     {
                         _budget = 2 * _budget;
+
                         if (_budget < 0)
                         {
                             _budget = int.MaxValue;
@@ -1932,6 +1952,7 @@ namespace System.Collections.Concurrent
                     // Compute the new table size at least twice the previous table size.
                     // Double the size of the buckets table and choose a prime that's at least as large.
                     const int Array_MaxLength = 0X7FFFFFC7;
+
                     if ((newLength = tables._buckets.Length * 2) < 0 ||
                         (newLength = HashHelpers.GetPrime(newLength)) > Array_MaxLength)
                     {
@@ -2082,6 +2103,7 @@ namespace System.Collections.Concurrent
                 AcquireAllLocks(ref locksAcquired);
 
                 int count = GetCountNoLocks();
+
                 if (count == 0)
                 {
                     return ROCTKeyEmpty;
@@ -2118,6 +2140,7 @@ namespace System.Collections.Concurrent
                 AcquireAllLocks(ref locksAcquired);
 
                 int count = GetCountNoLocks();
+
                 if (count == 0)
                 {
                     return ROCTValueEmpty;
@@ -2177,6 +2200,7 @@ namespace System.Collections.Concurrent
         private static Node? GetBucket(Tables tables, int hashcode)
         {
             VolatileNode[] buckets = tables._buckets;
+
             if (IntPtr.Size == 8)
             {
                 return buckets[HashHelpers.FastMod((uint)hashcode, (uint)buckets.Length, tables._fastModBucketsMultiplier)]._node;
@@ -2194,6 +2218,7 @@ namespace System.Collections.Concurrent
         {
             VolatileNode[] buckets = tables._buckets;
             uint bucketNo;
+
             if (IntPtr.Size == 8)
             {
                 bucketNo = HashHelpers.FastMod((uint)hashcode, (uint)buckets.Length, tables._fastModBucketsMultiplier);
@@ -2229,6 +2254,7 @@ namespace System.Collections.Concurrent
                 _locks = locks;
                 _countPerLock = countPerLock;
                 _comparer = comparer;
+
                 if (IntPtr.Size == 8)
                 {
                     _fastModBucketsMultiplier = HashHelpers.GetFastModMultiplier((uint)buckets.Length);

@@ -757,6 +757,7 @@ public class EnumerationTests
         foreach (var node in enumerable)
         {
             result.Add(node);
+
             if (node == node1)
             {
                 // Add a new node while iterating
@@ -783,6 +784,7 @@ public class EnumerationTests
         foreach (var node in enumerable)
         {
             result.Add(node);
+
             if (node == node1)
             {
                 list.AddLast(value4);

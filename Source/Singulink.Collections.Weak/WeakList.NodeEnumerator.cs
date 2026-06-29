@@ -24,7 +24,9 @@ public sealed partial class WeakList<T>
             _currentNode = node;
 
             using var scope = _list.EnterLock(out bool wasDisposed);
-            if (wasDisposed) _currentNode = null;
+
+            if (wasDisposed)
+                _currentNode = null;
 
             _listVersion = list._version;
         }
@@ -69,14 +71,17 @@ public sealed partial class WeakList<T>
         public bool MoveNext()
         {
             // Check if we know it's disposed before locking:
-            if (IsDisposed()) goto disposed;
+            if (IsDisposed())
+                goto disposed;
 
             // Get the next node (unless it has been removed):
             Node? newNode = _currentNode;
             bool isRemovedNode;
             using (_list.EnterLock(out bool wasDisposed))
             {
-                if (wasDisposed) goto disposed;
+                if (wasDisposed)
+                    goto disposed;
+
                 newNode = _list.GetNextNode(newNode, out isRemovedNode);
             }
 
@@ -108,14 +113,17 @@ public sealed partial class WeakList<T>
         public bool MovePrevious()
         {
             // Check if we know it's disposed before locking:
-            if (IsDisposed()) goto disposed;
+            if (IsDisposed())
+                goto disposed;
 
             // Get the previous node (unless it has been removed):
             Node? newNode = _currentNode;
             bool isRemovedNode;
             using (_list.EnterLock(out bool wasDisposed))
             {
-                if (wasDisposed) goto disposed;
+                if (wasDisposed)
+                    goto disposed;
+
                 newNode = _list.GetPrevNode(newNode, out isRemovedNode);
             }
 

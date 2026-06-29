@@ -198,6 +198,7 @@ internal sealed class ConditionalWeakTableListWrapper<TKey, TValue>
         // Only consider clearing out if at least half of the slots are free and we have at least 32 free slots in total, or have done too many operations.
         // This limits the amount of times we have to do this routine.
         _opsSinceLastShrink++;
+
         if ((_freeSlotCount > _keyCount / 2 && _freeSlotCount > 32) || (_opsSinceLastShrink > _keyCount / 2 && _opsSinceLastShrink > 32))
         {
             // Remove all unnecessary (due to key dying) free slots according to the _entries list:
@@ -213,6 +214,7 @@ internal sealed class ConditionalWeakTableListWrapper<TKey, TValue>
                     // NOTE: value must be alive if Key was alive, and can be presumed dead if key is dead.
                     _entries.Remove(node);
                     _keyCount--;
+
                     if (node.Value.IsEmpty)
                     {
                         _freeSlotCount--;

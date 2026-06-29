@@ -12,8 +12,12 @@ internal ref struct LockScope(Lock locker, object container)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {
-        if (_locker is null) return;
-        if (_locker.IsHeldByCurrentThread) _locker.Exit();
+        if (_locker is null)
+            return;
+
+        if (_locker.IsHeldByCurrentThread)
+            _locker.Exit();
+
         _locker = null;
 
         // Keep container alive until after we exit the lock - this is important for many of the algorithms that use the lock:
@@ -47,7 +51,10 @@ internal ref struct LockScope(Lock locker, object container)
             if (locker.TryEnter())
             {
                 wasDisposed = default(TNodeHelpers).IsDisposed(container);
-                if (wasDisposed) locker.Exit();
+
+                if (wasDisposed)
+                    locker.Exit();
+
                 return wasDisposed ? default : new LockScope(locker, container);
             }
 
@@ -76,11 +83,15 @@ internal ref struct LockScope(Lock locker, object container)
         }
 
         var locker = default(TNodeHelpers).GetLocker(container);
+
         if (locker.TryEnter())
         {
             wasDisposed = default(TNodeHelpers).IsDisposed(container);
             entered = !wasDisposed;
-            if (wasDisposed) locker.Exit();
+
+            if (wasDisposed)
+                locker.Exit();
+
             return wasDisposed ? default : new LockScope(locker, container);
         }
 

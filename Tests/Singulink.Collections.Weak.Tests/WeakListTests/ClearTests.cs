@@ -131,12 +131,15 @@ public class ClearTests
 
             GC.KeepAlive(initialValues);
             GC.KeepAlive(newValues);
-            if (success) return;
+
+            if (success)
+                return;
         }
 
 #pragma warning disable RS0030 // Do not use banned APIs
         // If we have less than 4 cores, return an inconclusive result instead:
-        if (Environment.ProcessorCount < 4) Assert.Inconclusive("Not enough cores for ClearWhileAddingValues to be reliable.");
+        if (Environment.ProcessorCount < 4)
+            Assert.Inconclusive("Not enough cores for ClearWhileAddingValues to be reliable.");
 
         // If we get here, no added nodes survived the Clear in any of the attempts
         Assert.Fail("No added nodes survived the Clear in any of the attempts.");

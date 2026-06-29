@@ -208,7 +208,10 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     public Node InsertBefore(T existingValue, T value, IEqualityComparer<T>? comparer = null)
     {
         var result = TryInsertNear(existingValue, value, comparer, addBefore: true);
-        if (result is null) Throw.ItemNotFound(nameof(existingValue));
+
+        if (result is null)
+            Throw.ItemNotFound(nameof(existingValue));
+
         return result;
     }
 
@@ -222,7 +225,10 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     public Node InsertAfter(T existingValue, T value, IEqualityComparer<T>? comparer = null)
     {
         var result = TryInsertNear(existingValue, value, comparer, addBefore: false);
-        if (result is null) Throw.ItemNotFound(nameof(existingValue));
+
+        if (result is null)
+            Throw.ItemNotFound(nameof(existingValue));
+
         return result;
     }
 
@@ -312,14 +318,18 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
 
         while (enumerator.MoveNext())
         {
-            if (enumerator.WasAddedDuringEnumeration) continue;
+            if (enumerator.WasAddedDuringEnumeration)
+                continue;
+
             var current = enumerator.CurrentNode;
             var currentValue = enumerator.Current;
+
             if (match(currentValue))
             {
                 // Make the operation somewhat atomic (i.e., if someone else removed it while we weren't holding the lock, we consider that as happened before
                 // us and thus not counting as a successful find here):
                 using var scope = EnterLock(out bool wasDisposed);
+
                 if (wasDisposed)
                 {
                     GC.KeepAlive(currentValue);
@@ -357,14 +367,18 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
         var enumerator = GetEnumerator();
         while (enumerator.MoveNext())
         {
-            if (enumerator.WasAddedDuringEnumeration) continue;
+            if (enumerator.WasAddedDuringEnumeration)
+                continue;
+
             var current = enumerator.CurrentNode;
             var currentValue = enumerator.Current;
+
             if (comparer.Equals(currentValue, value))
             {
                 // Make the operation somewhat atomic (i.e., if someone else removed it while we weren't holding the lock, we consider that as happened before
                 // us and thus not counting as a successful find here):
                 using var scope = EnterLock(out bool wasDisposed);
+
                 if (wasDisposed)
                 {
                     GC.KeepAlive(value);
@@ -428,14 +442,18 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
         var enumerator = GetEnumerator();
         while (enumerator.MoveNext())
         {
-            if (enumerator.WasAddedDuringEnumeration) continue;
+            if (enumerator.WasAddedDuringEnumeration)
+                continue;
+
             var current = enumerator.CurrentNode;
             var currentValue = enumerator.Current;
+
             if (comparer.Equals(currentValue, value))
             {
                 // Make the operation somewhat atomic (i.e., if someone else removed it while we weren't holding the lock, we consider that as happened before
                 // us and thus not counting as a successful removal here):
                 using var scope = EnterLock(out bool wasDisposed);
+
                 if (wasDisposed)
                 {
                     GC.KeepAlive(currentValue);
@@ -480,7 +498,8 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
 
         while (enumerator.MoveNext())
         {
-            if (!enumerator.WasAddedDuringEnumeration) enumerator.Current.Dispose();
+            if (!enumerator.WasAddedDuringEnumeration)
+                enumerator.Current.Dispose();
         }
     }
 
@@ -525,7 +544,10 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
 #endif
     {
         using var scope = TryEnterLock(out bool wasDisposed, out bool entered);
-        if (wasDisposed || !entered) return false;
+
+        if (wasDisposed || !entered)
+            return false;
+
         operation(this, state);
         return true;
     }
@@ -536,7 +558,10 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     public void Dispose()
     {
         using var scope = EnterLock(out bool wasDisposed);
-        if (wasDisposed) return;
+
+        if (wasDisposed)
+            return;
+
         HandleFailureOrDispose();
     }
 

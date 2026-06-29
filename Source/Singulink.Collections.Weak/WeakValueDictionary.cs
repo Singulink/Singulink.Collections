@@ -242,6 +242,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
 
             // Try TryAdd first
             Node? toDispose = null;
+
             if (lookup.TryAdd(key, node))
             {
                 return true;
@@ -331,6 +332,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
             if (lookup.TryRemove(key, out var node))
             {
                 bool result = false;
+
                 if (node.Value.TryGetTarget(out var valueTmp))
                 {
                     // Note: we do GC.KeepAlive on a temporary since 'value' could be overwritten before we could actually call that.
@@ -472,7 +474,8 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
         ThrowIfDisposed(out var lookup);
         try
         {
-            foreach (var kvp in lookup) kvp.Value.Dispose();
+            foreach (var kvp in lookup)
+                kvp.Value.Dispose();
         }
         finally
         {
@@ -489,6 +492,7 @@ public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePai
         foreach (var kvp in lookup)
         {
             ThrowIfDisposed(out _);
+
             if (kvp.Value.Value.TryGetTarget(out var value))
             {
                 GC.KeepAlive(this);

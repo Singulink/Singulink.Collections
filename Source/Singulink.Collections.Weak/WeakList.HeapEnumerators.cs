@@ -22,7 +22,8 @@ public sealed partial class WeakList<T>
         {
             do
             {
-                if (!(reversed ? _impl.MovePrevious() : _impl.MoveNext())) return false;
+                if (!(reversed ? _impl.MovePrevious() : _impl.MoveNext()))
+                    return false;
             }
             while (skipNewNodes && _impl.WasAddedDuringEnumeration);
             return true;
@@ -55,7 +56,8 @@ public sealed partial class WeakList<T>
         {
             do
             {
-                if (!(reversed ? _impl.MovePrevious() : _impl.MoveNext())) return false;
+                if (!(reversed ? _impl.MovePrevious() : _impl.MoveNext()))
+                    return false;
             }
             while (skipNewNodes && _impl.WasAddedDuringEnumeration);
             return true;

@@ -87,6 +87,7 @@ partial class WeakValueDictionary<TKey, TValue>
         {
             // Try to find an existing key on a node that isn't meant to be alive any more:
             _dictionary.ThrowIfDisposed(out _);
+
             if (_altLookup.TryGetValue(key, out var actualKey, out var oldNode))
             {
                 if (oldNode.Value.TryGetTarget(out var oldValue))

@@ -24,9 +24,13 @@ public class FuzzTests
         {
             // Determine whether to add or remove:
             bool doAdd;
-            if (actualList.Count == MaxValues) doAdd = false;
-            else if (actualList.Count == 0) doAdd = true;
-            else doAdd = r.Next(2) == 0;
+
+            if (actualList.Count == MaxValues)
+                doAdd = false;
+            else if (actualList.Count == 0)
+                doAdd = true;
+            else
+                doAdd = r.Next(2) == 0;
 
             // Perform the operation:
             if (doAdd)

@@ -73,19 +73,32 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
         {
             // Note: we must take the lock here, as otherwise we could be partway through disposing or updating the value:
             // Note: we technically still could be partway through disposing after taking the lock, but not in a problematic way.
-            if (default(TNodeHelpers).IsDisposed(_container)) return null;
+            if (default(TNodeHelpers).IsDisposed(_container))
+                return null;
+
             using var scope = LockScope.EnterLock<T, TNode, TContainer, TNodeHelpers>(_container, out bool wasDisposed);
-            if (wasDisposed) return null;
+
+            if (wasDisposed)
+                return null;
+
             var internalNode = _internalNode;
-            if (internalNode is null) return null;
+
+            if (internalNode is null)
+                return null;
+
             var helper = GetInternalNodeHelper();
-            if (helper is null) return null;
+
+            if (helper is null)
+                return null;
 
             // Do the actual get:
             T? retV;
 #if NET
             var dependentHandle = internalNode._dependentHandle;
-            if (!dependentHandle.IsAllocated) return null;
+
+            if (!dependentHandle.IsAllocated)
+                return null;
+
             object? result = dependentHandle.Target;
             Debug.Assert(result is T or null, "Stored target should be of the correct type or null.");
             retV = Unsafe.As<T?>(result);
@@ -108,7 +121,10 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
         get
         {
             var internalNode = _internalNode;
-            if (internalNode is null) return true;
+
+            if (internalNode is null)
+                return true;
+
             Thread.MemoryBarrier(); // Ensure we get the latest value (this stops the read from being re-ordered earlier, but it can still re-order to later).
             bool result = internalNode._finalizeAttemptCount == -1;
             GC.KeepAlive(_container);
@@ -122,9 +138,11 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     public void Dispose(TNode self)
     {
         var internalNode = _internalNode;
+
         if (internalNode is not null && GetInternalNodeHelper() is { } helper)
         {
             var impl = new StrongHandle(Interlocked.Exchange(ref helper._impl.Handle, IntPtr.Zero));
+
             if (impl.Handle != IntPtr.Zero && internalNode.Dispose(disposing: true, self, ref helper._impl, impl))
             {
                 GC.SuppressFinalize(helper);
@@ -157,14 +175,25 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
         // Note: nothing in theory prevents us from implementing this on .NET Standard, but it would be more complex (due to having to update the CWT), so
         // we just don't support it there for now.
         using var scope = LockScope.EnterLock<T, TNode, TContainer, TNodeHelpers>(_container, out bool wasDisposed);
-        if (GetInternalNodeHelper() is not { } helper) return false;
-        if (wasDisposed) return false;
-        if (helper._impl.Handle == IntPtr.Zero) return false;
+
+        if (GetInternalNodeHelper() is not { } helper)
+            return false;
+
+        if (wasDisposed)
+            return false;
+
+        if (helper._impl.Handle == IntPtr.Zero)
+            return false;
+
         var internalNode = _internalNode;
-        if (internalNode is null) return false;
+
+        if (internalNode is null)
+            return false;
 
         // Update the DependentHandle:
-        if (!internalNode._dependentHandle.IsAllocated) return false;
+        if (!internalNode._dependentHandle.IsAllocated)
+            return false;
+
         object? oldTarget = internalNode._dependentHandle.Target;
         DependentHandle dh = new(newTarget, helper);
         var oldDh = internalNode._dependentHandle;
@@ -228,6 +257,7 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
 #if NET
         internalNode._dependentHandle = new DependentHandle(value, internalNodeHelper);
         internalNode._trackingInfoHandle = StrongHandle.Alloc(containerValues._internalNodes);
+
         if (default(TNodeHelpers).HasLocker)
         {
             internalNode._finalizeHelperNode = WeakHandle.Alloc(containerValues._internalNodes.List.AddLast(_internalNodeHelper));
@@ -277,6 +307,7 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
 #else
         internalNode._value = WeakHandle.Alloc(value);
         var cwt = containerValues._cwt;
+
         if (default(TNodeHelpers).HasLocker)
         {
             internalNode._cwtNode = WeakHandle.Alloc(cwt.AddNoLock(value, internalNodeHelper));

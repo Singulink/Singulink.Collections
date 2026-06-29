@@ -25,9 +25,13 @@ public class FuzzTests
             // Determine which structural operation to perform:
             //   0 => clear, 1 => add, 2 => remove.
             int operation;
-            if (actualDictionary.Count == 0) operation = 1;
-            else if (actualDictionary.Count == MaxKeys) operation = r.Next(2) == 0 ? 0 : 2;
-            else operation = r.Next(20) == 0 ? 0 : (r.Next(2) == 0 ? 1 : 2);
+
+            if (actualDictionary.Count == 0)
+                operation = 1;
+            else if (actualDictionary.Count == MaxKeys)
+                operation = r.Next(2) == 0 ? 0 : 2;
+            else
+                operation = r.Next(20) == 0 ? 0 : (r.Next(2) == 0 ? 1 : 2);
 
             if (operation == 0)
             {
@@ -108,6 +112,7 @@ public class FuzzTests
 
             // TryGetValue should agree with the reference dictionary for both present and absent keys.
             int probeKey = r.Next(MaxKeys);
+
             if (actualDictionary.TryGetValue(probeKey, out object? expected))
             {
                 weakDictionary.TryGetValue(probeKey, out object? actual).ShouldBeTrue();
