@@ -26,12 +26,10 @@ BenchmarkRunner.Run<Benchs>(args: args);
         _ = ((Func<object>)([MethodImpl(MethodImplOptions.NoInlining)] () => new long[2000]))();
 #elif NET8_0
         _ = ((Func<object>)([MethodImpl(MethodImplOptions.NoInlining)] () => new long[3000]))();
-#elif NET6_0
-        _ = ((Func<object>)([MethodImpl(MethodImplOptions.NoInlining)] () => new long[4000]))();
 #elif NETSTANDARD2_1_OR_GREATER
-        _ = ((Func<object>)([MethodImpl(MethodImplOptions.NoInlining)] () => new long[5000]))();
+        _ = ((Func<object>)([MethodImpl(MethodImplOptions.NoInlining)] () => new long[4000]))();
 #elif NETSTANDARD
-        _ = ((Func<object>)([MethodImpl(MethodImplOptions.NoInlining)] () => new long[6000]))();
+        _ = ((Func<object>)([MethodImpl(MethodImplOptions.NoInlining)] () => new long[5000]))();
 #endif
 
     This allows validating that it is indeed running with the correct build of the library, as the allocated memory is substantially larger than what would
@@ -64,10 +62,6 @@ public class MyConfig : ManualConfig
         AddJob(baseJob
             .WithRuntime(CoreRuntime.Core80)
             .WithId(".NET 8.0"));
-
-        AddJob(baseJob
-            .WithRuntime(CoreRuntime.Core60)
-            .WithId(".NET 6.0"));
 #endif
 
         AddJob(baseJob
@@ -101,7 +95,7 @@ public class MyConfig : ManualConfig
         }
 #endif
 
-        WithOrderer(new JobOrderer(".NET 10.0", ".NET 9.0", ".NET 8.0", ".NET 6.0", ".NET 10.0 (.NET Standard 2.1)", ".NET 10.0 (.NET Standard 2.0)", ".NET Framework 4.8"));
+        WithOrderer(new JobOrderer(".NET 10.0", ".NET 9.0", ".NET 8.0", ".NET 10.0 (.NET Standard 2.1)", ".NET 10.0 (.NET Standard 2.0)", ".NET Framework 4.8"));
 
         HideColumns(Column.Runtime);
         HideColumns(Column.Arguments);
@@ -138,23 +132,34 @@ public class Benchs
     [Benchmark]
     public void DryRun() { }
 #else
-    [Params(0, 1, 3, 10, 30, 100, 300, 1000, 3000, 10000)]
+    [Params(0, 1, 3, 10, 100, 1000, 10000)]
     public int N { get; set; }
 
+    // A key deliberately outside the pre-populated range (0..N-1) so single-op dictionary benchmarks don't disturb the existing entries.
+    private const int SpareKey = -1;
+
     private readonly Random _random = new();
-    private ConcurrentWeakList<object> _list = null!;
+    private WeakList<object> _list = null!;
+    private WeakValueDictionary<int, object> _dictionary = null!;
     private readonly object _value = new();
     private object[] _values = null!;
-    private ConcurrentWeakList<object>.Node[] _nodes = null!;
+    private WeakList<object>.Node[] _nodes = null!;
 
     [GlobalSetup]
     public void GlobalSetup()
     {
         _list = new();
         _values = [.. Enumerable.Range(0, N).Select(_ => new object())];
-        _nodes = new ConcurrentWeakList<object>.Node[N];
+        _nodes = new WeakList<object>.Node[N];
         int i = 0;
-        foreach (object x in _values) _nodes[i++] = _list.AddLast(x);
+
+        foreach (object x in _values)
+            _nodes[i++] = _list.AddLast(x);
+
+        _dictionary = [];
+
+        for (int k = 0; k < N; k++)
+            _dictionary.TryAdd(k, _values[k]);
     }
 
     [GlobalCleanup]
@@ -166,51 +171,88 @@ public class Benchs
     }
 
     [Benchmark]
-    public void AddRemoveNodeAtStart()
+    public void WeakList_AddRemoveNodeAtStart()
     {
-        ConcurrentWeakList<object> list = _list;
+        WeakList<object> list = _list;
         var node = list.AddFirst(_value);
         list.Remove(node);
     }
 
     [Benchmark]
-    public void AddRemoveNodeAtEnd()
+    public void WeakList_AddRemoveNodeAtEnd()
     {
-        ConcurrentWeakList<object> list = _list;
+        WeakList<object> list = _list;
         var node = list.AddLast(_value);
         list.Remove(node);
     }
 
+#if NET
+    private static ref T GetArrayDataReference<T>(T[] array) => ref MemoryMarshal.GetArrayDataReference(array);
+#else
+    private static ref T GetArrayDataReference<T>(T[] array) => ref MemoryMarshal.GetReference((ReadOnlySpan<T>)array);
+#endif
+
     [Benchmark]
-    public void AddRemoveNodeRandomPosition()
+    public void WeakList_AddRemoveNodeRandomPosition()
     {
-        ConcurrentWeakList<object> list = _list;
-        var node = list.UnsafeInsertAt(_value, _random.Next(0, N + 1));
+        // Note: we're using unsafe code here to ensure we're not measuring the array access bounds checks also.
+        WeakList<object> list = _list;
+        int idx = _random.Next(0, N + 1);
+        WeakList<object>.Node? node;
+        ref var node0 = ref GetArrayDataReference(_nodes);
+
+        if (N == 0)
+            node = _random.Next(2) == 0 ? list.AddFirst(_value) : list.AddLast(_value);
+        else if (idx == N)
+            node = list.AddAfter(Unsafe.Add(ref node0, (uint)(N - 1)), _value);
+        else if (idx == 0)
+            node = list.AddBefore(node0, _value);
+        else if (_random.Next(2) == 0)
+            node = list.AddBefore(Unsafe.Add(ref node0, (uint)idx), _value);
+        else
+            node = list.AddAfter(Unsafe.Add(ref node0, (uint)(idx - 1)), _value);
+
         list.Remove(node);
     }
 
     [Benchmark]
-    public void AddRemoveNodeRandomPositionEach()
+    public void WeakList_AddRemoveNodeRandomPositionEach()
     {
-        ConcurrentWeakList<object> list = _list;
+        // Note: we're using unsafe code here to ensure we're not measuring the array access bounds checks also.
+        // Note: we're not preserving the order properly in _nodes for this method, but that is fine for this benchmark (others will re-instantiate it).
+        WeakList<object> list = _list;
         int n = N;
-        if (n == 0) return;
+
+        if (n == 0)
+            return;
+
         int idx = _random.Next(0, n);
-#if NET
-        static ref T GetArrayDataReference<T>(T[] array) => ref MemoryMarshal.GetArrayDataReference(array);
-#else
-        static ref T GetArrayDataReference<T>(T[] array) => ref MemoryMarshal.GetReference((ReadOnlySpan<T>)array);
-#endif
         ref var nodeSlot = ref Unsafe.Add(ref GetArrayDataReference(_nodes), (uint)idx)!;
         object oldValue = Unsafe.Add(ref GetArrayDataReference(_values), (uint)idx)!;
+
+        if (n == 1)
+        {
+            // Only one node in the list, so there is no other node to position relative to; re-add it at the start/end instead.
+            list.Remove(nodeSlot);
+            nodeSlot = _random.Next(2) == 0 ? list.AddFirst(oldValue) : list.AddLast(oldValue);
+            return;
+        }
+
+        int otherNodeIndex = _random.Next(0, n - 1);
+        otherNodeIndex += otherNodeIndex >= idx ? 1 : 0; // This particular construction is handled by roslyn to not branch, which reduces potential variation.
+        var otherNode = Unsafe.Add(ref GetArrayDataReference(_nodes), (uint)otherNodeIndex);
         list.Remove(nodeSlot);
-        nodeSlot = list.UnsafeInsertAt(oldValue, _random.Next(0, n));
+
+        if (_random.Next(2) == 0)
+            nodeSlot = list.AddBefore(otherNode, oldValue);
+        else
+            nodeSlot = list.AddAfter(otherNode, oldValue);
     }
 
     [Benchmark]
-    public void Enumerate()
+    public void WeakList_Enumerate()
     {
-        ConcurrentWeakList<object> list = _list;
+        WeakList<object> list = _list;
 #pragma warning disable IDE0059 // Unnecessary assignment of a value
         foreach (object x in list)
 #pragma warning restore IDE0059 // Unnecessary assignment of a value
@@ -219,13 +261,14 @@ public class Benchs
     }
 
     [Benchmark]
-    public void CreateAddNodesClearDispose()
+    public void WeakList_CreateAddNodesClearDispose()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         int n = N;
         var nodes = _nodes;
         object[] values = _values;
+
         if (n > 0)
         {
             _ = nodes[n - 1];
@@ -245,14 +288,16 @@ public class Benchs
     }
 
     [Benchmark]
-    public void CreateAddPreexistingNodesClearDispose()
+    public void WeakList_CreateAddPreexistingNodesClearDispose()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         int n = N;
         var nodes = _nodes;
         object value = _value;
-        if (n > 0) _ = nodes[n - 1];
+
+        if (n > 0)
+            _ = nodes[n - 1];
 
         for (int i = 0; i < n; i++)
         {
@@ -267,13 +312,14 @@ public class Benchs
     }
 
     [Benchmark]
-    public void CreateAddNodesDispose()
+    public void WeakList_CreateAddNodesDispose()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         int n = N;
         var nodes = _nodes;
         object[] values = _values;
+
         if (n > 0)
         {
             _ = nodes[n - 1];
@@ -291,14 +337,16 @@ public class Benchs
     }
 
     [Benchmark]
-    public void CreateAddPreexistingNodesDispose()
+    public void WeakList_CreateAddPreexistingNodesDispose()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         int n = N;
         var nodes = _nodes;
         object value = _value;
-        if (n > 0) _ = nodes[n - 1];
+
+        if (n > 0)
+            _ = nodes[n - 1];
 
         for (int i = 0; i < n; i++)
         {
@@ -311,13 +359,14 @@ public class Benchs
     }
 
     [Benchmark]
-    public void CreateAddNodesGCAutoClean()
+    public void WeakList_CreateAddNodesGCAutoClean()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         int n = N;
         var nodes = _nodes;
         object[] values = _values;
+
         if (n > 0)
         {
             _ = nodes[n - 1];
@@ -333,14 +382,16 @@ public class Benchs
     }
 
     [Benchmark]
-    public void CreateAddPreexistingNodesGCAutoClean()
+    public void WeakList_CreateAddPreexistingNodesGCAutoClean()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         int n = N;
         var nodes = _nodes;
         object value = _value;
-        if (n > 0) _ = nodes[n - 1];
+
+        if (n > 0)
+            _ = nodes[n - 1];
 
         for (int i = 0; i < n; i++)
         {
@@ -351,13 +402,14 @@ public class Benchs
     }
 
     [Benchmark]
-    public void CreateAddSelfGCAutoClean()
+    public void WeakList_CreateAddSelfGCAutoClean()
     {
-        ConcurrentWeakList<object> list = new();
+        WeakList<object> list = new();
 
         int n = N;
         var nodes = _nodes;
         object[] values = _values;
+
         if (n > 0)
         {
             _ = nodes[n - 1];
@@ -370,6 +422,133 @@ public class Benchs
         }
 
         GC.KeepAlive(values);
+    }
+
+    [Benchmark]
+    public object? WeakValueDictionary_TryGetValue()
+    {
+        if (N == 0)
+            return null;
+
+        int idx = _random.Next(0, N);
+        return _dictionary.TryGetValue(idx, out object result) ? result : null;
+    }
+
+    [Benchmark]
+    public object? WeakValueDictionary_TryGetValueFailing()
+    {
+        return _dictionary.TryGetValue(SpareKey, out object result) ? result : null;
+    }
+
+    [Benchmark]
+    public object? WeakValueDictionary_IndexerSetUnset()
+    {
+        var dictionary = _dictionary;
+        dictionary[SpareKey] = _value;
+        return dictionary.Remove(SpareKey, out object result) ? result : null;
+    }
+
+    [Benchmark]
+    public object? WeakValueDictionary_TryAddRemove()
+    {
+        var dictionary = _dictionary;
+        dictionary.TryAdd(SpareKey, _value);
+        return dictionary.Remove(SpareKey, out object result) ? result : null;
+    }
+
+    [Benchmark]
+    public void WeakValueDictionary_CreateAddClearGCAutoClean()
+    {
+        var dictionary = new WeakValueDictionary<int, object>();
+
+        int n = N;
+        object[] values = _values;
+
+        if (n > 0)
+            _ = values[n - 1];
+
+        for (int i = 0; i < n; i++)
+        {
+            dictionary.TryAdd(i, values[i] = new object());
+        }
+
+        dictionary.Clear();
+
+        GC.KeepAlive(values);
+    }
+
+    [Benchmark]
+    public void WeakValueDictionary_CreateAddNoClearGCAutoClean()
+    {
+        var dictionary = new WeakValueDictionary<int, object>();
+
+        int n = N;
+        object[] values = _values;
+
+        if (n > 0)
+            _ = values[n - 1];
+
+        for (int i = 0; i < n; i++)
+        {
+            dictionary.TryAdd(i, values[i] = new object());
+        }
+
+        GC.KeepAlive(values);
+    }
+
+    [Benchmark]
+    public void WeakValueDictionary_CreateAddClearDispose()
+    {
+        var dictionary = new WeakValueDictionary<int, object>();
+
+        int n = N;
+        object[] values = _values;
+
+        if (n > 0)
+            _ = values[n - 1];
+
+        for (int i = 0; i < n; i++)
+        {
+            dictionary.TryAdd(i, values[i] = new object());
+        }
+
+        dictionary.Clear();
+
+        GC.KeepAlive(values);
+
+        dictionary.Dispose();
+    }
+
+    [Benchmark]
+    public void WeakValueDictionary_CreateAddDispose()
+    {
+        var dictionary = new WeakValueDictionary<int, object>();
+
+        int n = N;
+        object[] values = _values;
+
+        if (n > 0)
+            _ = values[n - 1];
+
+        for (int i = 0; i < n; i++)
+        {
+            dictionary.TryAdd(i, values[i] = new object());
+        }
+
+        GC.KeepAlive(values);
+
+        dictionary.Dispose();
+    }
+
+    [Benchmark]
+    public void WeakValueDictionary_Enumerate()
+    {
+        var dictionary = _dictionary;
+#pragma warning disable IDE0059 // Unnecessary assignment of a value
+        foreach (object x in dictionary)
+#pragma warning restore IDE0059 // Unnecessary assignment of a value
+        {
+        }
     }
 #endif
 }

@@ -1,14 +1,14 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net48;net6.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <TargetFrameworks>net48;net8.0;net9.0;net10.0</TargetFrameworks>
     <OutputType>Exe</OutputType>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <NoWarn>$(NoWarn),CS1591,SA1600,SA1649</NoWarn>
     <DefineConstants Condition=" '$(DryRun)' == 'true' ">$(DefineConstants);DRY</DefineConstants>
 
-    <!-- Ensure we test all major variants of the implementations: .NET Standard 2.0, .NET Standard 2.1, .NET 6+ -->
+    <!-- Ensure we test all major variants of the implementations: .NET Standard 2.0, .NET Standard 2.1, .NET 8+ -->
     <ReferenceProjectTfm></ReferenceProjectTfm>
     <ReferenceProjectTfm Condition=" '$(Configuration)' == 'NS20' ">TargetFramework=netstandard2.0</ReferenceProjectTfm>
     <ReferenceProjectTfm Condition=" '$(Configuration)' == 'NS21' ">TargetFramework=netstandard2.1</ReferenceProjectTfm>

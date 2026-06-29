@@ -19,7 +19,10 @@ internal struct StrongHandle(IntPtr handle)
     private readonly GCHandle AsGCHandle()
     {
         IntPtr handle = Handle;
-        if (handle == IntPtr.Zero) return default;
+
+        if (handle == IntPtr.Zero)
+            return default;
+
         return GCHandle.FromIntPtr(handle);
     }
 #endif
@@ -36,20 +39,18 @@ internal struct StrongHandle(IntPtr handle)
 
     public readonly void SetTarget(object? target)
     {
-#if NET10_0_OR_GREATER
         var handle = AsGCHandle();
         handle.Target = target;
-#else
-        var handle = AsGCHandle();
-        handle.Target = target;
-#endif
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly T? GetTarget<T>() where T : class?
     {
         var handle = AsGCHandle();
-        if (!handle.IsAllocated) return null;
+
+        if (!handle.IsAllocated)
+            return null;
+
         object? result = handle.Target;
         Debug.Assert(result is T or null, "Stored target should be of the correct type or null.");
         return Unsafe.As<T?>(result);
@@ -69,6 +70,7 @@ internal struct StrongHandle(IntPtr handle)
     {
         // Try to get from per-thread cache:
         var perThreadCache = _perThreadCache;
+
         if (perThreadCache is not null && (uint)perThreadCache.Count > 0)
         {
             Debug.Assert(perThreadCache.Count > 0 && perThreadCache.Count <= PerThreadStrongHandleHolder.NumHandles, "Index should be in range.");
@@ -90,6 +92,7 @@ internal struct StrongHandle(IntPtr handle)
 #if NET
             ReadOnlySpan<IntPtr> values = MemoryMarshal.CreateReadOnlySpan(ref shared.Handle0, SharedStrongHandleHolder.NumHandles);
             int potentialIndex = values.IndexOfAnyExcept(IntPtr.Zero);
+
             if (potentialIndex >= 0)
             {
                 Debug.Assert(potentialIndex < SharedStrongHandleHolder.NumHandles, "Index should be in range.");
@@ -100,6 +103,7 @@ internal struct StrongHandle(IntPtr handle)
                 ref IntPtr handleRef = ref Unsafe.Add(ref shared.Handle0, i);
 #endif
                 handleValue = Interlocked.Exchange(ref handleRef, IntPtr.Zero);
+
                 if (handleValue != IntPtr.Zero)
                 {
                     var handle = new StrongHandle(handleValue);
@@ -129,6 +133,7 @@ internal struct StrongHandle(IntPtr handle)
             // Check if per-thread cache has a slot available:
 
             var perThreadCache = _perThreadCache;
+
             if (perThreadCache is null)
             {
                 perThreadCache = new PerThreadStrongHandleHolder();
@@ -155,6 +160,7 @@ internal struct StrongHandle(IntPtr handle)
 #if NET
                 Span<IntPtr> values = MemoryMarshal.CreateSpan(ref shared.Handle0, SharedStrongHandleHolder.NumHandles);
                 int potentialIndex = values.IndexOf(IntPtr.Zero);
+
                 if (potentialIndex >= 0)
                 {
                     handle.SetTarget(null);
@@ -167,6 +173,7 @@ internal struct StrongHandle(IntPtr handle)
                     ref IntPtr handleRef = ref Unsafe.Add(ref shared.Handle0, i);
 #endif
                     IntPtr oldValue = Interlocked.CompareExchange(ref handleRef, handleValue, IntPtr.Zero);
+
                     if (oldValue == IntPtr.Zero)
                     {
                         GC.KeepAlive(shared);
@@ -220,6 +227,7 @@ internal struct StrongHandle(IntPtr handle)
             for (int i = 0; i < NumHandles; i++)
             {
                 IntPtr handleValue = Unsafe.Add(ref Handle0, i);
+
                 if (handleValue != IntPtr.Zero)
                 {
                     var handle = new StrongHandle(handleValue);

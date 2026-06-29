@@ -4,7 +4,7 @@ namespace Singulink.Collections.Internal;
 /// Snapshot <see cref="ILookup{TKey, TElement}"/> implementation built directly from pre-grouped key/value-collection pairs, avoiding
 /// the per-element rehashing that <see cref="Enumerable.ToLookup{TSource, TKey}(IEnumerable{TSource}, Func{TSource, TKey})"/> performs.
 /// </summary>
-internal sealed class SnapshotLookup<TKey, TValue> : ILookup<TKey, TValue>
+internal sealed partial class SnapshotLookup<TKey, TValue> : ILookup<TKey, TValue>
     where TKey : notnull
 {
     private readonly Dictionary<TKey, Grouping> _groupings;
@@ -39,7 +39,7 @@ internal sealed class SnapshotLookup<TKey, TValue> : ILookup<TKey, TValue>
 
     System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
 
-    private sealed class Grouping : IGrouping<TKey, TValue>
+    private sealed partial class Grouping : IGrouping<TKey, TValue>
     {
         private readonly TValue[] _values;
 

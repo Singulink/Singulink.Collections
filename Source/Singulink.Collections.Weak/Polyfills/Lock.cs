@@ -12,6 +12,8 @@ internal sealed class Lock
 {
     public bool TryEnter() => Monitor.TryEnter(this);
 
+    public void Enter() => Monitor.Enter(this);
+
     public void Exit() => Monitor.Exit(this);
 
     public bool IsHeldByCurrentThread => Monitor.IsEntered(this);
@@ -30,7 +32,9 @@ internal sealed class Lock
 
         public void Dispose()
         {
-            if (_locker is null) return;
+            if (_locker is null)
+                return;
+
             Monitor.Exit(_locker);
             _locker = null;
         }
