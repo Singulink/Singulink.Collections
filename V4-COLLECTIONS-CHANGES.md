@@ -1,12 +1,12 @@
-# Singulink.Collections v4 — Changes & Migration Guide
+# Singulink.Collections v4 Changes and Migration Guide
 
 Version 4 of `Singulink.Collections` is a focused restructuring release. The primary goals were to:
 
 1. Build a clean, layered interface hierarchy for the collection dictionaries so they compose cleanly with each other and with the BCL.
-2. Replace the ad‑hoc "BCL adapter" extension method surface with a small set of conceptually well‑defined interfaces that are easy to teach and easy to consume.
+2. Replace the ad-hoc "BCL adapter" extension method surface with a small set of conceptually well-defined interfaces that are easy to teach and easy to consume.
 3. Integrate cleanly with LINQ via `IGrouping<,>` and `ILookup<,>`.
 
-If you were consuming the concrete `HashSetDictionary<,>`, `ListDictionary<,>`, or `Map<,>` types directly, or exposing them through the Singulink `I[ReadOnly]ListDictionary` / `I[ReadOnly]SetDictionary` / `I[ReadOnly]CollectionDictionary` interfaces, your migration is minimal — almost all existing code will continue to work as‑is.
+If you were consuming the concrete `HashSetDictionary<,>`, `ListDictionary<,>`, or `Map<,>` types directly, or exposing them through the Singulink `I[ReadOnly]ListDictionary` / `I[ReadOnly]SetDictionary` / `I[ReadOnly]CollectionDictionary` interfaces, your migration is minimal and almost all existing code will continue to work as-is.
 
 If, on the other hand, you were relying on the various BCL projection adapters (e.g. `AsReadOnlyDictionaryOfList()`, `AsDictionaryOfCollection()`, the implicit `IReadOnlyDictionary<TKey, IList<TValue>>` implementation, etc.) you will need to make some changes. The reasoning behind those breaks is explained below.
 
@@ -36,17 +36,17 @@ IKeyedList<TKey, TValue>                 : IReadOnlyKeyedList<TKey, TValue>,    
 IKeyedSet<TKey, TValue>                  : IReadOnlyKeyedSet<TKey, TValue>,     IKeyedCollection<TKey, TValue>, ISet<TValue>
 ```
 
-The concrete `ListDictionary<,>.ValueList` and `HashSetDictionary<,>.ValueSet` (and their read‑only variants) implement these new interfaces.
+The concrete `ListDictionary<,>.ValueList` and `HashSetDictionary<,>.ValueSet` (and their read-only variants) implement these new interfaces.
 
-### Why this matters
+#### Why this matters
 
-Because every value collection now implements `IGrouping<TKey, TValue>`, a collection dictionary is conceptually identical to an `ILookup<TKey, TValue>` — and we now make that explicit (see §4). You also get free interoperability with `Enumerable.GroupBy` / `Enumerable.ToLookup` consumers and producers.
+Because every value collection now implements `IGrouping<TKey, TValue>`, a collection dictionary is conceptually identical to an `ILookup<TKey, TValue>`, and we now make that explicit (see section 4). You also get free interoperability with `Enumerable.GroupBy` / `Enumerable.ToLookup` consumers and producers.
 
 ---
 
 ## 3. Collection dictionary interfaces are now properly layered
 
-Previously the read‑only and mutable dictionary interfaces were largely parallel sibling hierarchies. They now form a proper inheritance chain that mirrors the BCL `IReadOnlyDictionary` ⇄ `IDictionary` relationship:
+Previously the read-only and mutable dictionary interfaces were largely parallel sibling hierarchies. They now form a proper inheritance chain where each mutable interface derives from its read-only counterpart:
 
 ```
 IReadOnlyCollectionDictionary<TKey, TValue, TValueCollection>
@@ -62,19 +62,19 @@ ISetDictionary<TKey, TValue>                           : ICollectionDictionary<T
 
 `IMap<,>` similarly now derives from `IReadOnlyMap<,>`.
 
-### Why this matters
+#### Why this matters
 
-You can pass an `IListDictionary<TKey, TValue>` anywhere an `IReadOnlyCollectionDictionary<TKey, TValue>` is expected — no wrapper allocation needed. Generic constraints work as you would expect. Cast paths between the interfaces work as you would expect. Method overload resolution is unsurprising.
+You can pass an `IListDictionary<TKey, TValue>` anywhere an `IReadOnlyCollectionDictionary<TKey, TValue>` is expected with no wrapper allocation needed. Generic constraints work as you would expect. Cast paths between the interfaces work as you would expect. Method overload resolution is unsurprising.
 
-### Migration
+#### Migration
 
-Almost always: **none**. The signatures you were using are unchanged. The only edge case is generic constraints that previously required `where T : IListDictionary<,>, IReadOnlyListDictionary<,>` — the second constraint is now redundant and can be removed.
+Almost always: **none**. The signatures you were using are unchanged. The only edge case is generic constraints that previously required `where T : IListDictionary<,>, IReadOnlyListDictionary<,>`. The second constraint is now redundant and can be removed.
 
 ---
 
-## 4. `ILookup<,>` integration
+## 4. Lookup integration
 
-Two new extension methods are provided on the read‑only dictionary interfaces, and one instance method is provided on `HashSetDictionary` and `ListDictionary`:
+Two new extension methods are provided on the read-only dictionary interfaces, and one instance method is provided on `HashSetDictionary` and `ListDictionary`:
 
 ```csharp
 // Extensions on IReadOnly[Collection|List|Set]Dictionary<TKey, TValue>
@@ -87,7 +87,7 @@ public ILookup<TKey, TValue> ToLookup();
 ```
 
 - `AsLookup()` returns a **live** view. Changes to the underlying dictionary are reflected in the lookup.
-- `ToLookup()` returns a **snapshot**. It is hand‑optimized for collection dictionaries: the groupings are pre‑sized, no per‑element rehashing is performed, and the source dictionary's `KeyComparer` is used when calling the instance method.
+- `ToLookup()` returns a **snapshot**. It is hand-optimized for collection dictionaries: the groupings are pre-sized, no per-element rehashing is performed, and the source dictionary's `KeyComparer` is used when calling the instance method.
 
 This is the recommended replacement when you previously projected a dictionary to `IReadOnlyDictionary<TKey, IReadOnlyCollection<TValue>>` purely to feed it to LINQ.
 
@@ -112,30 +112,30 @@ The following extension methods have been **removed**:
 
 In addition, `HashSetDictionary<TKey, TValue>` and `ListDictionary<TKey, TValue>` **no longer directly implement** `IReadOnlyDictionary<TKey, IList<TValue>>` / `IReadOnlyDictionary<TKey, ISet<TValue>>` / `IReadOnlyDictionary<TKey, ICollection<TValue>>`.
 
-### Why these were removed
+#### Why these were removed
 
 The BCL projection surface had grown large, confusing, and conceptually muddled:
 
-- **Combinatorial explosion.** Every dictionary type × every BCL value collection type × read‑only/mutable produced a new extension. The user had to read a long list of similarly‑named methods (`AsReadOnlyDictionaryOfList`, `AsReadOnlyDictionaryOfCollection`, `AsDictionaryOfCollection`, ...) to find the one that matched their exact widening.
+- **Combinatorial explosion.** Every dictionary type × every BCL value collection type × read-only/mutable produced a new extension. The user had to read a long list of similarly-named methods (`AsReadOnlyDictionaryOfList`, `AsReadOnlyDictionaryOfCollection`, `AsDictionaryOfCollection`, ...) to find the one that matched their exact widening.
 - **Wrong abstraction.** A collection dictionary is conceptually an `ILookup<TKey, TValue>`, not an `IReadOnlyDictionary<TKey, ICollection<TValue>>`. The BCL projections forced consumers to think in terms of "a dictionary whose values are collections," which obscured the more useful grouping semantics and prevented LINQ interop.
-- **Semantic mismatch.** `IReadOnlyDictionary<TKey, IList<TValue>>` says "this is a read‑only dictionary," but mutations through the inner `IList<TValue>` were still possible and would silently mutate the source. That contradicted user expectations of a read‑only contract.
-- **Adapter allocations everywhere.** Each projection method allocated a wrapper plus per‑value wrappers on enumeration. The new design avoids that entirely because the value collections natively implement the appropriate BCL interfaces (`IList<T>`, `IReadOnlyList<T>`, `ISet<T>`, `IReadOnlySet<T>`).
+- **Semantic mismatch.** `IReadOnlyDictionary<TKey, IList<TValue>>` says "this is a read-only dictionary," but mutations through the inner `IList<TValue>` were still possible and would silently mutate the source. That contradicted user expectations of a read-only contract.
+- **Adapter allocations everywhere.** Each projection method allocated a wrapper plus per-value wrappers on enumeration. The new design avoids that entirely because the value collections natively implement the appropriate BCL interfaces (`IList<T>`, `IReadOnlyList<T>`, `ISet<T>`, `IReadOnlySet<T>`).
 
-### Replacements
+#### Replacements
 
 The new design gives you cleaner choices and better performance. Pick whichever of the following matches what you actually need:
 
 | Old surface | New surface |
 | --- | --- |
-| `dict.AsReadOnly()` returning a typed read‑only Singulink interface | Same — `AsReadOnly()` is still there for all three dictionary kinds and now returns the layered `IReadOnly*Dictionary<TKey, TValue>` interfaces. |
-| `dict.AsCollectionDictionary()` (widening a list/set dictionary to a collection dictionary) | Same — still there. |
-| `dict.AsReadOnlyCollectionDictionary()` | Same — still there for the read‑only widening too. |
-| `dict as IReadOnlyDictionary<TKey, IList<TValue>>` (used as a BCL dictionary for indexer/`TryGetValue`/`Keys`/`Values`) | Expose as `IListDictionary<TKey, TValue>` — same shape, value collections are still `IList<TValue>`. |
-| `dict.AsReadOnlyDictionaryOfList()` (used as a fully read‑only BCL dictionary) | Expose as `IReadOnlyListDictionary<TKey, TValue>` via `dict.AsReadOnly()` — same shape, value collections are `IReadOnlyList<TValue>`. |
+| `dict.AsReadOnly()` returning a typed read-only Singulink interface | Same. `AsReadOnly()` is still there for all three dictionary kinds and now returns the layered `IReadOnly*Dictionary<TKey, TValue>` interfaces. |
+| `dict.AsCollectionDictionary()` (widening a list/set dictionary to a collection dictionary) | Same. Still there. |
+| `dict.AsReadOnlyCollectionDictionary()` | Same. Still there for the read-only widening too. |
+| `dict as IReadOnlyDictionary<TKey, IList<TValue>>` (used as a BCL dictionary for indexer/`TryGetValue`/`Keys`/`Values`) | Expose as `IListDictionary<TKey, TValue>`. Same shape, and value collections are still `IList<TValue>`. |
+| `dict.AsReadOnlyDictionaryOfList()` (used as a fully read-only BCL dictionary) | Expose as `IReadOnlyListDictionary<TKey, TValue>` via `dict.AsReadOnly()`. Same shape, and value collections are `IReadOnlyList<TValue>`. |
 | `dict.AsReadOnlyDictionaryOfCollection()` | Expose as `IReadOnlyCollectionDictionary<TKey, TValue>` via `dict.AsReadOnly()`. |
 | Anywhere you fed a projected `IReadOnlyDictionary<TKey, IReadOnlyCollection<TValue>>` into LINQ for grouping | Use `dict.AsLookup()` or `dict.ToLookup()` and consume as `ILookup<TKey, TValue>` / `IEnumerable<IGrouping<TKey, TValue>>`. |
 
-#### Concrete migration examples
+##### Concrete migration examples
 
 ```csharp
 // --- Before ---
@@ -183,5 +183,5 @@ Several internal adapter classes were rewritten and renamed under `Singulink.Col
 
 ## TL;DR
 
-- If you used the concrete types or the Singulink dictionary interfaces — **you're done**, just retarget.
-- If you used the BCL projection extensions (`AsReadOnlyDictionaryOfList`, etc.) or relied on `HashSetDictionary` / `ListDictionary` implementing `IReadOnlyDictionary<TKey, ICollection<TValue>>`/etc. directly — switch to the Singulink interface (`I[ReadOnly]ListDictionary`, etc.) or to `AsLookup()` / `ToLookup()`. The new APIs are smaller, more discoverable, allocate less, and integrate with LINQ.
+- If you used the concrete types or the Singulink dictionary interfaces, **you're done**, just retarget.
+- If you used the BCL projection extensions (`AsReadOnlyDictionaryOfList`, etc.) or relied on `HashSetDictionary` / `ListDictionary` implementing `IReadOnlyDictionary<TKey, ICollection<TValue>>`/etc. directly, switch to the Singulink interface (`I[ReadOnly]ListDictionary`, etc.) or to `AsLookup()` / `ToLookup()`. The new APIs are smaller, more discoverable, allocate less, and integrate with LINQ.

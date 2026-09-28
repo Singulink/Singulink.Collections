@@ -105,7 +105,7 @@ public class YourClass
     public IListDictionary<int, string> NumberNames => _numberNames;
 
     // Expose as Singulink IReadOnlyListDictionary (value collections are IReadOnlyKeyedList<int, string>,
-    // which implements IReadOnlyList<string> and IGrouping<int, string>). True read-only — cannot be
+    // which implements IReadOnlyList<string> and IGrouping<int, string>). True read-only, cannot be
     // downcast back to a mutable dictionary.
     public IReadOnlyListDictionary<int, string> NumberNames => _numberNames.AsReadOnly();
 

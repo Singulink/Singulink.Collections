@@ -2,11 +2,11 @@
 
 # Singulink.Collections
 
-## Overview
+Generally useful collections that are missing from .NET, plus a companion package of weak reference collections. They are highly optimized for performance, well documented and follow the same design principles as built-in .NET collections so they should feel instantly familiar.
 
-**Singulink.Collections** provides generally useful collections that are missing from .NET. They are highly optimized for performance, well documented and follow the same design principles as built-in .NET collections so they should feel instantly familiar.
+### Packages
 
-The following is included in the package:
+**Singulink.Collections** includes the following:
 - `HashSetDictionary`: Collection of keys mapped to a hash set of unique values per key (with `AlternateLookup` support).
 - `ListDictionary`: Collection of keys mapped to a list of values per key (with `AlternateLookup` support).
 - `Map`: Collection of two types of values that map between each other in a bidirectional one-to-one relationship (with `AlternateLookup` support).
