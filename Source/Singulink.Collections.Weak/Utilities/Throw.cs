@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Singulink.Collections.Utilities;
+namespace Singulink.Collections.Weak.Utilities;
 
 [StackTraceHidden]
 internal static class Throw

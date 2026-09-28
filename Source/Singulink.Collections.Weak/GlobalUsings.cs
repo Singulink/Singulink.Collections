@@ -1,0 +1,1 @@
+global using Singulink.Collections.Weak.Utilities;

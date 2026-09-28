@@ -2,7 +2,6 @@ using System.Collections;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
-using Singulink.Collections.Utilities;
 using Singulink.Collections.WeakCollectionHelpers;
 
 namespace Singulink.Collections;

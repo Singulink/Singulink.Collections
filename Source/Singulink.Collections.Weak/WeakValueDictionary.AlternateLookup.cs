@@ -4,7 +4,6 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
-using Singulink.Collections.Utilities;
 
 namespace Singulink.Collections;
 

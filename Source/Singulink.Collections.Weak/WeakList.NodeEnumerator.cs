@@ -1,6 +1,5 @@
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
-using Singulink.Collections.Utilities;
 
 namespace Singulink.Collections;
 
