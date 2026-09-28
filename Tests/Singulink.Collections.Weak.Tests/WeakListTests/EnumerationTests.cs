@@ -829,6 +829,24 @@ public class EnumerationTests
     }
 
     [TestMethod]
+    public void AsEnumerableOnDisposedListIsEmpty()
+    {
+        var list = new WeakList<object>();
+        object value = new();
+        list.AddLast(value);
+
+        var values = list.GetEnumerator().AsEnumerable();
+        var nodes = list.GetNodeEnumerator().AsEnumerable();
+
+        list.Dispose();
+
+        values.ToList().ShouldBeEmpty();
+        nodes.ToList().ShouldBeEmpty();
+
+        GC.KeepAlive(value);
+    }
+
+    [TestMethod]
     public void AutoRemovedNodeSkippedDuringEnumeration()
     {
         var list = new WeakList<object>();

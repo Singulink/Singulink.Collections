@@ -77,6 +77,24 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
     }
 #endif
 
+    // Removes the node from the container's backing collection without disposing any handles. Used when the node is explicitly removed after its value has
+    // died but before the finalizer helper has unlinked it, so that the removal is immediately observable via Count / enumeration. The finalizer helper
+    // still runs afterwards to release the handles; the container's delete is a no-op for nodes that were already removed.
+    internal void RemoveFromContainerEarly(TNode node)
+    {
+        var container = default(TNodeHelpers).GetNodeState(node)._container;
+        bool wasDisposed = false; // Default to false for non-locking collections - locking collections overwrite on next statement.
+        using var scope = default(TNodeHelpers).HasLocker
+            ? LockScope.EnterLock<T, TNode, TContainer, TNodeHelpers>(container, out wasDisposed)
+            : default;
+
+        if (wasDisposed || _finalizeAttemptCount == -1)
+            return;
+
+        _finalizeAttemptCount = -1;
+        default(TNodeHelpers).DeleteHelper(container, node);
+    }
+
     // Removes the node from the container's backing collection under the lock and disposes the per-node handles. Returns false (without disposing
     // anything) if the lock was contended and the caller should retry later; the retry budget is tracked by _finalizeAttemptCount.
     private bool RemoveFromContainer(TNode node, ref StrongHandle implHandle, StrongHandle original, bool disposing)

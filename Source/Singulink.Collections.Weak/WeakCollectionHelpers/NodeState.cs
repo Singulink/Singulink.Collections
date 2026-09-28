@@ -139,17 +139,27 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     {
         var internalNode = _internalNode;
 
-        if (internalNode is not null && GetInternalNodeHelper() is { } helper)
+        if (internalNode is not null)
         {
-            var impl = new StrongHandle(Interlocked.Exchange(ref helper._impl.Handle, IntPtr.Zero));
-
-            if (impl.Handle != IntPtr.Zero && internalNode.Dispose(disposing: true, self, ref helper._impl, impl))
+            if (GetInternalNodeHelper() is { } helper)
             {
-                GC.SuppressFinalize(helper);
-            }
+                var impl = new StrongHandle(Interlocked.Exchange(ref helper._impl.Handle, IntPtr.Zero));
 
-            GC.KeepAlive(helper); // Ensure the finalizer can't run while we're attempting to dispose, so we can be sure it's done at the end of this method.
-            GC.KeepAlive(self);
+                if (impl.Handle != IntPtr.Zero && internalNode.Dispose(disposing: true, self, ref helper._impl, impl))
+                {
+                    GC.SuppressFinalize(helper);
+                }
+
+                GC.KeepAlive(helper); // Ensure the finalizer can't run while we're attempting to dispose, so we can be sure it's done at the end of this method.
+                GC.KeepAlive(self);
+            }
+            else
+            {
+                // The value has died and the finalizer helper is pending finalization (or is retrying because the lock was contended), so the node has not
+                // been unlinked from the container yet. Unlink it now so the removal is observable as soon as this method returns - the finalizer still
+                // releases the node's handles when it runs, and the container's delete is a no-op for nodes that were already removed.
+                internalNode.RemoveFromContainerEarly(self);
+            }
         }
 
         _internalNodeHelper = null;

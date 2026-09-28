@@ -388,6 +388,35 @@ public class RemoveTests
     }
 
     [TestMethod]
+    public void RemoveNodeWhoseValueDiedBeforeFinalizerRan()
+    {
+        var list = new WeakList<object>();
+        object keepAlive = new();
+        list.AddLast(keepAlive);
+
+        var node = Helpers.NotInlined(list, (list) => list.AddLast(new object()));
+
+        // Collect without waiting for finalizers so the node's value is dead but the finalizer helper has not unlinked the node yet:
+        GC.Collect();
+
+        list.Remove(node);
+
+        // The removal must be observable immediately, regardless of whether the finalizer has run:
+        node.IsRemoved.ShouldBeTrue();
+        list.Count.ShouldBe(1);
+        list.ToList().ShouldBe([keepAlive]);
+        list.GetNodeEnumerator().AsEnumerable().ShouldNotContain(node);
+
+        // The finalizer must still be able to clean up the node's handles afterwards without issue:
+        Helpers.ForceGC();
+
+        list.Count.ShouldBe(1);
+        list.ToList().ShouldBe([keepAlive]);
+
+        GC.KeepAlive(keepAlive);
+    }
+
+    [TestMethod]
     public void RemoveNullNodeThrows()
     {
         var list = new WeakList<object>();

@@ -44,22 +44,14 @@ internal ref struct LockScope(Lock locker, object container)
             return default;
         }
 
-        SpinWait sw = default;
         var locker = default(TNodeHelpers).GetLocker(container);
-        while (true)
-        {
-            if (locker.TryEnter())
-            {
-                wasDisposed = default(TNodeHelpers).IsDisposed(container);
+        locker.Enter();
+        wasDisposed = default(TNodeHelpers).IsDisposed(container);
 
-                if (wasDisposed)
-                    locker.Exit();
+        if (wasDisposed)
+            locker.Exit();
 
-                return wasDisposed ? default : new LockScope(locker, container);
-            }
-
-            sw.SpinOnce();
-        }
+        return wasDisposed ? default : new LockScope(locker, container);
     }
 
     /// <summary>

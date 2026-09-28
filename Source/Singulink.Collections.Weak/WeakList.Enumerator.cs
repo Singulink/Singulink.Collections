@@ -31,13 +31,8 @@ public sealed partial class WeakList<T>
         /// <summary>
         /// Gets the current value in the enumeration.
         /// </summary>
-        /// <remarks>
-        /// <para>
-        /// This API may return <see langword="null" /> on first call, even if provided a valid starting node, until either <see cref="MoveNext" /> or
-        /// <see cref="MovePrevious" /> is called.
-        /// </para>
-        /// </remarks>
-        /// <exception cref="InvalidOperationException">If the enumeration has not started or has already finished.</exception>
+        /// <exception cref="InvalidOperationException">If the enumeration has not started or has already finished (including when the enumerator was created
+        /// from a starting node and neither <see cref="MoveNext" /> nor <see cref="MovePrevious" /> has been called yet).</exception>
         public readonly T Current
         {
             get

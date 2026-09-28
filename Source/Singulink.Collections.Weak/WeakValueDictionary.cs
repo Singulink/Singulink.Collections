@@ -26,7 +26,7 @@ namespace Singulink.Collections;
 /// can lock on all accesses yourself, and call <see cref="Remove(TKey)"/> or <c>AlternateLookup.Remove(TAlternateKey)</c> before adding or updating entries.
 /// </para>
 /// </remarks>
-public partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>, IDisposable
+public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>, IDisposable
     where TKey : notnull
     where TValue : class
 {

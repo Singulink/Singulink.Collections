@@ -37,7 +37,12 @@ public sealed partial class WeakList<T>
         public IEnumerator<T> GetEnumerator()
         {
             var inst = impl;
-            inst._nodeEnumerator._listVersion = impl._nodeEnumerator._list!.Version._version;
+            var list = impl._nodeEnumerator._list;
+            Debug.Assert(list is not null, "List should not be null, as we can only box enumerators while they're not disposed.");
+
+            // Note: read the version field directly rather than via the Version property so that a list disposed after AsEnumerable() was called enumerates
+            // as empty (MoveNext returns false) instead of throwing here.
+            inst._nodeEnumerator._listVersion = Volatile.Read(ref list._version);
             return new HeapValueEnumerator(inst, reversed, skipNewNodes);
         }
 
@@ -73,7 +78,7 @@ public sealed partial class WeakList<T>
             var inst = impl;
             var list = impl._list;
             Debug.Assert(list is not null, "List should not be null, as we can only box enumerators while they're not disposed.");
-            inst._listVersion = list.Version._version;
+            inst._listVersion = Volatile.Read(ref list._version); // See note in HeapValueEnumerable.GetEnumerator.
             return new HeapNodeEnumerator(inst, reversed, skipNewNodes);
         }
 

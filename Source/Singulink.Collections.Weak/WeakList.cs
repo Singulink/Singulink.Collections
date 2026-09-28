@@ -511,6 +511,10 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     /// considered unsafe; if you need to perform long-running multi-part operations, you should use your own different lock and ensure you handle concurrent
     /// removal with it from the list's internal lock (this setup won't block the finalizer).
     /// </para>
+    /// <para>
+    /// Note: disposing the list from within <paramref name="operation"/> releases the lock immediately, so any code that runs after the dispose call inside the
+    /// operation is no longer protected by it.
+    /// </para>
     /// </summary>
     /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
     public void UnsafePerformLockedOperation<TState>(TState state, Action<WeakList<T>, TState> operation)
@@ -535,6 +539,10 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     /// Note: holding the lock for more than a short period of time may cause finalizer starvation due to blocking the finalizer thread, hence why this API is
     /// considered unsafe; if you need to perform long-running multi-part operations, you should use your own different lock and ensure you handle concurrent
     /// removal with it from the list's internal lock (this setup won't block the finalizer).
+    /// </para>
+    /// <para>
+    /// Note: disposing the list from within <paramref name="operation"/> releases the lock immediately, so any code that runs after the dispose call inside the
+    /// operation is no longer protected by it.
     /// </para>
     /// </summary>
     public bool UnsafeTryPerformLockedOperation<TState>(TState state, Action<WeakList<T>, TState> operation)
