@@ -38,8 +38,11 @@ See the [v4 changes and migration guide](V4-COLLECTIONS-CHANGES.md) for full det
 
 ### Version 3.0
 
- - Drop .NET 6 support
- - Add `ConcurrentWeakList`
+- Drop .NET 6 support
+- **Breaking:** Removed `WeakCollection`. Use `WeakList` instead
+- **Breaking:** `WeakList` was rewritten as a self-cleaning, thread-safe linked list. Dead values are removed automatically as they are garbage collected, so the `AutoCleanAddCount` / `Clean()` / `TrimExcess()` surface is gone and individual operations are safe for concurrent use without external locking
+- `WeakValueDictionary` now automatically removes entries whose values have been garbage collected
+- Fixed `WeakList` holding on to memory longer than necessary on .NET Standard when a removed value was still alive elsewhere
 
 ### V2.2
 - `AlternateLookup` support for `WeakDictionary`

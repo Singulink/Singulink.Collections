@@ -4,7 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   debug-windows:
@@ -12,14 +12,15 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: |
           6.0.x
           8.0.x
           9.0.x
+          10.0.x
     - name: Clean
       run: dotnet clean --configuration Debug && dotnet nuget locals all --clear
     - name: Install dependencies
@@ -34,14 +35,15 @@ jobs:
     runs-on: windows-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v6
     - name: Setup .NET
-      uses: actions/setup-dotnet@v4
+      uses: actions/setup-dotnet@v5
       with:
         dotnet-version: |
           6.0.x
           8.0.x
           9.0.x
+          10.0.x
     - name: Clean
       run: dotnet clean --configuration Release && dotnet nuget locals all --clear
     - name: Install dependencies
