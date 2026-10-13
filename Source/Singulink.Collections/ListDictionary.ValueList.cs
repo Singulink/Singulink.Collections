@@ -223,41 +223,38 @@ public partial class ListDictionary<TKey, TValue>
         /// </summary>
         public void SetRange(IEnumerable<TValue> collection)
         {
+            // The collection may be derived from this list (i.e. a LINQ query over it or a read-only view of it), so it is materialized before the list is
+            // cleared unless it is a type that cannot observe the list. This also means a collection that throws during enumeration leaves the list untouched.
+
+            if (collection is not (TValue[] or List<TValue> or HashSet<TValue>))
+                collection = collection.ToArray();
+
             var list = GetList();
             int beforeCount = list.Count;
 
             list.Clear();
+            list.AddRange(collection);
 
-            try
+            if (beforeCount == 0)
             {
-                list.AddRange(collection);
+                if (list.Count > 0)
+                {
+                    _dictionary._lookup.Add(_key, this);
+                    _dictionary._valueCount += list.Count;
+                }
             }
-            finally
+            else if (list.Count == 0)
             {
-                if (beforeCount == 0)
-                {
-                    if (list.Count > 0)
-                    {
-                        _dictionary._lookup.Add(_key, this);
-                        _dictionary._valueCount += list.Count;
-                    }
-                }
-                else
-                {
-                    if (list.Count == 0)
-                    {
-                        _dictionary._lookup.Remove(_key);
-                        _dictionary._valueCount -= beforeCount;
-                    }
-                    else
-                    {
-                        _dictionary._valueCount += list.Count - beforeCount;
-                    }
-                }
+                _dictionary._lookup.Remove(_key);
+                _dictionary._valueCount -= beforeCount;
+            }
+            else
+            {
+                _dictionary._valueCount += list.Count - beforeCount;
+            }
 
-                _dictionary._version++;
-                _dictionary.DebugValueCount();
-            }
+            _dictionary._version++;
+            _dictionary.DebugValueCount();
         }
 
         /// <summary>
@@ -307,10 +304,10 @@ public partial class ListDictionary<TKey, TValue>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void FinishRemoving(List<TValue> list, int removed)
         {
-            Debug.Assert(_dictionary._lookup[_key]._lastList == list, "removed from non-synced list");
-
             if (removed > 0)
             {
+                Debug.Assert(_dictionary._lookup[_key]._lastList == list, "removed from non-synced list");
+
                 if (list.Count == 0)
                     _dictionary._lookup.Remove(_key);
 

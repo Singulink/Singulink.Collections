@@ -131,42 +131,38 @@ public partial class HashSetDictionary<TKey, TValue>
         /// </summary>
         public void SetRange(IEnumerable<TValue> collection)
         {
+            // The collection may be derived from this set (i.e. a LINQ query over it or a read-only view of it), so it is materialized before the set is
+            // cleared unless it is a type that cannot observe the set. This also means a collection that throws during enumeration leaves the set untouched.
+
+            if (collection is not (TValue[] or List<TValue> or HashSet<TValue>))
+                collection = collection.ToArray();
+
             var set = GetSet();
             int beforeCount = set.Count;
 
             set.Clear();
+            set.UnionWith(collection);
 
-            try
+            if (beforeCount == 0)
             {
-                foreach (var item in collection)
-                    set.Add(item);
+                if (set.Count > 0)
+                {
+                    _dictionary._lookup.Add(_key, this);
+                    _dictionary._valueCount += set.Count;
+                }
             }
-            finally
+            else if (set.Count == 0)
             {
-                if (beforeCount == 0)
-                {
-                    if (set.Count > 0)
-                    {
-                        _dictionary._lookup.Add(_key, this);
-                        _dictionary._valueCount += set.Count;
-                    }
-                }
-                else
-                {
-                    if (set.Count == 0)
-                    {
-                        _dictionary._lookup.Remove(_key);
-                        _dictionary._valueCount -= beforeCount;
-                    }
-                    else
-                    {
-                        _dictionary._valueCount += set.Count - beforeCount;
-                    }
-                }
+                _dictionary._lookup.Remove(_key);
+                _dictionary._valueCount -= beforeCount;
+            }
+            else
+            {
+                _dictionary._valueCount += set.Count - beforeCount;
+            }
 
-                _dictionary._version++;
-                _dictionary.DebugValueCount();
-            }
+            _dictionary._version++;
+            _dictionary.DebugValueCount();
         }
 
         /// <summary>
@@ -211,10 +207,10 @@ public partial class HashSetDictionary<TKey, TValue>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void FinishRemoving(HashSet<TValue> set, int removed)
         {
-            Debug.Assert(_dictionary._lookup[_key]._lastSet == set, "removed from non-synced set");
-
             if (removed > 0)
             {
+                Debug.Assert(_dictionary._lookup[_key]._lastSet == set, "removed from non-synced set");
+
                 if (set.Count == 0)
                     _dictionary._lookup.Remove(_key);
 

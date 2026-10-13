@@ -299,7 +299,7 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IDictionary<TLeft
     bool IDictionary<TLeft, TRight>.Remove(TLeft key) => RemoveLeft(key);
 
     /// <inheritdoc cref="TryGetRightValue(TLeft, out TRight)"/>
-    bool IDictionary<TLeft, TRight>.TryGetValue(TLeft key, out TRight value) => TryGetRightValue(key, out value!);
+    bool IDictionary<TLeft, TRight>.TryGetValue(TLeft key, [MaybeNullWhen(false)] out TRight value) => TryGetRightValue(key, out value);
 
     /// <inheritdoc cref="Add(TLeft, TRight)"/>
     void ICollection<KeyValuePair<TLeft, TRight>>.Add(KeyValuePair<TLeft, TRight> item) => Add(item.Key, item.Value);
@@ -322,7 +322,7 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IDictionary<TLeft
     bool IReadOnlyDictionary<TLeft, TRight>.ContainsKey(TLeft key) => ContainsLeft(key);
 
     /// <inheritdoc cref="TryGetRightValue(TLeft, out TRight)"/>
-    bool IReadOnlyDictionary<TLeft, TRight>.TryGetValue(TLeft key, out TRight value) => TryGetRightValue(key, out value!);
+    bool IReadOnlyDictionary<TLeft, TRight>.TryGetValue(TLeft key, [MaybeNullWhen(false)] out TRight value) => TryGetRightValue(key, out value);
 
     /// <inheritdoc cref="GetEnumerator"/>
     IEnumerator<KeyValuePair<TLeft, TRight>> IEnumerable<KeyValuePair<TLeft, TRight>>.GetEnumerator() => GetEnumerator();
