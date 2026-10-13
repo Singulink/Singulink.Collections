@@ -288,10 +288,10 @@ public partial class ListDictionary<TKey, TValue>
         }
 
         /// <summary>
-        /// Sorts the items in a range of items in System.Collections.Generic.List`1 using the specified comparer.
+        /// Sorts the items in the specified range of the list using the specified comparer.
         /// </summary>
         /// <param name="index">The zero-based starting index of the range to sort.</param>
-        /// <param name="count"> The length of the range to sort.</param>
+        /// <param name="count">The number of items in the range to sort.</param>
         /// <param name="comparer">The comparer implementation to use when comparing items, or <see langword="null"/> to use the default comparer.</param>
         public void Sort(int index, int count, IComparer<TValue>? comparer)
         {

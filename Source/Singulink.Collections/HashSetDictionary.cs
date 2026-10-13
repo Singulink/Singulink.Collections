@@ -29,6 +29,7 @@ public partial class HashSetDictionary<TKey, TValue> :
     /// <summary>
     /// Initializes a new instance of the <see cref="HashSetDictionary{TKey, TValue}"/> class with the specified initial capacity for key/value set pairs.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="capacity"/> is less than <c>0</c>.</exception>
     public HashSetDictionary(int capacity) : this(capacity, null, null) { }
 
     /// <summary>
@@ -40,6 +41,7 @@ public partial class HashSetDictionary<TKey, TValue> :
     /// Initializes a new instance of the <see cref="HashSetDictionary{TKey, TValue}"/> class with the specified initial capacity for key/value set pairs,
     /// and uses the specified key and value comparers.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="capacity"/> is less than <c>0</c>.</exception>
     public HashSetDictionary(int capacity, IEqualityComparer<TKey>? keyComparer = null, IEqualityComparer<TValue>? valueComparer = null)
     {
         _lookup = new(capacity, keyComparer);
@@ -47,7 +49,7 @@ public partial class HashSetDictionary<TKey, TValue> :
     }
 
     /// <summary>
-    /// Gets the value list associated with the specified key. If the key is not found then a new value list is returned which can be used to add values to the
+    /// Gets the value set associated with the specified key. If the key is not found then a new value set is returned which can be used to add values to the
     /// key or to monitor when items are added to the key.
     /// </summary>
     /// <remarks>
@@ -176,10 +178,7 @@ public partial class HashSetDictionary<TKey, TValue> :
     /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.GetValueCount(TKey)"/>
     public int GetValueCount(TKey key) => _lookup.TryGetValue(key, out var valueSet) ? valueSet.Count : 0;
 
-    /// <summary>
-    /// Gets the value set for the specified key or <see langword="null"/> if the key was not found.
-    /// </summary>
-    /// <returns>A value indicating whether the key was found.</returns>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.TryGetValues(TKey, out TValueCollection)"/>
     public bool TryGetValues(TKey key, [MaybeNullWhen(false)] out ValueSet valueSet) => _lookup.TryGetValue(key, out valueSet);
 
     /// <summary>
@@ -227,7 +226,7 @@ public partial class HashSetDictionary<TKey, TValue> :
 
     /// <summary>
     /// Sets the key/value set pair capacity of this dictionary to hold up to a specified number of entries without any further expansion of its backing
-    /// storage, and optionally trims the capacity of each value set to the actual number of values in the list.
+    /// storage, and optionally trims the capacity of each value set to the actual number of values in the set.
     /// </summary>
     /// <param name="dictionaryCapacity">The new key/value set pair capacity.</param>
     /// <param name="trimValueSets"><see langword="true"/> to trim all the value sets as well, or <see langword="false"/> to only trim the
@@ -288,13 +287,13 @@ public partial class HashSetDictionary<TKey, TValue> :
     /// <inheritdoc cref="ValueSets"/>
     IReadOnlyCollection<IKeyedSet<TKey, TValue>> ISetDictionary<TKey, TValue>.ValueCollections => ValueSets;
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     IReadOnlyCollection<IKeyedSet<TKey, TValue>> IReadOnlyCollectionDictionary<TKey, TValue, IKeyedSet<TKey, TValue>>.ValueCollections => ValueSets;
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     IReadOnlyCollection<IReadOnlyKeyedSet<TKey, TValue>> IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyKeyedSet<TKey, TValue>>.ValueCollections => ValueSets;
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     bool ISetDictionary<TKey, TValue>.TryGetValues(TKey key, [MaybeNullWhen(false)] out IKeyedSet<TKey, TValue> valueCollection)
     {
         bool result = TryGetValues(key, out var v);
@@ -302,7 +301,7 @@ public partial class HashSetDictionary<TKey, TValue> :
         return result;
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     bool IReadOnlyCollectionDictionary<TKey, TValue, IKeyedSet<TKey, TValue>>.TryGetValues(TKey key, [MaybeNullWhen(false)] out IKeyedSet<TKey, TValue> valueCollection)
     {
         bool result = TryGetValues(key, out var v);
@@ -310,7 +309,7 @@ public partial class HashSetDictionary<TKey, TValue> :
         return result;
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     bool IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyKeyedSet<TKey, TValue>>.TryGetValues(TKey key, [MaybeNullWhen(false)] out IReadOnlyKeyedSet<TKey, TValue> valueCollection)
     {
         bool result = TryGetValues(key, out var v);

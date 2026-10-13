@@ -9,39 +9,37 @@ using System.Runtime.CompilerServices;
 namespace Singulink.Collections;
 
 /// <summary>
-/// Provides methods for creating an <see cref="ComparerEquatableArray{T}"/>.
+/// Provides methods for creating a <see cref="ComparerEquatableArray{T}"/>.
 /// </summary>
 public static class ComparerEquatableArray
 {
     /// <summary>
-    /// Returns an instance of the <see cref="ComparerEquatableArray{T}"/> class from the given collection with the default comparer.
+    /// Returns a <see cref="ComparerEquatableArray{T}"/> containing the specified items that uses the default comparer.
     /// </summary>
     /// <remarks>
-    /// Note: values of the collection are assumed to be immutable and interchangeable (that is, the standard equality and hash code contracts must be held, but
-    /// also must be consistent indefinitely, and the value you read out of the array is only guaranteed to be equal to the one passed in, not necessarily the
-    /// same instance or bits).
+    /// <para>The values in the array are assumed to be immutable and interchangeable. Equal values must stay equal and keep the same hash code indefinitely,
+    /// and a value read from the array is only guaranteed to be equal to the one that was passed in, not to be the same instance.</para>
     /// </remarks>
     public static ComparerEquatableArray<T> Create<T>(ImmutableArray<T> items) => Create((IEqualityComparer<T>)null, items);
 
-    /// <inheritdoc cref="Create{T}(ImmutableArray{T})" />
+    /// <inheritdoc cref="Create{T}(ImmutableArray{T})"/>
     public static ComparerEquatableArray<T> Create<T>(IEnumerable<T> items) => Create((IEqualityComparer<T>)null, items);
 
-    /// <inheritdoc cref="Create{T}(ImmutableArray{T})" />
+    /// <inheritdoc cref="Create{T}(ImmutableArray{T})"/>
     public static ComparerEquatableArray<T> Create<T>(params ReadOnlySpan<T> items) => Create(null, items);
 
-    /// <inheritdoc cref="Create{T}(ImmutableArray{T})" />
+    /// <inheritdoc cref="Create{T}(ImmutableArray{T})"/>
     public static ComparerEquatableArray<T> Create<T>(params T[] items) => Create((IEqualityComparer<T>)null, items);
 
     /// <summary>
-    /// Returns an instance of the <see cref="ComparerEquatableArray{T}"/> class from the given collection with the specified comparer.
+    /// Returns a <see cref="ComparerEquatableArray{T}"/> containing the specified items that uses the specified comparer, or the default comparer if
+    /// <see langword="null"/> is specified.
     /// </summary>
     /// <remarks>
-    /// <para>Note: values of the collection are assumed to be immutable and interchangeable (that is, the standard equality and hash code contracts must be held, but
-    /// also must be consistent indefinitely, and the value you read out of the array is only guaranteed to be equal to the one passed in, not necessarily the
-    /// same instance or bits).</para>
-    /// <para>
-    /// Note: the values for the comparer are compared by reference equality, but with <see langword="null" /> considered equivalent to
-    /// <see cref="EqualityComparer{T}.Default" />.</para>
+    /// <para>The values in the array are assumed to be immutable and interchangeable. Equal values must stay equal and keep the same hash code indefinitely,
+    /// and a value read from the array is only guaranteed to be equal to the one that was passed in, not to be the same instance.</para>
+    /// <para>Comparers are compared by reference when determining whether two arrays are equal, with <see langword="null"/> treated as equivalent to
+    /// <see cref="EqualityComparer{T}.Default"/>.</para>
     /// </remarks>
     public static ComparerEquatableArray<T> Create<T>(IEqualityComparer<T>? comparer, ImmutableArray<T> items)
     {
@@ -51,7 +49,7 @@ public static class ComparerEquatableArray
         return new(items, comparer);
     }
 
-    /// <inheritdoc cref="Create{T}(IEqualityComparer{T}?, ImmutableArray{T})" />
+    /// <inheritdoc cref="Create{T}(IEqualityComparer{T}?, ImmutableArray{T})"/>
     public static ComparerEquatableArray<T> Create<T>(IEqualityComparer<T>? comparer, IEnumerable<T> items)
     {
         if (items is ComparerEquatableArray<T> comparerEquatableArray)
@@ -73,7 +71,7 @@ public static class ComparerEquatableArray
         return new ComparerEquatableArray<T>(array, comparer);
     }
 
-    /// <inheritdoc cref="Create{T}(IEqualityComparer{T}?, ImmutableArray{T})" />
+    /// <inheritdoc cref="Create{T}(IEqualityComparer{T}?, ImmutableArray{T})"/>
     public static ComparerEquatableArray<T> Create<T>(IEqualityComparer<T>? comparer, params ReadOnlySpan<T> items)
     {
         if (items.Length == 0 && (comparer == null || comparer == EqualityComparer<T>.Default))
@@ -82,17 +80,18 @@ public static class ComparerEquatableArray
         return new ComparerEquatableArray<T>(ImmutableArray.Create(items), comparer);
     }
 
-    /// <inheritdoc cref="Create{T}(IEqualityComparer{T}?, ImmutableArray{T})" />
+    /// <inheritdoc cref="Create{T}(IEqualityComparer{T}?, ImmutableArray{T})"/>
     public static ComparerEquatableArray<T> Create<T>(IEqualityComparer<T>? comparer, params T[] items) => Create(comparer, (ReadOnlySpan<T>)items);
 }
 
 /// <summary>
-/// An immutable array wrapper that provides value-based equality semantics with a custom comparer.
+/// Represents an immutable array with value-based equality semantics that uses a custom comparer.
 /// </summary>
 /// <remarks>
-/// Note: values of the array are assumed to be immutable and interchangeable (that is, the standard equality and hash code contracts must be held, but also
-/// must be consistent indefinitely, and the value you read out of the array is only guaranteed to be equal to the one passed in, not necessarily the same
-/// instance or bits).
+/// <para>The values in the array are assumed to be immutable and interchangeable. Equal values must stay equal and keep the same hash code indefinitely,
+/// and a value read from the array is only guaranteed to be equal to the one that was passed in, not to be the same instance.</para>
+/// <para>Comparers are compared by reference when determining whether two arrays are equal, with <see langword="null"/> treated as equivalent to
+/// <see cref="EqualityComparer{T}.Default"/>.</para>
 /// </remarks>
 [CollectionBuilder(typeof(ComparerEquatableArray), "Create")]
 public sealed class ComparerEquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<ComparerEquatableArray<T>>, IFormattable
@@ -107,18 +106,16 @@ public sealed class ComparerEquatableArray<T> : IReadOnlyList<T>, IList<T>, IEqu
     private EquatableArrayImpl<T> _impl;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="ComparerEquatableArray{T}"/> class from the given immutable array and comparer.
+    /// Initializes a new instance of the <see cref="ComparerEquatableArray{T}"/> class that wraps the specified immutable array and uses the specified
+    /// comparer, or the default comparer if <see langword="null"/> is specified.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// Note: values of the array are assumed to be immutable and interchangeable (that is, the standard equality and hash code contracts must be held, but also
-    /// must be consistent indefinitely, and the value you read out of the array is only guaranteed to be equal to the one passed in, not necessarily the same
-    /// instance or bits). Note: this constructor does not de-duplicate against existing instances when created (however, it can still later) - it is a quick
-    /// constructor that just copies the provided value directly, other than ensuring non-<see langword="null" /> - use methods on
-    /// <see cref="ComparerEquatableArray" /> to get de-duplication.</para>
-    /// <para>
-    /// Note: the values for the comparer are compared by reference equality, but with <see langword="null" /> considered equivalent to
-    /// <see cref="EqualityComparer{T}.Default" />.</para>
+    /// <para>The values in the array are assumed to be immutable and interchangeable. Equal values must stay equal and keep the same hash code indefinitely,
+    /// and a value read from the array is only guaranteed to be equal to the one that was passed in, not to be the same instance.</para>
+    /// <para>This constructor wraps the array directly without de-duplicating it against existing instances, although the instance may still be de-duplicated
+    /// later. Use the methods on <see cref="ComparerEquatableArray"/> to create de-duplicated instances.</para>
+    /// <para>Comparers are compared by reference when determining whether two arrays are equal, with <see langword="null"/> treated as equivalent to
+    /// <see cref="EqualityComparer{T}.Default"/>.</para>
     /// </remarks>
     public ComparerEquatableArray(ImmutableArray<T> array, IEqualityComparer<T>? comparer = null)
     {
@@ -131,7 +128,7 @@ public sealed class ComparerEquatableArray<T> : IReadOnlyList<T>, IList<T>, IEqu
     /// </summary>
     public static ComparerEquatableArray<T> Empty { get; } = new(ImmutableArray<T>.Empty);
 
-    /// <inheritdoc cref="EquatableArray{T}.UnderlyingArray" />
+    /// <inheritdoc cref="EquatableArray{T}.UnderlyingArray"/>
     public ImmutableArray<T> UnderlyingArray => _impl.UnderlyingArray;
 
     /// <summary>
@@ -139,10 +136,10 @@ public sealed class ComparerEquatableArray<T> : IReadOnlyList<T>, IList<T>, IEqu
     /// </summary>
     public IEqualityComparer<T> Comparer => _comparer ?? EqualityComparer<T>.Default;
 
-    /// <inheritdoc cref="EquatableArray{T}.UnderlyingArray" />
+    /// <inheritdoc cref="EquatableArray{T}.GetHashCode"/>
     public override int GetHashCode() => _impl.GetHashCode(_comparer);
 
-    /// <inheritdoc cref="Equals(object?)" />
+    /// <inheritdoc cref="Equals(object?)"/>
     public bool Equals([NotNullWhen(true)] ComparerEquatableArray<T>? other)
     {
         // Check simple cases:
@@ -159,90 +156,90 @@ public sealed class ComparerEquatableArray<T> : IReadOnlyList<T>, IList<T>, IEqu
 
     /// <summary>Determines whether the specified object is equal to the current object.</summary>
     /// <param name="obj">The object to compare with the current object.</param>
-    /// <returns><see langword="true" /> if the specified object is equal to the current object; otherwise, <see langword="false" />.</returns>
-    /// <remarks>Returns <see langword="false" /> if the two instances of <see cref="ComparerEquatableArray{T}"/> have different comparers.</remarks>
+    /// <returns><see langword="true"/> if the specified object is equal to the current object; otherwise, <see langword="false"/>.</returns>
+    /// <remarks>Returns <see langword="false"/> if the two instances of <see cref="ComparerEquatableArray{T}"/> have different comparers.</remarks>
     public override bool Equals(object? obj) => Equals(obj as ComparerEquatableArray<T>);
 
     /// <summary>
-    /// Value-based equality operator.
+    /// Determines whether two arrays are equal.
     /// </summary>
-    /// <remarks>Returns <see langword="false" /> if the two instances of <see cref="ComparerEquatableArray{T}"/> have different comparers.</remarks>
+    /// <remarks>Returns <see langword="false"/> if the two instances of <see cref="ComparerEquatableArray{T}"/> have different comparers.</remarks>
     public static bool operator ==(ComparerEquatableArray<T>? left, ComparerEquatableArray<T>? right) => Equals(left, right);
 
     /// <summary>
-    /// Value-based inequality operator.
+    /// Determines whether two arrays are not equal.
     /// </summary>
-    /// <remarks>Returns <see langword="false" /> if the two instances of <see cref="ComparerEquatableArray{T}"/> have different comparers.</remarks>
+    /// <remarks>Returns <see langword="false"/> if the two instances of <see cref="ComparerEquatableArray{T}"/> have different comparers.</remarks>
     public static bool operator !=(ComparerEquatableArray<T>? left, ComparerEquatableArray<T>? right) => !(left == right);
 
-    /// <inheritdoc cref="EquatableArray{T}.Length" />
+    /// <inheritdoc cref="EquatableArray{T}.Length"/>
     public int Length => _impl.Length;
 
-    /// <inheritdoc cref="EquatableArray{T}.IsEmpty" />
+    /// <inheritdoc cref="EquatableArray{T}.IsEmpty"/>
     public bool IsEmpty => _impl.IsEmpty;
 
-    /// <inheritdoc cref="EquatableArray{T}.this[int]" />
+    /// <inheritdoc cref="EquatableArray{T}.this[int]"/>
     public ref readonly T this[int index] => ref _impl[index];
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     int ICollection<T>.Count => Length;
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     int IReadOnlyCollection<T>.Count => Length;
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     bool ICollection<T>.IsReadOnly => true;
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     T IList<T>.this[int index]
     {
         get => this[index];
         set => EquatableArrayImpl.ThrowReadOnlyException();
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     T IReadOnlyList<T>.this[int index] => this[index];
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     IEnumerator<T> IEnumerable<T>.GetEnumerator() => _impl.IEnumerableTGetEnumerator();
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<T>)this).GetEnumerator();
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     void IList<T>.Insert(int index, T item) => EquatableArrayImpl.ThrowReadOnlyException();
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     void IList<T>.RemoveAt(int index) => EquatableArrayImpl.ThrowReadOnlyException();
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     void ICollection<T>.Add(T item) => EquatableArrayImpl.ThrowReadOnlyException();
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     void ICollection<T>.Clear() => EquatableArrayImpl.ThrowReadOnlyException();
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     void ICollection<T>.CopyTo(T[] array, int arrayIndex) => CopyTo(array, arrayIndex);
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     bool ICollection<T>.Remove(T item) => EquatableArrayImpl.ThrowReadOnlyException<bool>();
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public override string ToString() => _impl.ToString();
 
-    /// <inheritdoc cref="EquatableArray{T}.ToString(IFormatProvider?)" />
+    /// <inheritdoc cref="EquatableArray{T}.ToString(IFormatProvider?)"/>
     public string ToString(IFormatProvider? formatProvider) => _impl.ToString(formatProvider);
 
-    /// <inheritdoc cref="EquatableArray{T}.ToString(string?)" />
+    /// <inheritdoc cref="EquatableArray{T}.ToString(string?)"/>
     public string ToString(string? elementFormat) => _impl.ToString(elementFormat);
 
-    /// <inheritdoc cref="EquatableArray{T}.ToString(string?, IFormatProvider?)" />
+    /// <inheritdoc cref="EquatableArray{T}.ToString(string?, IFormatProvider?)"/>
     public string ToString(string? elementFormat, IFormatProvider? formatProvider) => _impl.ToString(elementFormat, formatProvider);
 
-    /// <inheritdoc cref="IFormattable.ToString(string?, IFormatProvider?)" />
+    /// <inheritdoc cref="IFormattable.ToString(string?, IFormatProvider?)"/>
     string IFormattable.ToString(string? format, IFormatProvider? formatProvider) => ToString(format, formatProvider);
 
-    /// <inheritdoc cref="EquatableArray{T}.Enumerator" />
+    /// <inheritdoc cref="EquatableArray{T}.Enumerator"/>
     public struct Enumerator
     {
         private EquatableArrayImpl<T>.Enumerator _impl;
@@ -252,83 +249,83 @@ public sealed class ComparerEquatableArray<T> : IReadOnlyList<T>, IList<T>, IEqu
             _impl = array._impl.GetEnumerator();
         }
 
-        /// <inheritdoc cref="EquatableArray{T}.Enumerator.Current" />
+        /// <inheritdoc cref="EquatableArray{T}.Enumerator.Current"/>
         public readonly T Current => _impl.Current;
 
-        /// <inheritdoc cref="EquatableArray{T}.Enumerator.MoveNext()" />
+        /// <inheritdoc cref="EquatableArray{T}.Enumerator.MoveNext()"/>
         public bool MoveNext() => _impl.MoveNext();
     }
 
-    /// <inheritdoc cref="EquatableArray{T}.AsMemory()" />
+    /// <inheritdoc cref="EquatableArray{T}.AsMemory()"/>
     public ReadOnlyMemory<T> AsMemory() => _impl.AsMemory();
 
-    /// <inheritdoc cref="EquatableArray{T}.AsSpan()" />
+    /// <inheritdoc cref="EquatableArray{T}.AsSpan()"/>
     public ReadOnlySpan<T> AsSpan() => _impl.AsSpan();
 
-    /// <inheritdoc cref="EquatableArray{T}.AsSpan(int, int)" />
+    /// <inheritdoc cref="EquatableArray{T}.AsSpan(int, int)"/>
     public ReadOnlySpan<T> AsSpan(int start, int length) => _impl.AsSpan(start, length);
 
-    /// <inheritdoc cref="EquatableArray{T}.AsSpan(Range)" />
+    /// <inheritdoc cref="EquatableArray{T}.AsSpan(Range)"/>
     public ReadOnlySpan<T> AsSpan(Range range) => _impl.AsSpan(range);
 
-    /// <inheritdoc cref="EquatableArray{T}.Contains(T)" />
+    /// <inheritdoc cref="EquatableArray{T}.Contains(T)"/>
     public bool Contains(T item) => _impl.Contains(item, _comparer);
 
-    /// <inheritdoc cref="EquatableArray{T}.Contains(T, IEqualityComparer{T}?)" />
+    /// <inheritdoc cref="EquatableArray{T}.Contains(T, IEqualityComparer{T}?)"/>
     public bool Contains(T item, IEqualityComparer<T>? equalityComparer) => _impl.Contains(item, equalityComparer ?? _comparer);
 
-    /// <inheritdoc cref="EquatableArray{T}.CopyTo(Span{T})" />
+    /// <inheritdoc cref="EquatableArray{T}.CopyTo(Span{T})"/>
     public void CopyTo(Span<T> destination) => _impl.CopyTo(destination);
 
-    /// <inheritdoc cref="EquatableArray{T}.CopyTo(T[])" />
+    /// <inheritdoc cref="EquatableArray{T}.CopyTo(T[])"/>
     public void CopyTo(T[] destination) => _impl.CopyTo(destination);
 
-    /// <inheritdoc cref="EquatableArray{T}.CopyTo(T[], int)" />
+    /// <inheritdoc cref="EquatableArray{T}.CopyTo(T[], int)"/>
     public void CopyTo(T[] destination, int destinationIndex) => _impl.CopyTo(destination, destinationIndex);
 
-    /// <inheritdoc cref="EquatableArray{T}.CopyTo(int, T[], int, int)" />
+    /// <inheritdoc cref="EquatableArray{T}.CopyTo(int, T[], int, int)"/>
     public void CopyTo(int sourceIndex, T[] destination, int destinationIndex, int length) => _impl.CopyTo(sourceIndex, destination, destinationIndex, length);
 
-    /// <inheritdoc cref="EquatableArray{T}.GetEnumerator()" />
+    /// <inheritdoc cref="EquatableArray{T}.GetEnumerator()"/>
     public Enumerator GetEnumerator() => new(this);
 
-    /// <inheritdoc cref="EquatableArray{T}.IndexOf(T)" />
+    /// <inheritdoc cref="EquatableArray{T}.IndexOf(T)"/>
     public int IndexOf(T item) => _impl.IndexOf(item, _comparer);
 
-    /// <inheritdoc cref="EquatableArray{T}.IndexOf(T, IEqualityComparer{T}?)" />
+    /// <inheritdoc cref="EquatableArray{T}.IndexOf(T, IEqualityComparer{T}?)"/>
     public int IndexOf(T item, IEqualityComparer<T>? equalityComparer) => _impl.IndexOf(item, equalityComparer ?? _comparer);
 
-    /// <inheritdoc cref="EquatableArray{T}.IndexOf(T, int)" />
+    /// <inheritdoc cref="EquatableArray{T}.IndexOf(T, int)"/>
     public int IndexOf(T item, int startIndex) => _impl.IndexOf(item, startIndex, _comparer);
 
-    /// <inheritdoc cref="EquatableArray{T}.IndexOf(T, int, IEqualityComparer{T}?)" />
+    /// <inheritdoc cref="EquatableArray{T}.IndexOf(T, int, IEqualityComparer{T}?)"/>
     public int IndexOf(T item, int startIndex, IEqualityComparer<T>? equalityComparer) => _impl.IndexOf(item, startIndex, equalityComparer ?? _comparer);
 
-    /// <inheritdoc cref="EquatableArray{T}.IndexOf(T, int, int)" />
+    /// <inheritdoc cref="EquatableArray{T}.IndexOf(T, int, int)"/>
     public int IndexOf(T item, int startIndex, int count) => _impl.IndexOf(item, startIndex, count, _comparer);
 
-    /// <inheritdoc cref="EquatableArray{T}.IndexOf(T, int, int, IEqualityComparer{T}?)" />
+    /// <inheritdoc cref="EquatableArray{T}.IndexOf(T, int, int, IEqualityComparer{T}?)"/>
     public int IndexOf(T item, int startIndex, int count, IEqualityComparer<T>? equalityComparer) => _impl.IndexOf(item, startIndex, count, equalityComparer ?? _comparer);
 
-    /// <inheritdoc cref="EquatableArray{T}.LastIndexOf(T)" />
+    /// <inheritdoc cref="EquatableArray{T}.LastIndexOf(T)"/>
     public int LastIndexOf(T item) => _impl.LastIndexOf(item, _comparer);
 
-    /// <inheritdoc cref="EquatableArray{T}.LastIndexOf(T, IEqualityComparer{T}?)" />
+    /// <inheritdoc cref="EquatableArray{T}.LastIndexOf(T, IEqualityComparer{T}?)"/>
     public int LastIndexOf(T item, IEqualityComparer<T>? equalityComparer) => _impl.LastIndexOf(item, equalityComparer ?? _comparer);
 
-    /// <inheritdoc cref="EquatableArray{T}.LastIndexOf(T, int)" />
+    /// <inheritdoc cref="EquatableArray{T}.LastIndexOf(T, int)"/>
     public int LastIndexOf(T item, int startIndex) => _impl.LastIndexOf(item, startIndex, _comparer);
 
-    /// <inheritdoc cref="EquatableArray{T}.LastIndexOf(T, int, IEqualityComparer{T}?)" />
+    /// <inheritdoc cref="EquatableArray{T}.LastIndexOf(T, int, IEqualityComparer{T}?)"/>
     public int LastIndexOf(T item, int startIndex, IEqualityComparer<T>? equalityComparer) => _impl.LastIndexOf(item, startIndex, equalityComparer ?? _comparer);
 
-    /// <inheritdoc cref="EquatableArray{T}.LastIndexOf(T, int, int)" />
+    /// <inheritdoc cref="EquatableArray{T}.LastIndexOf(T, int, int)"/>
     public int LastIndexOf(T item, int startIndex, int count) => _impl.LastIndexOf(item, startIndex, count, _comparer);
 
-    /// <inheritdoc cref="EquatableArray{T}.LastIndexOf(T, int, int, IEqualityComparer{T}?)" />
+    /// <inheritdoc cref="EquatableArray{T}.LastIndexOf(T, int, int, IEqualityComparer{T}?)"/>
     public int LastIndexOf(T item, int startIndex, int count, IEqualityComparer<T>? equalityComparer) => _impl.LastIndexOf(item, startIndex, count, equalityComparer ?? _comparer);
 
-    /// <inheritdoc cref="EquatableArray{T}.Slice(int, int)" />
+    /// <inheritdoc cref="EquatableArray{T}.Slice(int, int)"/>
     public ComparerEquatableArray<T> Slice(int start, int length) => _impl.Slice(start, length, out bool identical) switch
     {
         _ when identical => this,
@@ -336,7 +333,7 @@ public sealed class ComparerEquatableArray<T> : IReadOnlyList<T>, IList<T>, IEqu
     };
 
     /// <summary>
-    /// Returns an <see cref="ComparerEquatableArray{T}"/> instance with the specified comparer over the current values.
+    /// Returns a <see cref="ComparerEquatableArray{T}"/> instance with the specified comparer over the current values.
     /// </summary>
     public ComparerEquatableArray<T> WithComparer(IEqualityComparer<T>? comparer)
     {

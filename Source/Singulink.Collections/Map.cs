@@ -22,6 +22,7 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IDictionary<TLeft
     /// <summary>
     /// Initializes a new instance of the <see cref="Map{TLeft, TRight}"/> class with the specified capacity.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="capacity"/> is less than <c>0</c>.</exception>
     public Map(int capacity) : this(capacity, null, null) { }
 
     /// <summary>
@@ -32,6 +33,7 @@ public partial class Map<TLeft, TRight> : IMap<TLeft, TRight>, IDictionary<TLeft
     /// <summary>
     /// Initializes a new instance of the <see cref="Map{TLeft, TRight}"/> class with the specified capacity and left and right value comparers.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="capacity"/> is less than <c>0</c>.</exception>
     public Map(int capacity, IEqualityComparer<TLeft>? leftComparer, IEqualityComparer<TRight>? rightComparer)
     {
         _leftSide = new Dictionary<TLeft, TRight>(capacity, leftComparer);

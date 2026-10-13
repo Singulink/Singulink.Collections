@@ -48,16 +48,16 @@ public sealed partial class WeakList<T>
         /// </summary>
         public static bool operator <(ListVersion left, ListVersion right) => left._version < right._version;
 
-        /// <inheritdoc />
+        /// <inheritdoc/>
         public readonly override int GetHashCode() => _version.GetHashCode();
 
-        /// <inheritdoc />
+        /// <inheritdoc/>
         public readonly override bool Equals(object? obj) => obj is ListVersion other && _version == other._version;
 
-        /// <inheritdoc cref="IEquatable{T}.Equals(T)" />
+        /// <inheritdoc cref="IEquatable{T}.Equals(T)"/>
         public readonly bool Equals(ListVersion other) => _version == other._version;
 
-        /// <inheritdoc cref="IComparable{T}.CompareTo(T)" />
+        /// <inheritdoc cref="IComparable{T}.CompareTo(T)"/>
         public readonly int CompareTo(ListVersion other) => _version.CompareTo(other._version);
     }
 }

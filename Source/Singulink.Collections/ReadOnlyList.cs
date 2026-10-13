@@ -95,7 +95,7 @@ public class ReadOnlyList<T> : IList<T>, IReadOnlyList<T>
     public void CopyTo(int index, T[] array, int arrayIndex, int count) => _list.CopyTo(index, array, arrayIndex, count);
 
     /// <summary>
-    /// Determines whether the list contains an item that matches the condition specified by the specified predicate.
+    /// Determines whether the list contains an item that matches the conditions defined by the specified predicate.
     /// </summary>
     public bool Exists(Predicate<T> match) => _list.Exists(match);
 

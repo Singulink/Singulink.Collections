@@ -25,7 +25,7 @@ public static class CollectionExtensions
     /// as an optimization. That optimization can cause silent corruption or exceptions if the dictionary is modified concurrently.</para>
     /// <para>
     /// Wrapping the dictionary with this method hides the <see cref="ICollection{T}"/> implementation so it can be safely passed to any method that accepts an
-    /// <see cref="IEnumerable{T}"/>, such as LINQ operators, collection constructors, etc., without risking corruption or exceptions due to concurrent
+    /// <see cref="IEnumerable{T}"/>, such as LINQ operators and collection constructors, without risking corruption or exceptions due to concurrent
     /// modifications.</para>
     /// </remarks>
     public static IEnumerable<KeyValuePair<TKey, TValue>> AsSafeEnumerable<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> dictionary) where TKey : notnull
@@ -36,33 +36,33 @@ public static class CollectionExtensions
 
     // EquatableArray extensions
 
-    /// <inheritdoc cref="EquatableArray.Create{T}(ImmutableArray{T})" />
+    /// <inheritdoc cref="EquatableArray.Create{T}(ImmutableArray{T})"/>
     public static EquatableArray<T> ToEquatableArray<T>(this ImmutableArray<T> value) => EquatableArray.Create(value);
 
-    /// <inheritdoc cref="EquatableArray.Create{T}(ImmutableArray{T})" />
+    /// <inheritdoc cref="EquatableArray.Create{T}(ImmutableArray{T})"/>
     public static EquatableArray<T> ToEquatableArray<T>(this IEnumerable<T> value) => EquatableArray.Create(value);
 
-    /// <inheritdoc cref="EquatableArray.Create{T}(ImmutableArray{T})" />
+    /// <inheritdoc cref="EquatableArray.Create{T}(ImmutableArray{T})"/>
     public static EquatableArray<T> ToEquatableArray<T>(this ReadOnlySpan<T> value) => EquatableArray.Create(value);
 
-    /// <inheritdoc cref="EquatableArray.Create{T}(ImmutableArray{T})" />
+    /// <inheritdoc cref="EquatableArray.Create{T}(ImmutableArray{T})"/>
     public static EquatableArray<T> ToEquatableArray<T>(this T[] value) => EquatableArray.Create(value);
 
     // ComparerEquatableArray extensions
 
-    /// <inheritdoc cref="ComparerEquatableArray.Create{T}(IEqualityComparer{T}?, ImmutableArray{T})" />
+    /// <inheritdoc cref="ComparerEquatableArray.Create{T}(IEqualityComparer{T}?, ImmutableArray{T})"/>
     public static ComparerEquatableArray<T> ToComparerEquatableArray<T>(this ImmutableArray<T> value, IEqualityComparer<T>? comparer = null) =>
         ComparerEquatableArray.Create(comparer, value);
 
-    /// <inheritdoc cref="ComparerEquatableArray.Create{T}(IEqualityComparer{T}?, ImmutableArray{T})" />
+    /// <inheritdoc cref="ComparerEquatableArray.Create{T}(IEqualityComparer{T}?, ImmutableArray{T})"/>
     public static ComparerEquatableArray<T> ToComparerEquatableArray<T>(this IEnumerable<T> value, IEqualityComparer<T>? comparer = null) =>
         ComparerEquatableArray.Create(comparer, value);
 
-    /// <inheritdoc cref="ComparerEquatableArray.Create{T}(IEqualityComparer{T}?, ImmutableArray{T})" />
+    /// <inheritdoc cref="ComparerEquatableArray.Create{T}(IEqualityComparer{T}?, ImmutableArray{T})"/>
     public static ComparerEquatableArray<T> ToComparerEquatableArray<T>(this ReadOnlySpan<T> value, IEqualityComparer<T>? comparer = null) =>
         ComparerEquatableArray.Create(comparer, value);
 
-    /// <inheritdoc cref="ComparerEquatableArray.Create{T}(IEqualityComparer{T}?, ImmutableArray{T})" />
+    /// <inheritdoc cref="ComparerEquatableArray.Create{T}(IEqualityComparer{T}?, ImmutableArray{T})"/>
     public static ComparerEquatableArray<T> ToComparerEquatableArray<T>(this T[] value, IEqualityComparer<T>? comparer = null) =>
         ComparerEquatableArray.Create(comparer, value);
 }

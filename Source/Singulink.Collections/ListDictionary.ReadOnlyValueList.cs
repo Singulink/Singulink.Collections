@@ -30,7 +30,7 @@ public partial class ListDictionary<TKey, TValue>
         }
 
         /// <summary>
-        /// Gets the element at the specified index.
+        /// Gets the item at the specified index.
         /// </summary>
         public TValue this[int index] => GetList()[index];
 
@@ -40,15 +40,17 @@ public partial class ListDictionary<TKey, TValue>
         public TKey Key => _key;
 
         /// <summary>
-        /// Gets the dictionary this value list is associate with.
+        /// Gets the dictionary this value list is associated with.
         /// </summary>
         public ListDictionary<TKey, TValue> Dictionary => _dictionary;
 
         /// <summary>
-        /// Gets the number of items in this value list. If the count is zero, this value list is detached from <see cref="Dictionary"/>, i.e. calling <see
-        /// cref="ContainsKey(TKey)"/> on the dictionary and passing in <see cref="Key"/> as a parameter will return <see langword="false"/>. When items are
-        /// added to the value list it is attached to the dictionary.
+        /// Gets the number of items in this value list.
         /// </summary>
+        /// <remarks>
+        /// A value list with no items is detached from its <see cref="Dictionary"/>, so <see cref="ListDictionary{TKey, TValue}.ContainsKey(TKey)"/> returns
+        /// <see langword="false"/> for its <see cref="Key"/>. The value list is attached to the dictionary again when items are added to it.
+        /// </remarks>
         public int Count => GetList().Count;
 
         /// <summary>
@@ -76,8 +78,8 @@ public partial class ListDictionary<TKey, TValue>
             return _transientReadOnlyList;
         }
 
-        /// <summary>a
-        /// Determines whether an element is in the list.
+        /// <summary>
+        /// Determines whether an item is in the list.
         /// </summary>
         public bool Contains(TValue item) => GetList().Contains(item);
 
@@ -92,73 +94,73 @@ public partial class ListDictionary<TKey, TValue>
         public void CopyTo(TValue[] array, int arrayIndex) => GetList().CopyTo(array, arrayIndex);
 
         /// <summary>
-        /// Copies a range of elements from the list to an array starting at the specified array index.
+        /// Copies a range of items from the list to an array starting at the specified array index.
         /// </summary>
         public void CopyTo(int index, TValue[] array, int arrayIndex, int count) => GetList().CopyTo(index, array, arrayIndex, count);
 
         /// <summary>
-        /// Determines whether the list contains an element that matches the condition specified by the specified predicate.
+        /// Determines whether the list contains an item that matches the conditions defined by the specified predicate.
         /// </summary>
         public bool Exists(Predicate<TValue> match) => GetList().Exists(match);
 
         /// <summary>
-        /// Searches the list for an element that matches the conditions in the specified predicate and returns the first matching item.
+        /// Searches the list for an item that matches the conditions in the specified predicate and returns the first matching item.
         /// </summary>
         public TValue? Find(Predicate<TValue> match) => GetList().Find(match);
 
         /// <summary>
-        /// Returns all the elements in the list that match the condition in the specified predicate.
+        /// Returns all the items in the list that match the condition in the specified predicate.
         /// </summary>
         public List<TValue> FindAll(Predicate<TValue> match) => GetList().FindAll(match);
 
         /// <summary>
-        /// Searches for an element that matches the conditions defined by the specified predicate, and returns the index of the first occurrence within the range
-        /// of elements in the list that starts at the specified  index and contains the specified number of elements.
+        /// Searches for an item that matches the conditions defined by the specified predicate, and returns the index of the first occurrence within the range
+        /// of items in the list that starts at the specified index and contains the specified number of items.
         /// </summary>
         public int FindIndex(int startIndex, int count, Predicate<TValue> match) => GetList().FindIndex(startIndex, count, match);
 
         /// <summary>
-        /// Searches for an element that matches the conditions defined by the specified predicate, and returns the index of the first occurrence within
-        /// the range of elements in the list that extends from the specified index to the last element.
+        /// Searches for an item that matches the conditions defined by the specified predicate, and returns the index of the first occurrence within
+        /// the range of items in the list that extends from the specified index to the last item.
         /// </summary>
         public int FindIndex(int startIndex, Predicate<TValue> match) => GetList().FindIndex(startIndex, match);
 
         /// <summary>
-        /// Searches for an element that matches the conditions defined by the specified predicate, and returns the index of the first occurrence within the entire
+        /// Searches for an item that matches the conditions defined by the specified predicate, and returns the index of the first occurrence within the entire
         /// list.
         /// </summary>
         public int FindIndex(Predicate<TValue> match) => GetList().FindIndex(match);
 
         /// <summary>
-        /// Searches for an element that matches the conditions defined by the specified predicate, and returns the last occurrence within the entire list.
+        /// Searches for an item that matches the conditions defined by the specified predicate, and returns the last occurrence within the entire list.
         /// </summary>
         public TValue? FindLast(Predicate<TValue> match) => GetList().FindLast(match);
 
         /// <summary>
-        /// Searches for an element that matches the conditions defined by the specified predicate, and returns the index of the last occurrence within the range of
-        /// elements in the list that contains the specified number of elements and ends at the specified index.
+        /// Searches for an item that matches the conditions defined by the specified predicate, and returns the index of the last occurrence within the range of
+        /// items in the list that contains the specified number of items and ends at the specified index.
         /// </summary>
         public int FindLastIndex(int startIndex, int count, Predicate<TValue> match) => GetList().FindLastIndex(startIndex, count, match);
 
         /// <summary>
-        /// Searches for an element that matches the conditions defined by the specified predicate, and returns the index of the last occurrence within the range of
-        /// elements in the list that extends from the first element to the specified index.
+        /// Searches for an item that matches the conditions defined by the specified predicate, and returns the index of the last occurrence within the range of
+        /// items in the list that extends from the first item to the specified index.
         /// </summary>
         public int FindLastIndex(int startIndex, Predicate<TValue> match) => GetList().FindLastIndex(startIndex, match);
 
         /// <summary>
-        /// Searches for an element that matches the conditions defined by the specified predicate, and returns the index of the last occurrence within the entire
+        /// Searches for an item that matches the conditions defined by the specified predicate, and returns the index of the last occurrence within the entire
         /// list.
         /// </summary>
         public int FindLastIndex(Predicate<TValue> match) => GetList().FindLastIndex(match);
 
         /// <summary>
-        /// Performs the specified action on each element of the list.
+        /// Performs the specified action on each item of the list.
         /// </summary>
         public void ForEach(Action<TValue> action) => GetList().ForEach(action);
 
         /// <summary>
-        /// Creates a shallow copy of a range of elements in the source list.
+        /// Creates a shallow copy of a range of items in the source list.
         /// </summary>
         public List<TValue> GetRange(int index, int count) => GetList().GetRange(index, count);
 
@@ -168,14 +170,14 @@ public partial class ListDictionary<TKey, TValue>
         public int IndexOf(TValue item) => GetList().IndexOf(item);
 
         /// <summary>
-        /// Searches for the specified object and returns the index of the first occurrence within the range of elements in the list that extends from the specified
-        /// index to the last element.
+        /// Searches for the specified object and returns the index of the first occurrence within the range of items in the list that extends from the specified
+        /// index to the last item.
         /// </summary>
         public int IndexOf(TValue item, int index) => GetList().IndexOf(item, index);
 
         /// <summary>
-        /// Searches for the specified object and returns the index of the first occurrence within the range of elements in the list that starts at the specified
-        /// index and contains the specified number of elements.
+        /// Searches for the specified object and returns the index of the first occurrence within the range of items in the list that starts at the specified
+        /// index and contains the specified number of items.
         /// </summary>
         public int IndexOf(TValue item, int index, int count) => GetList().IndexOf(item, index, count);
 
@@ -185,24 +187,24 @@ public partial class ListDictionary<TKey, TValue>
         public int LastIndexOf(TValue item) => GetList().LastIndexOf(item);
 
         /// <summary>
-        /// Searches for the specified object and returns the index of the last occurrence within the range of elements in the list that extends from the first
+        /// Searches for the specified object and returns the index of the last occurrence within the range of items in the list that extends from the first
         /// element to the specified index.
         /// </summary>
         public int LastIndexOf(TValue item, int index) => GetList().LastIndexOf(item, index);
 
         /// <summary>
-        /// Searches for the specified object and returns the index of the last occurrence within the range of elements in the list that contains the specified
-        /// number of elements and ends at the specified index.
+        /// Searches for the specified object and returns the index of the last occurrence within the range of items in the list that contains the specified
+        /// number of items and ends at the specified index.
         /// </summary>
         public int LastIndexOf(TValue item, int index, int count) => GetList().LastIndexOf(item, index, count);
 
         /// <summary>
-        /// Copies the elements of the list to a new array.
+        /// Copies the items of the list to a new array.
         /// </summary>
         public TValue[] ToArray() => GetList().ToArray();
 
         /// <summary>
-        /// Determines whether every element in the list matches the conditions defined by the specified predicate.
+        /// Determines whether every item in the list matches the conditions defined by the specified predicate.
         /// </summary>
         public bool TrueForAll(Predicate<TValue> match) => GetList().TrueForAll(match);
 
@@ -326,7 +328,7 @@ public partial class ListDictionary<TKey, TValue>
         #endregion
 
         /// <summary>
-        /// Enumerates the elements of a <see cref="ReadOnlyValueList"/> or <see cref="ValueList"/>.
+        /// Enumerates the items of a <see cref="ReadOnlyValueList"/> or <see cref="ValueList"/>.
         /// </summary>
         public struct Enumerator : IEnumerator<TValue>
         {
@@ -342,7 +344,7 @@ public partial class ListDictionary<TKey, TValue>
             }
 
             /// <summary>
-            /// Gets the element at the current position of the enumerator.
+            /// Gets the item at the current position of the enumerator.
             /// </summary>
             public TValue Current => _listEnumerator.Current;
 

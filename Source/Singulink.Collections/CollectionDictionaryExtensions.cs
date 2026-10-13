@@ -101,8 +101,8 @@ public static class CollectionDictionaryExtensions
     /// dictionary are not reflected in the returned lookup.
     /// </summary>
     /// <param name="dictionary">The dictionary to snapshot.</param>
-    /// <param name="keyComparer">The key comparer to use for the returned lookup, or <see langword="null"/> to use the default comparer. Note: this does
-    /// <em>not</em> default to any comparer the source dictionary may be using internally.</param>
+    /// <param name="keyComparer">The key comparer to use for the returned lookup, or <see langword="null"/> to use the default comparer. This does not
+    /// default to the comparer used by the source dictionary.</param>
     public static ILookup<TKey, TValue> ToLookup<TKey, TValue>(this IReadOnlyCollectionDictionary<TKey, TValue> dictionary, IEqualityComparer<TKey>? keyComparer = null)
         where TKey : notnull
     {

@@ -13,19 +13,23 @@ namespace Singulink.Collections;
 #pragma warning disable IDE0028 // Simplify collection initialization
 
 /// <summary>
-/// Represents a collection of keys and weakly referenced values. This type is also automatically safe for concurrent access, and will automatically remove dead
-/// objects from the collection.
+/// Represents a collection of keys and weakly referenced values that automatically removes entries as their values are garbage collected.
 /// </summary>
 /// <remarks>
-/// <para>
-/// Using a type or custom comparer that throws from <see cref="IEqualityComparer{T}.Equals(T, T)"/> or <see cref="IEqualityComparer{T}.GetHashCode(T)"/> is not
-/// supported and may make the collection unusable after such an exception.
-/// </para>
-/// <para>
-/// In some cases, keys may be re-used even when the value is logically dead. This may be detectable if you compare the values with an equality comparer that is
-/// not compatible with the one used for this dictionary (by default, <see cref="EqualityComparer{T}.Default"/>). If you need to not have this behaviour, you
-/// can lock on all accesses yourself, and call <see cref="Remove(TKey)"/> or <c>AlternateLookup.Remove(TAlternateKey)</c> before adding or updating entries.
-/// </para>
+/// <para>Values are held through weak references, so adding a value to the dictionary does not prevent it from being garbage collected. When a value is
+/// collected its entry is removed from the dictionary automatically on the finalizer thread shortly afterwards, so the dictionary never needs to be cleaned
+/// and lookups and enumeration never return <see langword="null"/> values.</para>
+/// <para>Individual operations are safe for concurrent use from multiple threads without external synchronization, including while other threads are
+/// enumerating the dictionary. Compound operations that must observe a consistent view of the dictionary still require external synchronization.</para>
+/// <para>Key comparers that throw from <see cref="IEqualityComparer{T}.Equals(T, T)"/> or <see cref="IEqualityComparer{T}.GetHashCode(T)"/> are not
+/// supported and may leave the dictionary unusable after the exception.</para>
+/// <para>When a value dies, its entry lingers until the finalizer thread removes it. If an equal key is added during that window the entry is replaced in
+/// place and the dictionary keeps the key instance it already had, so <see cref="Keys"/> and enumeration return the original key instance rather than the
+/// one passed to the later add. This matches the key retention behavior of <see cref="Dictionary{TKey, TValue}"/> and is only observable when equal keys
+/// are distinguishable, such as by reference. Callers that require the new key instance to be stored can synchronize access and call
+/// <see cref="Remove(TKey)"/> before adding.</para>
+/// <para>Dispose dictionaries that are no longer needed instead of letting them be finalized. The finalizer removes all remaining entries, which can block
+/// the finalizer thread for a significant amount of time if the dictionary is large.</para>
 /// </remarks>
 public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyValuePair<TKey, TValue>>, IDisposable
     where TKey : notnull
@@ -47,7 +51,8 @@ public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyV
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="WeakValueDictionary{TKey, TValue}"/> class using the specified key equality comparer.
+    /// Initializes a new instance of the <see cref="WeakValueDictionary{TKey, TValue}"/> class that uses the specified key comparer, or the default comparer
+    /// if <see langword="null"/> is specified.
     /// </summary>
     public WeakValueDictionary(IEqualityComparer<TKey>? comparer)
     {
@@ -76,8 +81,9 @@ public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyV
     }
 
     /// <summary>
-    /// Gets the equality comparer used to compare keys in the dictionary.
+    /// Gets the comparer that is used to determine equality of the keys.
     /// </summary>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     public IEqualityComparer<TKey> Comparer
     {
         get
@@ -90,20 +96,25 @@ public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyV
     }
 
     /// <summary>
-    /// Gets the keys in the dictionary.
+    /// Gets the keys in the dictionary whose values are still available.
     /// </summary>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed. The exception is thrown when the keys are enumerated.</exception>
     public IEnumerable<TKey> Keys => this.Select((x) => x.Key);
 
     /// <summary>
-    /// Gets the values in the dictionary.
+    /// Gets the values in the dictionary that are still available.
     /// </summary>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed. The exception is thrown when the values are enumerated.</exception>
     public IEnumerable<TValue> Values => this.Select((x) => x.Value);
 
     /// <summary>
-    /// Gets the number of entries in the dictionary. This value can change at any time, and may briefly include entries whose values have been garbage
-    /// collected but have not yet been removed by the finalizer thread.
+    /// Gets the number of entries in the dictionary.
     /// </summary>
-    /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
+    /// <remarks>
+    /// The count includes entries whose values have been garbage collected but have not yet been removed from the dictionary, so it may briefly exceed the
+    /// number of entries that enumeration returns.
+    /// </remarks>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     public int Count
     {
         get
@@ -116,15 +127,18 @@ public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyV
     }
 
     /// <summary>
-    /// Gets the number of entries in the dictionary. Use <see cref="Count"/> instead.
+    /// Gets the number of entries in the dictionary. This member is obsolete, use <see cref="Count"/> instead.
     /// </summary>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     [Obsolete($"Use {nameof(Count)} instead.")]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public int UnsafeCount => Count;
 
     /// <summary>
-    /// Gets or sets the value associated with the specified key.
+    /// Gets or sets the value associated with the specified key. Setting a value replaces any existing value for the key.
     /// </summary>
+    /// <exception cref="KeyNotFoundException">The key does not exist in the dictionary, or its value has been garbage collected.</exception>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     public TValue this[TKey key]
     {
         get
@@ -189,8 +203,10 @@ public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyV
     /// Gets the value associated with the specified key.
     /// </summary>
     /// <param name="key">The key of the value to get.</param>
-    /// <param name="value">The value associated with the specified key, otherwise <see langword="null"/>.</param>
-    /// <returns><see langword="true"/> if the dictionary contains a value with the specified key, otherwise <see langword="false"/>.</returns>
+    /// <param name="value">When this method returns, contains the value associated with the key if it was found and is still available; otherwise
+    /// <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if the key was found and its value is still available; otherwise <see langword="false"/>.</returns>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     public bool TryGetValue(TKey key, [NotNullWhen(true)] out TValue? value)
     {
         ThrowIfDisposed(out var lookup);
@@ -228,8 +244,11 @@ public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyV
     }
 
     /// <summary>
-    /// Adds the specified key and value to the dictionary.
+    /// Attempts to add the specified key and value to the dictionary.
     /// </summary>
+    /// <returns><see langword="true"/> if the key and value were added; <see langword="false"/> if the dictionary already contains the key with a value that is
+    /// still available.</returns>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     public bool TryAdd(TKey key, TValue value)
     {
         ThrowIfDisposed(out var lookup);
@@ -310,7 +329,8 @@ public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyV
     /// <summary>
     /// Adds the specified key and value to the dictionary.
     /// </summary>
-    /// <exception cref="ArgumentException">The specified key already exists in the dictionary.</exception>
+    /// <exception cref="ArgumentException">The dictionary already contains the key with a value that is still available.</exception>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     public void Add(TKey key, TValue value)
     {
         if (!TryAdd(key, value))
@@ -318,20 +338,23 @@ public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyV
     }
 
     /// <summary>
-    /// Removes the value with the specified key from the dictionary.
+    /// Removes the entry with the specified key from the dictionary.
     /// </summary>
-    /// <returns><see langword="true"/> if the item was found and removed, otherwise <see langword="false"/>.</returns>
+    /// <returns><see langword="true"/> if the entry was found and removed; otherwise <see langword="false"/>.</returns>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     public bool Remove(TKey key)
     {
         return Remove(key, out _);
     }
 
     /// <summary>
-    /// Removes the value with the specified key from the dictionary.
+    /// Removes the entry with the specified key from the dictionary.
     /// </summary>
-    /// <param name="key">The key of the value to remove.</param>
-    /// <param name="value">The value that was removed, otherwise <see langword="null"/>.</param>
-    /// <returns><see langword="true"/> if the item was found and removed, otherwise <see langword="false"/>.</returns>
+    /// <param name="key">The key of the entry to remove.</param>
+    /// <param name="value">When this method returns, contains the value that was removed if the entry was found and its value was still available; otherwise
+    /// <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if the entry was found and removed; otherwise <see langword="false"/>.</returns>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     public bool Remove(TKey key, [MaybeNullWhen(false)] out TValue value)
     {
         ThrowIfDisposed(out var lookup);
@@ -373,8 +396,13 @@ public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyV
     }
 
     /// <summary>
-    /// Removes the entry with the given key and value from the dictionary using the specified equality comparer for the value type.
+    /// Removes the entry with the specified key from the dictionary if its value is equal to the specified value.
     /// </summary>
+    /// <param name="key">The key of the entry to remove.</param>
+    /// <param name="value">The value that the entry must have in order to be removed.</param>
+    /// <param name="comparer">The comparer to use to determine equality of the values, or <see langword="null"/> to use the default comparer.</param>
+    /// <returns><see langword="true"/> if the entry was found with an equal value and removed; otherwise <see langword="false"/>.</returns>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     public bool Remove(TKey key, TValue value, IEqualityComparer<TValue>? comparer = null)
     {
         ThrowIfDisposed(out var lookup);
@@ -446,13 +474,20 @@ public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyV
     }
 
     /// <summary>
-    /// Indicates whether the dictionary contains the specified key/value pair using the optionally specified value comparer.
+    /// Determines whether the dictionary contains the specified key and value pair.
     /// </summary>
+    /// <param name="kvp">The key and value pair to locate.</param>
+    /// <param name="comparer">The comparer to use to determine equality of the values, or <see langword="null"/> to use the default comparer.</param>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     public bool Contains(KeyValuePair<TKey, TValue> kvp, IEqualityComparer<TValue>? comparer = null) => Contains(kvp.Key, kvp.Value, comparer);
 
     /// <summary>
-    /// Indicates whether the dictionary contains the key and value using the optionally specified value comparer.
+    /// Determines whether the dictionary contains the specified key with a value equal to the specified value.
     /// </summary>
+    /// <param name="key">The key to locate.</param>
+    /// <param name="value">The value to locate.</param>
+    /// <param name="comparer">The comparer to use to determine equality of the values, or <see langword="null"/> to use the default comparer.</param>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     public bool Contains(TKey key, TValue value, IEqualityComparer<TValue>? comparer = null)
     {
         bool result = TryGetValue(key, out var current) && (comparer ?? EqualityComparer<TValue>.Default).Equals(value, current);
@@ -461,21 +496,26 @@ public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyV
     }
 
     /// <summary>
-    /// Determines whether the dictionary contains the specified key.
+    /// Determines whether the dictionary contains the specified key with a value that is still available.
     /// </summary>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     public bool ContainsKey(TKey key) => TryGetValue(key, out _);
 
     /// <summary>
-    /// Determines whether the dictionary contains the specified value.
+    /// Determines whether the dictionary contains a value equal to the specified value.
     /// </summary>
+    /// <param name="value">The value to locate.</param>
+    /// <param name="comparer">The comparer to use to determine equality of the values, or <see langword="null"/> to use the default comparer.</param>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     public bool ContainsValue(TValue value, IEqualityComparer<TValue>? comparer = null) => Values.Contains(value, comparer);
 
     /// <summary>
-    /// Removes all keys and values from the dictionary.
+    /// Removes all entries from the dictionary.
     /// </summary>
     /// <remarks>
-    /// This method removes all nodes one-by-one; using <see cref="Dispose" /> is faster if you do not need to reuse the dictionary instance.
+    /// Entries are removed one at a time. <see cref="Dispose"/> is faster if the dictionary will not be used again.
     /// </remarks>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     public void Clear()
     {
         // Note: we attempt to dispose the entries here also.
@@ -492,8 +532,12 @@ public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyV
     }
 
     /// <summary>
-    /// Returns an enumerator that iterates through the key/value pairs in the dictionary.
+    /// Returns an enumerator that iterates through the entries in the dictionary whose values are still available.
     /// </summary>
+    /// <remarks>
+    /// Enumeration is safe while other threads modify the dictionary. Entries added by other threads during enumeration may or may not be included.
+    /// </remarks>
+    /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
     {
         ThrowIfDisposed(out var lookup);
@@ -521,8 +565,12 @@ public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyV
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     /// <summary>
-    /// Disposes the <see cref="WeakValueDictionary{TKey, TValue}" />, removing all entries and preventing further use.
+    /// Removes all entries from the dictionary and prevents further use. Most members throw <see cref="ObjectDisposedException"/> afterwards.
     /// </summary>
+    /// <remarks>
+    /// Disposing is faster than <see cref="Clear"/> and should be preferred for dictionaries that will not be used again, since it also avoids the cost of
+    /// finalizing the dictionary.
+    /// </remarks>
     public void Dispose()
     {
         _containerValues.Dispose(this);

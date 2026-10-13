@@ -28,6 +28,7 @@ public partial class ListDictionary<TKey, TValue> :
     /// <summary>
     /// Initializes a new instance of the <see cref="ListDictionary{TKey, TValue}"/> class with the specified initial capacity for key/value list pairs.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="capacity"/> is less than <c>0</c>.</exception>
     public ListDictionary(int capacity) : this(capacity, null) { }
 
     /// <summary>
@@ -39,13 +40,14 @@ public partial class ListDictionary<TKey, TValue> :
     /// Initializes a new instance of the <see cref="ListDictionary{TKey, TValue}"/> class with the specified initial capacity for key/value list pairs,
     /// and uses the specified key comparer.
     /// </summary>
+    /// <exception cref="ArgumentOutOfRangeException"><paramref name="capacity"/> is less than <c>0</c>.</exception>
     public ListDictionary(int capacity, IEqualityComparer<TKey>? keyComparer)
     {
         _lookup = new(capacity, keyComparer);
     }
 
     /// <summary>
-    /// Gets the value set associated with the specified key. If the key is not found then a new value set is returned which can be used to add values to the
+    /// Gets the value list associated with the specified key. If the key is not found then a new value list is returned which can be used to add values to the
     /// key or to monitor when items are added to the key.
     /// </summary>
     /// <remarks>
@@ -189,10 +191,7 @@ public partial class ListDictionary<TKey, TValue> :
         return 0;
     }
 
-    /// <summary>
-    /// Gets the values for the specified key.
-    /// </summary>
-    /// <returns>A value indicating whether the key was found.</returns>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.TryGetValues(TKey, out TValueCollection)"/>
     public bool TryGetValues(TKey key, [MaybeNullWhen(false)] out ValueList valueList) => _lookup.TryGetValue(key, out valueList);
 
 #if !NETSTANDARD2_0
@@ -296,13 +295,13 @@ public partial class ListDictionary<TKey, TValue> :
     /// <inheritdoc cref="ValueLists"/>
     IReadOnlyCollection<IKeyedList<TKey, TValue>> IListDictionary<TKey, TValue>.ValueCollections => ValueLists;
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     IReadOnlyCollection<IKeyedList<TKey, TValue>> IReadOnlyCollectionDictionary<TKey, TValue, IKeyedList<TKey, TValue>>.ValueCollections => ValueLists;
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     IReadOnlyCollection<IReadOnlyKeyedList<TKey, TValue>> IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyKeyedList<TKey, TValue>>.ValueCollections => ValueLists;
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     bool IListDictionary<TKey, TValue>.TryGetValues(TKey key, [MaybeNullWhen(false)] out IKeyedList<TKey, TValue> valueCollection)
     {
         bool result = TryGetValues(key, out var v);
@@ -310,7 +309,7 @@ public partial class ListDictionary<TKey, TValue> :
         return result;
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     bool IReadOnlyCollectionDictionary<TKey, TValue, IKeyedList<TKey, TValue>>.TryGetValues(TKey key, [MaybeNullWhen(false)] out IKeyedList<TKey, TValue> valueCollection)
     {
         bool result = TryGetValues(key, out var v);
@@ -318,7 +317,7 @@ public partial class ListDictionary<TKey, TValue> :
         return result;
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     bool IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyKeyedList<TKey, TValue>>.TryGetValues(TKey key, [MaybeNullWhen(false)] out IReadOnlyKeyedList<TKey, TValue> valueCollection)
     {
         bool result = TryGetValues(key, out var v);

@@ -12,9 +12,11 @@ namespace Singulink.Collections;
 partial class Map<TLeft, TRight>
 {
     /// <summary>
-    /// Gets an alternate lookup that can be used to perform operations on this map using <typeparamref name="TAlternateLeft"/> instead of <typeparamref
-    /// name="TLeft"/> and <typeparamref name="TAlternateRight"/> instead of <typeparamref name="TRight"/>.
+    /// Gets an alternate lookup that can be used to perform operations on this map using <typeparamref name="TAlternateLeft"/> instead of
+    /// <typeparamref name="TLeft"/> and <typeparamref name="TAlternateRight"/> instead of <typeparamref name="TRight"/>.
     /// </summary>
+    /// <exception cref="InvalidOperationException">The map's comparers do not implement <see cref="IAlternateEqualityComparer{TAlternate, T}"/> for the
+    /// alternate types.</exception>
     public AlternateLookup<TAlternateLeft, TAlternateRight> GetAlternateLookup<TAlternateLeft, TAlternateRight>()
         where TAlternateLeft : notnull, allows ref struct
         where TAlternateRight : notnull, allows ref struct
@@ -26,16 +28,23 @@ partial class Map<TLeft, TRight>
     }
 
     /// <summary>
-    /// Gets an alternate lookup that can be used to perform operations on this map using <typeparamref name="TAlternateLeft"/> instead of <typeparamref
-    /// name="TLeft"/>.
+    /// Gets an alternate lookup that can be used to perform operations on this map using <typeparamref name="TAlternateLeft"/> instead of
+    /// <typeparamref name="TLeft"/>.
     /// </summary>
+    /// <exception cref="InvalidOperationException">The map's left comparer does not implement <see cref="IAlternateEqualityComparer{TAlternate, T}"/> for
+    /// <typeparamref name="TAlternateLeft"/>.</exception>
     public AlternateLeftLookup<TAlternateLeft> GetAlternateLeftLookup<TAlternateLeft>()
         where TAlternateLeft : notnull, allows ref struct
     {
         return new AlternateLeftLookup<TAlternateLeft>(this, _leftSide.GetAlternateLookup<TAlternateLeft>());
     }
 
-    /// <inheritdoc cref="GetAlternateLookup{TAlternateLeft, TAlternateRight}"/>
+    /// <summary>
+    /// Attempts to get an alternate lookup that can be used to perform operations on this map using <typeparamref name="TAlternateLeft"/> instead of
+    /// <typeparamref name="TLeft"/> and <typeparamref name="TAlternateRight"/> instead of <typeparamref name="TRight"/>.
+    /// </summary>
+    /// <returns><see langword="true"/> if the map's comparers implement <see cref="IAlternateEqualityComparer{TAlternate, T}"/> for the alternate types and
+    /// the lookup was created; otherwise <see langword="false"/>.</returns>
     public bool TryGetAlternateLookup<TAlternateLeft, TAlternateRight>(
         [MaybeNullWhen(false)] out AlternateLookup<TAlternateLeft, TAlternateRight> lookup)
         where TAlternateLeft : notnull, allows ref struct
@@ -52,7 +61,12 @@ partial class Map<TLeft, TRight>
         return false;
     }
 
-    /// <inheritdoc cref="GetAlternateLeftLookup{TAlternateLeft}"/>
+    /// <summary>
+    /// Attempts to get an alternate lookup that can be used to perform operations on this map using <typeparamref name="TAlternateLeft"/> instead of
+    /// <typeparamref name="TLeft"/>.
+    /// </summary>
+    /// <returns><see langword="true"/> if the map's left comparer implements <see cref="IAlternateEqualityComparer{TAlternate, T}"/> for
+    /// <typeparamref name="TAlternateLeft"/> and the lookup was created; otherwise <see langword="false"/>.</returns>
     public bool TryGetAlternateLeftLookup<TAlternateLeft>(
         [MaybeNullWhen(false)] out AlternateLeftLookup<TAlternateLeft> lookup)
         where TAlternateLeft : notnull, allows ref struct
@@ -140,13 +154,13 @@ partial class Map<TLeft, TRight>
             Unsafe.As<IAlternateEqualityComparer<TAlternateRight, TRight>>(_altRightSide.Dictionary.Comparer);
 
         /// <summary>
-        /// Gets a value indicating if the map contains an association between the specified alternate left and alternate right value.
+        /// Determines whether the map contains an association between the specified alternate left and alternate right value.
         /// </summary>
         public bool Contains(TAlternateLeft leftValue, TAlternateRight rightValue) =>
             _altLeftSide.TryGetValue(leftValue, out TRight right) && RightComparer.Equals(rightValue, right);
 
         /// <summary>
-        /// Gets a value indicating if the map contains an association between the specified alternate left and alternate right value.
+        /// Determines whether the map contains an association between the specified alternate left and alternate right value.
         /// </summary>
         public bool Contains(
             TAlternateLeft leftValue,
@@ -185,7 +199,7 @@ partial class Map<TLeft, TRight>
         /// <summary>
         /// Removes an association from the map between the specified alternate left and alternate right value if they currently map to each other.
         /// </summary>
-        /// <returns><see langword="true"/> if removal was successful, otherwise <see langword="false"/>.</returns>
+        /// <returns><see langword="true"/> if the association was found and removed; otherwise <see langword="false"/>.</returns>
         /// <remarks>
         /// If the left and right values do not map to each other then no changes are made to the map and the removal does not succeed.
         /// </remarks>
@@ -211,7 +225,7 @@ partial class Map<TLeft, TRight>
         }
 
         /// <summary>
-        /// Removes the mapping with the specified alternate left value.
+        /// Removes the association with the specified alternate left value.
         /// </summary>
         public bool RemoveLeft(TAlternateLeft leftValue)
         {
@@ -226,7 +240,7 @@ partial class Map<TLeft, TRight>
         }
 
         /// <summary>
-        /// Removes the mapping with the specified alternate left value.
+        /// Removes the association with the specified alternate left value.
         /// </summary>
         public bool RemoveLeft(TAlternateLeft leftKey, [MaybeNullWhen(false)] out TLeft actualLeftKey, [MaybeNullWhen(false)] out TRight rightValue)
         {
@@ -241,12 +255,12 @@ partial class Map<TLeft, TRight>
         }
 
         /// <summary>
-        /// Removes the mapping with the specified alternate right value.
+        /// Removes the association with the specified alternate right value.
         /// </summary>
-        public bool RemoveRight(TAlternateRight rightKey) => _altRightSide.Remove(rightKey, out _, out _);
+        public bool RemoveRight(TAlternateRight rightKey) => RemoveRight(rightKey, out _, out _);
 
         /// <summary>
-        /// Removes the mapping with the specified alternate right value.
+        /// Removes the association with the specified alternate right value.
         /// </summary>
         public bool RemoveRight(TAlternateRight rightKey, [MaybeNullWhen(false)] out TRight actualRightKey, [MaybeNullWhen(false)] out TLeft leftValue)
         {
@@ -274,7 +288,7 @@ partial class Map<TLeft, TRight>
         /// had.
         /// </summary>
         /// <remarks>
-        /// This method is functionally equivalent to removing any existing associations for the left and right values and then adding the new association, so
+        /// Equivalent to removing any existing associations for the left and right values and then adding the new association, so
         /// it is guaranteed to succeed.
         /// </remarks>
         public void Set(TAlternateLeft leftValue, TAlternateRight rightValue, out TLeft actualLeftValue, out TRight actualRightValue)
@@ -297,7 +311,7 @@ partial class Map<TLeft, TRight>
         /// Sets an association in the map between the specified alternate left value and right value, overriding any existing associations these values had.
         /// </summary>
         /// <remarks>
-        /// This method is functionally equivalent to removing any existing associations for the left and right values and then adding the new association, so
+        /// Equivalent to removing any existing associations for the left and right values and then adding the new association, so
         /// it is guaranteed to succeed.
         /// </remarks>
         public void Set(TAlternateLeft leftValue, TRight rightValue, out TLeft actualLeftValue)
@@ -318,7 +332,7 @@ partial class Map<TLeft, TRight>
         /// Sets an association in the map between the specified left value and alternate right value, overriding any existing associations these values had.
         /// </summary>
         /// <remarks>
-        /// This method is functionally equivalent to removing any existing associations for the left and right values and then adding the new association, so
+        /// Equivalent to removing any existing associations for the left and right values and then adding the new association, so
         /// it is guaranteed to succeed.
         /// </remarks>
         public void Set(TLeft leftValue, TAlternateRight rightValue, out TRight actualRightValue)
@@ -379,7 +393,7 @@ partial class Map<TLeft, TRight>
         /// the map.</returns>
         public bool TryAdd(TAlternateLeft leftValue, TRight rightValue, [MaybeNullWhen(false)] out TLeft actualLeftValue)
         {
-            if (_altLeftSide.ContainsKey(leftValue) || !_altRightSide.Dictionary.ContainsKey(rightValue))
+            if (_altLeftSide.ContainsKey(leftValue) || _altRightSide.Dictionary.ContainsKey(rightValue))
             {
                 actualLeftValue = default;
                 return false;
@@ -436,7 +450,7 @@ partial class Map<TLeft, TRight>
     }
 
     /// <summary>
-    /// Provides a type that can be used to perform operations on a <see cref="Map{TLeft, TRight}"/> using <typeparamref name="TAlternateLeft"/> instead of
+    /// Provides an alternate lookup that can be used to perform operations on a <see cref="Map{TLeft, TRight}"/> using <typeparamref name="TAlternateLeft"/> instead of
     /// <typeparamref name="TLeft"/>.
     /// </summary>
     public readonly struct AlternateLeftLookup<TAlternateLeft> where TAlternateLeft : notnull, allows ref struct
@@ -490,13 +504,13 @@ partial class Map<TLeft, TRight>
         public Map<TLeft, TRight> Map => _map;
 
         /// <summary>
-        /// Gets a value indicating if the map contains an association between the specified alternate left value and right value.
+        /// Determines whether the map contains an association between the specified alternate left value and right value.
         /// </summary>
         public bool Contains(TAlternateLeft leftValue, TRight rightValue) =>
             _altLeftSide.TryGetValue(leftValue, out TRight right) && _map._rightSide.Comparer.Equals(rightValue, right);
 
         /// <summary>
-        /// Gets a value indicating if the map contains an association between the specified alternate left value and right value.
+        /// Determines whether the map contains an association between the specified alternate left value and right value.
         /// </summary>
         public bool Contains(TAlternateLeft leftValue, TRight rightValue, [MaybeNullWhen(false)] out TLeft actualLeftValue) =>
             _altLeftSide.TryGetValue(leftValue, out actualLeftValue, out TRight right) && _map._rightSide.Comparer.Equals(rightValue, right);
@@ -518,7 +532,7 @@ partial class Map<TLeft, TRight>
         /// <summary>
         /// Removes an association from the map between the specified alternate left and alternate right value if they currently map to each other.
         /// </summary>
-        /// <returns><see langword="true"/> if removal was successful, otherwise <see langword="false"/>.</returns>
+        /// <returns><see langword="true"/> if the association was found and removed; otherwise <see langword="false"/>.</returns>
         /// <remarks>
         /// If the left and right values do not map to each other then no changes are made to the map and the removal does not succeed.
         /// </remarks>
@@ -537,7 +551,7 @@ partial class Map<TLeft, TRight>
         }
 
         /// <summary>
-        /// Removes the mapping with the specified alternate left value.
+        /// Removes the association with the specified alternate left value.
         /// </summary>
         public bool RemoveLeft(TAlternateLeft leftValue)
         {
@@ -552,7 +566,7 @@ partial class Map<TLeft, TRight>
         }
 
         /// <summary>
-        /// Removes the mapping with the specified alternate left value.
+        /// Removes the association with the specified alternate left value.
         /// </summary>
         public bool RemoveLeft(TAlternateLeft leftKey, [MaybeNullWhen(false)] out TLeft actualLeftKey, [MaybeNullWhen(false)] out TRight rightValue)
         {
@@ -573,7 +587,7 @@ partial class Map<TLeft, TRight>
         /// Sets an association in the map between the specified alternate left value and right value, overriding any existing associations these values had.
         /// </summary>
         /// <remarks>
-        /// This method is functionally equivalent to removing any existing associations for the left and right values and then adding the new association, so
+        /// Equivalent to removing any existing associations for the left and right values and then adding the new association, so
         /// it is guaranteed to succeed.
         /// </remarks>
         public void Set(TAlternateLeft leftValue, TRight rightValue, out TLeft actualLeftValue)
@@ -600,7 +614,7 @@ partial class Map<TLeft, TRight>
         /// the map.</returns>
         public bool TryAdd(TAlternateLeft leftValue, TRight rightValue, [MaybeNullWhen(false)] out TLeft actualLeftValue)
         {
-            if (_altLeftSide.ContainsKey(leftValue) || !_map._rightSide.ContainsKey(rightValue))
+            if (_altLeftSide.ContainsKey(leftValue) || _map._rightSide.ContainsKey(rightValue))
             {
                 actualLeftValue = default;
                 return false;

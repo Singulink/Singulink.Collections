@@ -35,15 +35,17 @@ public partial class HashSetDictionary<TKey, TValue>
         public TKey Key => _key;
 
         /// <summary>
-        /// Gets the dictionary this value set is associate with.
+        /// Gets the dictionary this value set is associated with.
         /// </summary>
         public HashSetDictionary<TKey, TValue> Dictionary => _dictionary;
 
         /// <summary>
-        /// Gets the number of items in this value set. If the count is zero, this value set is detached from <see cref="Dictionary"/>, i.e. calling <see
-        /// cref="ContainsKey(TKey)"/> on the dictionary and passing in <see cref="Key"/> as a parameter will return <see langword="false"/>.
-        /// When items are added to the value set it is attached (or re-attached) to the dictionary.
+        /// Gets the number of items in this value set.
         /// </summary>
+        /// <remarks>
+        /// A value set with no items is detached from its <see cref="Dictionary"/>, so <see cref="HashSetDictionary{TKey, TValue}.ContainsKey(TKey)"/> returns
+        /// <see langword="false"/> for its <see cref="Key"/>. The value set is attached to the dictionary again when items are added to it.
+        /// </remarks>
         public int Count => GetSet().Count;
 
         internal HashSet<TValue> LastSet => _lastSet;
@@ -79,12 +81,12 @@ public partial class HashSetDictionary<TKey, TValue>
         public bool Contains(TValue item) => GetSet().Contains(item);
 
         /// <summary>
-        /// Copies the elements of the set to an array.
+        /// Copies the items of the set to an array.
         /// </summary>
         public void CopyTo(TValue[] array) => GetSet().CopyTo(array);
 
         /// <summary>
-        /// Copies the elements of the set to an array starting at the specified index.
+        /// Copies the items of the set to an array starting at the specified index.
         /// </summary>
         public void CopyTo(TValue[] array, int arrayIndex) => GetSet().CopyTo(array, arrayIndex);
 
@@ -109,12 +111,12 @@ public partial class HashSetDictionary<TKey, TValue>
         public bool IsSupersetOf(IEnumerable<TValue> other) => GetSet().IsSupersetOf(other);
 
         /// <summary>
-        /// Determines whether this set and the specified set share any common elements.
+        /// Determines whether this set and the specified collection share any common items.
         /// </summary>
         public bool Overlaps(IEnumerable<TValue> other) => GetSet().Overlaps(other);
 
         /// <summary>
-        /// Determines whether this set and the specified collection contain the same elements.
+        /// Determines whether this set and the specified collection contain the same items.
         /// </summary>
         public bool SetEquals(IEnumerable<TValue> other) => GetSet().SetEquals(other);
 
@@ -248,7 +250,7 @@ public partial class HashSetDictionary<TKey, TValue>
         #endregion
 
         /// <summary>
-        /// Enumerates the elements of a <see cref="ReadOnlyValueSet"/> or <see cref="ValueSet"/>.
+        /// Enumerates the items of a <see cref="ReadOnlyValueSet"/> or <see cref="ValueSet"/>.
         /// </summary>
         public struct Enumerator : IEnumerator<TValue>
         {
@@ -264,7 +266,7 @@ public partial class HashSetDictionary<TKey, TValue>
             }
 
             /// <summary>
-            /// Gets the element at the current position of the enumerator.
+            /// Gets the item at the current position of the enumerator.
             /// </summary>
             public TValue Current => _setEnumerator.Current;
 

@@ -52,7 +52,7 @@ public partial class ReadOnlyMap<TLeft, TRight> : IMap<TLeft, TRight>
     /// <inheritdoc cref="Map{TLeft, TRight}.GetEnumerator"/>
     public IEnumerator<KeyValuePair<TLeft, TRight>> GetEnumerator() => _map.GetEnumerator();
 
-    #region Explicit Interface Implemenetations
+    #region Explicit Interface Implementations
 
     /// <inheritdoc cref="this[TLeft]"/>
     TRight IMap<TLeft, TRight>.this[TLeft leftValue]

@@ -13,9 +13,11 @@ namespace Singulink.Collections;
 partial class WeakValueDictionary<TKey, TValue>
 {
     /// <summary>
-    /// Gets an alternate lookup that can be used to perform operations on this dictionary using <typeparamref name="TAlternateKey"/> instead of <typeparamref
-    /// name="TKey"/>.
+    /// Gets an alternate lookup that can be used to perform operations on this dictionary using <typeparamref name="TAlternateKey"/> instead of
+    /// <typeparamref name="TKey"/>.
     /// </summary>
+    /// <exception cref="InvalidOperationException">The dictionary's comparer does not implement <see cref="IAlternateEqualityComparer{TAlternate, T}"/> for
+    /// <typeparamref name="TAlternateKey"/>.</exception>
     public AlternateLookup<TAlternateKey> GetAlternateLookup<TAlternateKey>()
         where TAlternateKey : notnull, allows ref struct
     {
@@ -23,7 +25,12 @@ partial class WeakValueDictionary<TKey, TValue>
         return new AlternateLookup<TAlternateKey>(this, lookup.GetAlternateLookup<TAlternateKey>());
     }
 
-    /// <inheritdoc cref="GetAlternateLookup{TAlternateKey}"/>
+    /// <summary>
+    /// Attempts to get an alternate lookup that can be used to perform operations on this dictionary using <typeparamref name="TAlternateKey"/> instead of
+    /// <typeparamref name="TKey"/>.
+    /// </summary>
+    /// <returns><see langword="true"/> if the dictionary's comparer implements <see cref="IAlternateEqualityComparer{TAlternate, T}"/> for
+    /// <typeparamref name="TAlternateKey"/> and the lookup was created; otherwise <see langword="false"/>.</returns>
     public bool TryGetAlternateLookup<TAlternateKey>(
         [MaybeNullWhen(false)] out AlternateLookup<TAlternateKey> lookup)
         where TAlternateKey : notnull, allows ref struct
@@ -57,8 +64,10 @@ partial class WeakValueDictionary<TKey, TValue>
         }
 
         /// <summary>
-        /// Gets or sets the value associated with the specified alternate key.
+        /// Gets or sets the value associated with the specified alternate key. Setting a value replaces any existing value for the key.
         /// </summary>
+        /// <exception cref="KeyNotFoundException">The key does not exist in the dictionary, or its value has been garbage collected.</exception>
+        /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
         public TValue this[TAlternateKey key]
         {
             get
@@ -80,8 +89,11 @@ partial class WeakValueDictionary<TKey, TValue>
         }
 
         /// <summary>
-        /// Adds the specified alternate key and value to the dictionary.
+        /// Attempts to add the specified alternate key and value to the dictionary.
         /// </summary>
+        /// <returns><see langword="true"/> if the key and value were added; <see langword="false"/> if the dictionary already contains the key with a value that is
+        /// still available.</returns>
+        /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
         public bool TryAdd(TAlternateKey key, TValue value)
         {
             // Try to find an existing key on a node that isn't meant to be alive any more:
@@ -121,16 +133,27 @@ partial class WeakValueDictionary<TKey, TValue>
         public bool ContainsKey(TAlternateKey key) => TryGetValue(key, out _);
 
         /// <summary>
-        /// Returns a value indicating whether the dictionary contains the specified alternate key.
+        /// Determines whether the dictionary contains the specified alternate key with a value that is still available.
         /// </summary>
+        /// <param name="key">The alternate key to locate.</param>
+        /// <param name="actualKey">When this method returns, contains the key instance stored in the dictionary if the key was found; otherwise the default
+        /// value.</param>
+        /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
         public bool ContainsKey(TAlternateKey key, [MaybeNullWhen(false)] out TKey actualKey) => TryGetValue(key, out actualKey, out _);
 
         /// <inheritdoc cref="Remove(TAlternateKey, out TKey, out TValue)"/>
         public bool Remove(TAlternateKey key) => Remove(key, out _, out _);
 
         /// <summary>
-        /// Removes the value with the specified alternate key from the dictionary.
+        /// Removes the entry with the specified alternate key from the dictionary.
         /// </summary>
+        /// <param name="key">The alternate key of the entry to remove.</param>
+        /// <param name="actualKey">When this method returns, contains the key instance that was stored in the dictionary if the entry was found; otherwise the
+        /// default value.</param>
+        /// <param name="value">When this method returns, contains the value that was removed if the entry was found and its value was still available; otherwise
+        /// <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the entry was found and removed; otherwise <see langword="false"/>.</returns>
+        /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
         public bool Remove(TAlternateKey key, [MaybeNullWhen(false)] out TKey actualKey, [MaybeNullWhen(false)] out TValue value)
         {
             _dictionary.ThrowIfDisposed(out var lookup);
@@ -191,6 +214,13 @@ partial class WeakValueDictionary<TKey, TValue>
         /// <summary>
         /// Gets the value associated with the specified alternate key.
         /// </summary>
+        /// <param name="key">The alternate key of the value to get.</param>
+        /// <param name="actualKey">When this method returns, contains the key instance stored in the dictionary if the key was found; otherwise the default
+        /// value.</param>
+        /// <param name="value">When this method returns, contains the value associated with the key if it was found and is still available; otherwise
+        /// <see langword="null"/>.</param>
+        /// <returns><see langword="true"/> if the key was found and its value is still available; otherwise <see langword="false"/>.</returns>
+        /// <exception cref="ObjectDisposedException">The dictionary has been disposed.</exception>
         public bool TryGetValue(TAlternateKey key, [MaybeNullWhen(false)] out TKey actualKey, [MaybeNullWhen(false)] out TValue value)
         {
             _dictionary.ThrowIfDisposed(out _);

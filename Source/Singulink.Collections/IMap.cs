@@ -57,7 +57,7 @@ public interface IMap<TLeft, TRight> : IReadOnlyMap<TLeft, TRight>, ICollection<
     /// Sets an association between the specified left and right values, overriding any existing associations involving either value.
     /// </summary>
     /// <remarks>
-    /// This method is functionally equivalent to removing any existing associations involving the specified left or right values and then adding the new
+    /// Equivalent to removing any existing associations involving the specified left or right values and then adding the new
     /// association, so it is guaranteed to succeed.
     /// </remarks>
 #pragma warning disable CA1716 // Identifiers should not match keywords

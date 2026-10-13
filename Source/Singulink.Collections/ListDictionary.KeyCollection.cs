@@ -75,7 +75,7 @@ public partial class ListDictionary<TKey, TValue>
         #endregion
 
         /// <summary>
-        /// Enumerates the values of a <see cref="KeyCollection"/>.
+        /// Enumerates the keys of a <see cref="KeyCollection"/>.
         /// </summary>
         public struct Enumerator : IEnumerator<TKey>
         {

@@ -11,16 +11,21 @@ namespace Singulink.Collections;
 partial class HashSetDictionary<TKey, TValue>
 {
     /// <summary>
-    /// Gets an alternate lookup that can be used to perform operations on this dictionary using <typeparamref name="TAlternateKey"/> instead of <typeparamref
-    /// name="TKey"/>.
+    /// Gets an alternate lookup that can be used to perform operations on this dictionary using <typeparamref name="TAlternateKey"/> instead of <typeparamref name="TKey"/>.
     /// </summary>
+    /// <exception cref="InvalidOperationException">The dictionary's key comparer does not implement <see cref="IAlternateEqualityComparer{TAlternate, T}"/> for
+    /// <typeparamref name="TAlternateKey"/>.</exception>
     public AlternateLookup<TAlternateKey> GetAlternateLookup<TAlternateKey>()
         where TAlternateKey : notnull, allows ref struct
     {
         return new AlternateLookup<TAlternateKey>(this, _lookup.GetAlternateLookup<TAlternateKey>());
     }
 
-    /// <inheritdoc cref="GetAlternateLookup{TAlternateKey}"/>
+    /// <summary>
+    /// Attempts to get an alternate lookup that can be used to perform operations on this dictionary using <typeparamref name="TAlternateKey"/> instead of <typeparamref name="TKey"/>.
+    /// </summary>
+    /// <returns><see langword="true"/> if the dictionary's key comparer implements <see cref="IAlternateEqualityComparer{TAlternate, T}"/> for
+    /// <typeparamref name="TAlternateKey"/> and the lookup was created; otherwise <see langword="false"/>.</returns>
     public bool TryGetAlternateLookup<TAlternateKey>(
         [MaybeNullWhen(false)] out AlternateLookup<TAlternateKey> lookup)
         where TAlternateKey : notnull, allows ref struct
@@ -108,7 +113,7 @@ partial class HashSetDictionary<TKey, TValue>
         public bool Contains(TAlternateKey key, TValue value) => Contains(key, value, out _);
 
         /// <summary>
-        /// Returns a value indicating whether the specified alternate key and associated value are present in the dictionary.
+        /// Determines whether the specified alternate key and associated value are present in the dictionary.
         /// </summary>
         public bool Contains(TAlternateKey key, TValue value, [MaybeNullWhen(false)] out TKey actualKey)
         {
@@ -125,7 +130,7 @@ partial class HashSetDictionary<TKey, TValue>
         public bool ContainsKey(TAlternateKey key) => _altLookup.ContainsKey(key);
 
         /// <summary>
-        /// Returns a value indicating whether the dictionary contains the specified alternate key.
+        /// Determines whether the dictionary contains the specified alternate key.
         /// </summary>
         public bool ContainsKey(TAlternateKey key, [MaybeNullWhen(false)] out TKey actualKey) => _altLookup.TryGetValue(key, out actualKey, out _);
 

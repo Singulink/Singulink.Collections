@@ -71,7 +71,7 @@ public class ReadOnlyHashSet<T> : ISet<T>, IReadOnlySet<T>
     public bool IsSupersetOf(IEnumerable<T> other) => _set.IsSupersetOf(other);
 
     /// <summary>
-    /// Determines whether this set and the specified set share any common items.
+    /// Determines whether this set and the specified collection share any common items.
     /// </summary>
     public bool Overlaps(IEnumerable<T> other) => _set.Overlaps(other);
 

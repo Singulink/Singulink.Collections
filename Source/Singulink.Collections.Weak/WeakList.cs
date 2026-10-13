@@ -337,7 +337,6 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     /// <summary>
     /// Returns an enumerator that iterates through the values in the list starting from the position of the specified node.
     /// </summary>
-    /// <param name="startNode">The node to start enumerating from.</param>
     /// <remarks>
     /// <para><paramref name="startNode"/> itself is not included in the enumeration. The first call to <see cref="Enumerator.MoveNext"/> moves to the value
     /// after it and the first call to <see cref="Enumerator.MovePrevious"/> moves to the value before it.</para>
@@ -363,7 +362,6 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     /// <summary>
     /// Returns an enumerator that iterates through the nodes in the list starting from the position of the specified node.
     /// </summary>
-    /// <param name="startNode">The node to start enumerating from.</param>
     /// <remarks>
     /// <para><paramref name="startNode"/> itself is not included in the enumeration. The first call to <see cref="NodeEnumerator.MoveNext"/> moves to the node
     /// after it and the first call to <see cref="NodeEnumerator.MovePrevious"/> moves to the node before it.</para>
@@ -376,16 +374,15 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
         return new(this, startNode);
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     IEnumerator<T> IEnumerable<T>.GetEnumerator() => new HeapValueEnumerator(GetEnumerator(), reversed: false, skipNewNodes: false);
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     IEnumerator IEnumerable.GetEnumerator() => new HeapValueEnumerator(GetEnumerator(), reversed: false, skipNewNodes: false);
 
     /// <summary>
     /// Searches for the first value in the list that matches the specified predicate.
     /// </summary>
-    /// <param name="match">The predicate that defines the conditions of the value to search for.</param>
     /// <returns>The node and value of the first match, or <see langword="null"/> if no match was found.</returns>
     /// <remarks>
     /// This operation enumerates the list, so it takes O(n) time plus the cost of the predicate calls. Nodes added by other threads during the search are not
@@ -487,7 +484,6 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     /// </summary>
     /// <param name="value">The value to search for.</param>
     /// <param name="comparer">The comparer to use to determine equality, or <see langword="null"/> to use the default comparer.</param>
-    /// <returns><see langword="true"/> if the value was found; otherwise <see langword="false"/>.</returns>
     /// <remarks>
     /// This operation enumerates the list, so it takes O(n) time plus the cost of the comparisons. Nodes added by other threads during the search are not
     /// considered.
@@ -502,7 +498,6 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     /// <summary>
     /// Removes the specified node from the list. Does nothing if the node has already been removed.
     /// </summary>
-    /// <param name="node">The node to remove.</param>
     /// <remarks>
     /// This operation takes O(1) time.
     /// </remarks>
@@ -519,7 +514,6 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     /// </summary>
     /// <param name="value">The value to remove.</param>
     /// <param name="comparer">The comparer to use to determine equality, or <see langword="null"/> to use the default comparer.</param>
-    /// <returns><see langword="true"/> if a value was found and removed; otherwise <see langword="false"/>.</returns>
     /// <remarks>
     /// This operation enumerates the list, so it takes O(n) time plus the cost of the comparisons. Nodes added by other threads during the search are not
     /// considered.

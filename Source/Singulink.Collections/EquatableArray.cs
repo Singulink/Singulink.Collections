@@ -14,12 +14,11 @@ namespace Singulink.Collections;
 public static class EquatableArray
 {
     /// <summary>
-    /// Returns an instance of the <see cref="EquatableArray{T}"/> class from the given collection.
+    /// Returns an <see cref="EquatableArray{T}"/> containing the specified items.
     /// </summary>
     /// <remarks>
-    /// Note: values of the collection are assumed to be immutable and interchangeable (that is, the standard equality and hash code contracts must be held, but
-    /// also must be consistent indefinitely, and the value you read out of the array is only guaranteed to be equal to the one passed in, not necessarily the
-    /// same instance or bits).
+    /// <para>The values in the array are assumed to be immutable and interchangeable. Equal values must stay equal and keep the same hash code indefinitely,
+    /// and a value read from the array is only guaranteed to be equal to the one that was passed in, not to be the same instance.</para>
     /// </remarks>
     public static EquatableArray<T> Create<T>(ImmutableArray<T> items)
     {
@@ -29,7 +28,7 @@ public static class EquatableArray
         return new(items);
     }
 
-    /// <inheritdoc cref="Create{T}(ImmutableArray{T})" />
+    /// <inheritdoc cref="Create{T}(ImmutableArray{T})"/>
     public static EquatableArray<T> Create<T>(IEnumerable<T> items)
     {
         if (items is EquatableArray<T> equatableArray)
@@ -42,7 +41,7 @@ public static class EquatableArray
         return array.Length is 0 ? EquatableArray<T>.Empty : new EquatableArray<T>(array);
     }
 
-    /// <inheritdoc cref="Create{T}(ImmutableArray{T})" />
+    /// <inheritdoc cref="Create{T}(ImmutableArray{T})"/>
     public static EquatableArray<T> Create<T>(params ReadOnlySpan<T> items)
     {
         if (items.Length is 0)
@@ -51,7 +50,7 @@ public static class EquatableArray
         return new EquatableArray<T>(ImmutableArray.Create(items));
     }
 
-    /// <inheritdoc cref="Create{T}(ImmutableArray{T})" />
+    /// <inheritdoc cref="Create{T}(ImmutableArray{T})"/>
     public static EquatableArray<T> Create<T>(params T[] items) => Create((ReadOnlySpan<T>)items);
 
     /// <summary>
@@ -61,12 +60,11 @@ public static class EquatableArray
 }
 
 /// <summary>
-/// An immutable array wrapper that provides value-based equality semantics.
+/// Represents an immutable array with value-based equality semantics.
 /// </summary>
 /// <remarks>
-/// Note: values of the array are assumed to be immutable and interchangeable (that is, the standard equality and hash code contracts must be held, but also
-/// must be consistent indefinitely, and the value you read out of the array is only guaranteed to be equal to the one passed in, not necessarily the same
-/// instance or bits).
+/// <para>The values in the array are assumed to be immutable and interchangeable. Equal values must stay equal and keep the same hash code indefinitely,
+/// and a value read from the array is only guaranteed to be equal to the one that was passed in, not to be the same instance.</para>
 /// </remarks>
 [CollectionBuilder(typeof(EquatableArray), "Create")]
 public sealed class EquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<EquatableArray<T>>, IFormattable
@@ -78,14 +76,13 @@ public sealed class EquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<E
     private EquatableArrayImpl<T> _impl;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="EquatableArray{T}"/> class from the given immutable array.
+    /// Initializes a new instance of the <see cref="EquatableArray{T}"/> class that wraps the specified immutable array.
     /// </summary>
     /// <remarks>
-    /// Note: values of the array are assumed to be immutable and interchangeable (that is, the standard equality and hash code contracts must be held, but also
-    /// must be consistent indefinitely, and the value you read out of the array is only guaranteed to be equal to the one passed in, not necessarily the same
-    /// instance or bits). Note: this constructor does not de-duplicate against existing instances when created (however, it can still later) - it is a quick
-    /// constructor that just copies the provided value directly, other than ensuring non-<see langword="null" /> - use methods on <see cref="EquatableArray" />
-    /// to get de-duplication.
+    /// <para>The values in the array are assumed to be immutable and interchangeable. Equal values must stay equal and keep the same hash code indefinitely,
+    /// and a value read from the array is only guaranteed to be equal to the one that was passed in, not to be the same instance.</para>
+    /// <para>This constructor wraps the array directly without de-duplicating it against existing instances, although the instance may still be de-duplicated
+    /// later. Use the methods on <see cref="EquatableArray"/> to create de-duplicated instances.</para>
     /// </remarks>
     public EquatableArray(ImmutableArray<T> array)
     {
@@ -108,7 +105,7 @@ public sealed class EquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<E
     /// </summary>
     public override int GetHashCode() => _impl.GetHashCode();
 
-    /// <inheritdoc cref="Equals(object?)" />
+    /// <inheritdoc cref="Equals(object?)"/>
     public bool Equals([NotNullWhen(true)] EquatableArray<T>? other)
     {
         // Check simple cases:
@@ -123,21 +120,21 @@ public sealed class EquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<E
         return _impl.Equals(ref other._impl);
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public override bool Equals(object? obj) => Equals(obj as EquatableArray<T>);
 
     /// <summary>
-    /// Value-based equality operator.
+    /// Determines whether two arrays are equal.
     /// </summary>
     public static bool operator ==(EquatableArray<T>? left, EquatableArray<T>? right) => Equals(left, right);
 
     /// <summary>
-    /// Value-based inequality operator.
+    /// Determines whether two arrays are not equal.
     /// </summary>
     public static bool operator !=(EquatableArray<T>? left, EquatableArray<T>? right) => !(left == right);
 
     /// <summary>
-    /// Gets a value indicating the number of elements in the array.
+    /// Gets the number of elements in the array.
     /// </summary>
     public int Length => _impl.Length;
 
@@ -151,66 +148,72 @@ public sealed class EquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<E
     /// </summary>
     public ref readonly T this[int index] => ref _impl[index];
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     int ICollection<T>.Count => Length;
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     int IReadOnlyCollection<T>.Count => Length;
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     bool ICollection<T>.IsReadOnly => true;
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     T IList<T>.this[int index]
     {
         get => this[index];
         set => EquatableArrayImpl.ThrowReadOnlyException();
     }
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     T IReadOnlyList<T>.this[int index] => this[index];
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     IEnumerator<T> IEnumerable<T>.GetEnumerator() => _impl.IEnumerableTGetEnumerator();
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     IEnumerator IEnumerable.GetEnumerator() => ((IEnumerable<T>)this).GetEnumerator();
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     void IList<T>.Insert(int index, T item) => EquatableArrayImpl.ThrowReadOnlyException();
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     void IList<T>.RemoveAt(int index) => EquatableArrayImpl.ThrowReadOnlyException();
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     void ICollection<T>.Add(T item) => EquatableArrayImpl.ThrowReadOnlyException();
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     void ICollection<T>.Clear() => EquatableArrayImpl.ThrowReadOnlyException();
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     void ICollection<T>.CopyTo(T[] array, int arrayIndex) => CopyTo(array, arrayIndex);
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     bool ICollection<T>.Remove(T item) => EquatableArrayImpl.ThrowReadOnlyException<bool>();
 
-    /// <inheritdoc />
+    /// <inheritdoc/>
     public override string ToString() => _impl.ToString();
 
-    /// <inheritdoc cref="IFormattable.ToString(string?, IFormatProvider?)" />
+    /// <summary>
+    /// Returns a string representation of the array using the specified format provider to format its elements.
+    /// </summary>
     public string ToString(IFormatProvider? formatProvider) => _impl.ToString(formatProvider);
 
-    /// <inheritdoc cref="IFormattable.ToString(string?, IFormatProvider?)" />
+    /// <summary>
+    /// Returns a string representation of the array using the specified format to format its elements.
+    /// </summary>
     public string ToString(string? elementFormat) => _impl.ToString(elementFormat);
 
-    /// <inheritdoc cref="IFormattable.ToString(string?, IFormatProvider?)" />
+    /// <summary>
+    /// Returns a string representation of the array using the specified format and format provider to format its elements.
+    /// </summary>
     public string ToString(string? elementFormat, IFormatProvider? formatProvider) => _impl.ToString(elementFormat, formatProvider);
 
-    /// <inheritdoc cref="IFormattable.ToString(string?, IFormatProvider?)" />
+    /// <inheritdoc cref="IFormattable.ToString(string?, IFormatProvider?)"/>
     string IFormattable.ToString(string? format, IFormatProvider? formatProvider) => ToString(format, formatProvider);
 
     /// <summary>
-    /// An equatable array enumerator.
+    /// Enumerates the elements of an <see cref="EquatableArray{T}"/>.
     /// </summary>
     public struct Enumerator
     {
@@ -227,7 +230,7 @@ public sealed class EquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<E
         public readonly T Current => _impl.Current;
 
         /// <summary>
-        /// Advances the enumerator to the next element of the equatable array, or returns <see langword="false" /> if the end of the collection is reached.
+        /// Advances the enumerator to the next element of the equatable array, or returns <see langword="false"/> if the end of the collection is reached.
         /// </summary>
         public bool MoveNext() => _impl.MoveNext();
     }
@@ -247,7 +250,9 @@ public sealed class EquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<E
     /// </summary>
     public ReadOnlySpan<T> AsSpan(int start, int length) => _impl.AsSpan(start, length);
 
-    /// <inheritdoc cref="AsSpan(int, int)" />
+    /// <summary>
+    /// Creates a new read-only span over the specified range of this equatable array.
+    /// </summary>
     public ReadOnlySpan<T> AsSpan(Range range) => _impl.AsSpan(range);
 
     /// <summary>
@@ -255,7 +260,7 @@ public sealed class EquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<E
     /// </summary>
     public bool Contains(T item) => _impl.Contains(item);
 
-    /// <inheritdoc cref="Contains(T)" />
+    /// <inheritdoc cref="Contains(T)"/>
     public bool Contains(T item, IEqualityComparer<T>? equalityComparer) => _impl.Contains(item, equalityComparer);
 
     /// <summary>
@@ -263,13 +268,23 @@ public sealed class EquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<E
     /// </summary>
     public void CopyTo(Span<T> destination) => _impl.CopyTo(destination);
 
-    /// <inheritdoc cref="CopyTo(Span{T})" />
+    /// <summary>
+    /// Copies the elements of the equatable array to the specified destination array.
+    /// </summary>
     public void CopyTo(T[] destination) => _impl.CopyTo(destination);
 
-    /// <inheritdoc cref="CopyTo(Span{T})" />
+    /// <summary>
+    /// Copies the elements of the equatable array to the specified destination array starting at the specified index of the destination.
+    /// </summary>
     public void CopyTo(T[] destination, int destinationIndex) => _impl.CopyTo(destination, destinationIndex);
 
-    /// <inheritdoc cref="CopyTo(Span{T})" />
+    /// <summary>
+    /// Copies a range of elements of the equatable array to the specified destination array.
+    /// </summary>
+    /// <param name="sourceIndex">The zero-based index in the equatable array at which copying begins.</param>
+    /// <param name="destination">The array to copy the elements to.</param>
+    /// <param name="destinationIndex">The zero-based index in the destination array at which storing begins.</param>
+    /// <param name="length">The number of elements to copy.</param>
     public void CopyTo(int sourceIndex, T[] destination, int destinationIndex, int length) => _impl.CopyTo(sourceIndex, destination, destinationIndex, length);
 
     /// <summary>
@@ -282,19 +297,19 @@ public sealed class EquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<E
     /// </summary>
     public int IndexOf(T item) => _impl.IndexOf(item);
 
-    /// <inheritdoc cref="IndexOf(T)" />
+    /// <inheritdoc cref="IndexOf(T)"/>
     public int IndexOf(T item, IEqualityComparer<T>? equalityComparer) => _impl.IndexOf(item, equalityComparer);
 
-    /// <inheritdoc cref="IndexOf(T)" />
+    /// <inheritdoc cref="IndexOf(T)"/>
     public int IndexOf(T item, int startIndex) => _impl.IndexOf(item, startIndex);
 
-    /// <inheritdoc cref="IndexOf(T)" />
+    /// <inheritdoc cref="IndexOf(T)"/>
     public int IndexOf(T item, int startIndex, IEqualityComparer<T>? equalityComparer) => _impl.IndexOf(item, startIndex, equalityComparer);
 
-    /// <inheritdoc cref="IndexOf(T)" />
+    /// <inheritdoc cref="IndexOf(T)"/>
     public int IndexOf(T item, int startIndex, int count) => _impl.IndexOf(item, startIndex, count);
 
-    /// <inheritdoc cref="IndexOf(T)" />
+    /// <inheritdoc cref="IndexOf(T)"/>
     public int IndexOf(T item, int startIndex, int count, IEqualityComparer<T>? equalityComparer) => _impl.IndexOf(item, startIndex, count, equalityComparer);
 
     /// <summary>
@@ -302,19 +317,19 @@ public sealed class EquatableArray<T> : IReadOnlyList<T>, IList<T>, IEquatable<E
     /// </summary>
     public int LastIndexOf(T item) => _impl.LastIndexOf(item);
 
-    /// <inheritdoc cref="LastIndexOf(T)" />
+    /// <inheritdoc cref="LastIndexOf(T)"/>
     public int LastIndexOf(T item, IEqualityComparer<T>? equalityComparer) => _impl.LastIndexOf(item, equalityComparer);
 
-    /// <inheritdoc cref="LastIndexOf(T)" />
+    /// <inheritdoc cref="LastIndexOf(T)"/>
     public int LastIndexOf(T item, int startIndex) => _impl.LastIndexOf(item, startIndex);
 
-    /// <inheritdoc cref="LastIndexOf(T)" />
+    /// <inheritdoc cref="LastIndexOf(T)"/>
     public int LastIndexOf(T item, int startIndex, IEqualityComparer<T>? equalityComparer) => _impl.LastIndexOf(item, startIndex, equalityComparer);
 
-    /// <inheritdoc cref="LastIndexOf(T)" />
+    /// <inheritdoc cref="LastIndexOf(T)"/>
     public int LastIndexOf(T item, int startIndex, int count) => _impl.LastIndexOf(item, startIndex, count);
 
-    /// <inheritdoc cref="LastIndexOf(T)" />
+    /// <inheritdoc cref="LastIndexOf(T)"/>
     public int LastIndexOf(T item, int startIndex, int count, IEqualityComparer<T>? equalityComparer) => _impl.LastIndexOf(item, startIndex, count, equalityComparer);
 
     /// <summary>

@@ -178,7 +178,17 @@ public partial class HashSetDictionary<TKey, TValue>
             int beforeCount = set.Count;
 
             set.SymmetricExceptWith(other);
-            FinishRemoving(set, beforeCount - set.Count);
+            int delta = set.Count - beforeCount;
+
+            // A symmetric difference can both add and remove items, so attach or detach the set based on the net change. If the count is unchanged the
+            // contents may still have changed, so the version is bumped to invalidate enumerators.
+
+            if (delta > 0)
+                FinishAdding(set, delta);
+            else if (delta < 0)
+                FinishRemoving(set, -delta);
+            else if (set.Count > 0)
+                _dictionary._version++;
         }
 
         /// <summary>
@@ -194,8 +204,8 @@ public partial class HashSetDictionary<TKey, TValue>
             var set = GetSet();
             int beforeCount = set.Count;
 
-            set.ExceptWith(other);
-            FinishAdding(set, beforeCount - set.Count);
+            set.UnionWith(other);
+            FinishAdding(set, set.Count - beforeCount);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
