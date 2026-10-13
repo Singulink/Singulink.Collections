@@ -11,7 +11,7 @@
 > [!IMPORTANT]
 > **`Singulink.Collections` v4 contains breaking changes.** The interface hierarchies have been restructured, value collections now implement `IGrouping<TKey, TValue>` for free LINQ interop, and the BCL projection extension methods (e.g. `AsReadOnlyDictionaryOfList`, `AsDictionaryOfCollection`) have been removed in favor of a smaller, cleaner surface. Impact is minimal for code that uses the concrete types or Singulink dictionary interfaces. See the [**v4 changes and migration guide**](V4-COLLECTIONS-CHANGES.md) if you were relying on the BCL adapters/shims.
 >
-> **`Singulink.Collections.Weak` v3 also contains breaking changes.** .NET 6 support was dropped, `WeakCollection` was removed, and `WeakList` was rewritten as a self-cleaning, thread-safe collection that maintains relative insertion order. `WeakValueDictionary` now automatically cleans up dead entries as well.
+> **`Singulink.Collections.Weak` v3 also contains breaking changes.** .NET 6 support was dropped, `WeakCollection` was removed, and `WeakList` was rewritten as a self-cleaning, thread-safe collection that maintains relative insertion order. `WeakValueDictionary` now automatically cleans up dead entries as well. See the [**v3 weak collections changes and migration guide**](V3-WEAK-COLLECTIONS-CHANGES.md) for details.
 
 **Singulink.Collections** provides generally useful collections that are missing from .NET. They are highly optimized for performance, well documented and follow the same design principles as built-in .NET collections so they should feel instantly familiar.
 
@@ -138,6 +138,9 @@ foreach (var s in subscribers)
 ```
 
 `WeakList<T>` automatically cleans up references to garbage collected values and is safe for concurrent access at an operation level, so individual operations are thread-safe without external locking.
+
+> [!TIP]
+> Coming from v2? See the [v3 weak collections changes and migration guide](V3-WEAK-COLLECTIONS-CHANGES.md) for the renamed members, the removed cleaning API and the new node-based list.
 
 ### WeakValueDictionary
 

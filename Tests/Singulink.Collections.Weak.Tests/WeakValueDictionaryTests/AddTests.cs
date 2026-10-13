@@ -11,7 +11,7 @@ public class AddTests
 
         dictionary.TryAdd(1, value).ShouldBeTrue();
 
-        dictionary.UnsafeCount.ShouldBe(1);
+        dictionary.Count.ShouldBe(1);
         dictionary.TryGetValue(1, out object? current).ShouldBeTrue();
         current.ShouldBeSameAs(value);
 
@@ -30,7 +30,7 @@ public class AddTests
         dictionary.TryAdd(2, value2).ShouldBeTrue();
         dictionary.TryAdd(3, value3).ShouldBeTrue();
 
-        dictionary.UnsafeCount.ShouldBe(3);
+        dictionary.Count.ShouldBe(3);
         dictionary.ToList().ShouldBe(
             [new(1, value1), new(2, value2), new(3, value3)],
             ignoreOrder: true);
@@ -93,7 +93,7 @@ public class AddTests
 
         dictionary.Add(1, value);
 
-        dictionary.UnsafeCount.ShouldBe(1);
+        dictionary.Count.ShouldBe(1);
         dictionary.TryGetValue(1, out object? current).ShouldBeTrue();
         current.ShouldBeSameAs(value);
 
@@ -110,7 +110,7 @@ public class AddTests
         dictionary.Add(1, value1);
         dictionary.Add(2, value2);
 
-        dictionary.UnsafeCount.ShouldBe(2);
+        dictionary.Count.ShouldBe(2);
         dictionary.ToList().ShouldBe([new(1, value1), new(2, value2)], ignoreOrder: true);
 
         GC.KeepAlive(value1);

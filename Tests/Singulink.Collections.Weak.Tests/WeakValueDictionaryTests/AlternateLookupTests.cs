@@ -230,7 +230,7 @@ public class AlternateLookupTests
         var lookup = dictionary.GetAlternateLookup<ReadOnlySpan<char>>();
         lookup["key".AsSpan()] = value;
 
-        dictionary.UnsafeCount.ShouldBe(1);
+        dictionary.Count.ShouldBe(1);
         dictionary.TryGetValue("key", out object? current).ShouldBeTrue();
         current.ShouldBeSameAs(value);
 
@@ -248,7 +248,7 @@ public class AlternateLookupTests
         var lookup = dictionary.GetAlternateLookup<ReadOnlySpan<char>>();
         lookup["key".AsSpan()] = value2;
 
-        dictionary.UnsafeCount.ShouldBe(1);
+        dictionary.Count.ShouldBe(1);
         dictionary.TryGetValue("key", out object? current).ShouldBeTrue();
         current.ShouldBeSameAs(value2);
 
@@ -306,7 +306,7 @@ public class AlternateLookupTests
         var lookup = dictionary.GetAlternateLookup<ReadOnlySpan<char>>();
         lookup.TryAdd("key".AsSpan(), value).ShouldBeTrue();
 
-        dictionary.UnsafeCount.ShouldBe(1);
+        dictionary.Count.ShouldBe(1);
         dictionary.TryGetValue("key", out object? current).ShouldBeTrue();
         current.ShouldBeSameAs(value);
 
@@ -503,7 +503,7 @@ public class AlternateLookupTests
         // Setting through a differently-cased span should overwrite the existing entry rather than add a second one.
         lookup["KEY".AsSpan()] = value2;
 
-        dictionary.UnsafeCount.ShouldBe(1);
+        dictionary.Count.ShouldBe(1);
         dictionary.TryGetValue("key", out object? current).ShouldBeTrue();
         current.ShouldBeSameAs(value2);
 

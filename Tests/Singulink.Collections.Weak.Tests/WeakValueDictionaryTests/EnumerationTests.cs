@@ -97,25 +97,25 @@ public class EnumerationTests
     }
 
     [TestMethod]
-    public void UnsafeCountTracksAddsAndRemoves()
+    public void CountTracksAddsAndRemoves()
     {
         var dictionary = new WeakValueDictionary<int, object>();
         object value1 = new();
         object value2 = new();
 
-        dictionary.UnsafeCount.ShouldBe(0);
+        dictionary.Count.ShouldBe(0);
 
         dictionary.TryAdd(1, value1);
-        dictionary.UnsafeCount.ShouldBe(1);
+        dictionary.Count.ShouldBe(1);
 
         dictionary.TryAdd(2, value2);
-        dictionary.UnsafeCount.ShouldBe(2);
+        dictionary.Count.ShouldBe(2);
 
         dictionary.Remove(1);
-        dictionary.UnsafeCount.ShouldBe(1);
+        dictionary.Count.ShouldBe(1);
 
         dictionary.Clear();
-        dictionary.UnsafeCount.ShouldBe(0);
+        dictionary.Count.ShouldBe(0);
 
         GC.KeepAlive(value1);
         GC.KeepAlive(value2);
@@ -148,5 +148,19 @@ public class EnumerationTests
 
         GC.KeepAlive(liveValues);
         GC.KeepAlive(dictionary);
+    }
+
+    [TestMethod]
+    public void ObsoleteUnsafeCountMatchesCount()
+    {
+        var dictionary = new WeakValueDictionary<string, object>();
+        object value = new();
+        dictionary.Add("a", value);
+
+#pragma warning disable CS0618 // Type or member is obsolete
+        dictionary.UnsafeCount.ShouldBe(dictionary.Count);
+#pragma warning restore CS0618
+
+        GC.KeepAlive(value);
     }
 }

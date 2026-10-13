@@ -6,10 +6,11 @@ namespace Singulink.Collections;
 public sealed partial class WeakList<T>
 {
     /// <summary>
-    /// Represents a version of the list at a point in time - the version is increased only whenever an item is added to the list.
+    /// Represents the version of a <see cref="WeakList{T}"/> at a point in time. The version increases every time a node is added to the list, so versions
+    /// can be compared to determine whether a node was added before or after a given point.
     /// </summary>
     /// <remarks>
-    /// This allows callers to detect whether a node was added after they begun a long operation they split up into multiple steps to not starve finalizers.
+    /// Versions are obtained from <see cref="WeakList{T}.Version"/> and <see cref="Node.Version"/>.
     /// </remarks>
     public readonly struct ListVersion : IEquatable<ListVersion>, IComparable<ListVersion>
     {
@@ -28,22 +29,22 @@ public sealed partial class WeakList<T>
         public static bool operator !=(ListVersion left, ListVersion right) => left._version != right._version;
 
         /// <summary>
-        /// Determines whether the first version is greater than or equal to the second.
+        /// Determines whether the first version is the same as or later than the second.
         /// </summary>
         public static bool operator >=(ListVersion left, ListVersion right) => left._version >= right._version;
 
         /// <summary>
-        /// Determines whether the first version is less than or equal to the second.
+        /// Determines whether the first version is the same as or earlier than the second.
         /// </summary>
         public static bool operator <=(ListVersion left, ListVersion right) => left._version <= right._version;
 
         /// <summary>
-        /// Determines whether the first version is greater than the second.
+        /// Determines whether the first version is later than the second.
         /// </summary>
         public static bool operator >(ListVersion left, ListVersion right) => left._version > right._version;
 
         /// <summary>
-        /// Determines whether the first version is less than the second.
+        /// Determines whether the first version is earlier than the second.
         /// </summary>
         public static bool operator <(ListVersion left, ListVersion right) => left._version < right._version;
 

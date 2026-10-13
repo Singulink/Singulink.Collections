@@ -12,7 +12,7 @@ public class RemoveTests
 
         dictionary.Remove(1).ShouldBeTrue();
 
-        dictionary.UnsafeCount.ShouldBe(0);
+        dictionary.Count.ShouldBe(0);
         dictionary.ContainsKey(1).ShouldBeFalse();
 
         GC.KeepAlive(value);

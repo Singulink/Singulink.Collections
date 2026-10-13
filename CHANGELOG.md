@@ -38,10 +38,13 @@ See the [v4 changes and migration guide](V4-COLLECTIONS-CHANGES.md) for full det
 
 ### Version 3.0
 
+See the [v3 weak collections changes and migration guide](V3-WEAK-COLLECTIONS-CHANGES.md) for full details, rationale, and migration examples.
+
 - Drop .NET 6 support
 - **Breaking:** Removed `WeakCollection`. Use `WeakList` instead
 - **Breaking:** `WeakList` was rewritten as a self-cleaning, thread-safe linked list. Dead values are removed automatically as they are garbage collected, so the `AutoCleanAddCount` / `Clean()` / `TrimExcess()` surface is gone and individual operations are safe for concurrent use without external locking
 - `WeakValueDictionary` now automatically removes entries whose values have been garbage collected
+- `UnsafeCount` is obsolete and hidden on both collections. Use `Count` instead, which returns the same value
 - Fixed `WeakList` holding on to memory longer than necessary on .NET Standard when a removed value was still alive elsewhere
 
 ### V2.2

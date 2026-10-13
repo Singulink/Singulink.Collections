@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Concurrent;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -99,10 +100,11 @@ public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyV
     public IEnumerable<TValue> Values => this.Select((x) => x.Value);
 
     /// <summary>
-    /// Gets the number of entries in the internal data structure. This value can change at any time, and additionally may be overcounting the real amount of
-    /// live entries, since it does not exclude entries whose values have been collected where the entry has not yet been collected.
+    /// Gets the number of entries in the dictionary. This value can change at any time, and may briefly include entries whose values have been garbage
+    /// collected but have not yet been removed by the finalizer thread.
     /// </summary>
-    public int UnsafeCount
+    /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
+    public int Count
     {
         get
         {
@@ -112,6 +114,13 @@ public sealed partial class WeakValueDictionary<TKey, TValue> : IEnumerable<KeyV
             return result;
         }
     }
+
+    /// <summary>
+    /// Gets the number of entries in the dictionary. Use <see cref="Count"/> instead.
+    /// </summary>
+    [Obsolete($"Use {nameof(Count)} instead.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public int UnsafeCount => Count;
 
     /// <summary>
     /// Gets or sets the value associated with the specified key.

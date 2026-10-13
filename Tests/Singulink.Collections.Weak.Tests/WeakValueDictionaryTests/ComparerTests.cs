@@ -87,7 +87,7 @@ public class ComparerTests
         // Setting via a differently-cased key should overwrite the existing entry rather than insert a new one.
         dictionary["KEY"] = newValue;
 
-        dictionary.UnsafeCount.ShouldBe(1);
+        dictionary.Count.ShouldBe(1);
         dictionary["key"].ShouldBeSameAs(newValue);
 
         GC.KeepAlive(oldValue);

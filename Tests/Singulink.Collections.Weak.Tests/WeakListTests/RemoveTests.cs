@@ -388,6 +388,20 @@ public class RemoveTests
     }
 
     [TestMethod]
+    public void ObsoleteUnsafeCountMatchesCount()
+    {
+        var list = new WeakList<object>();
+        object value = new();
+        list.AddLast(value);
+
+#pragma warning disable CS0618 // Type or member is obsolete
+        list.UnsafeCount.ShouldBe((int)list.Count);
+#pragma warning restore CS0618
+
+        GC.KeepAlive(value);
+    }
+
+    [TestMethod]
     public void RemoveNodeWhoseValueDiedBeforeFinalizerRan()
     {
         var list = new WeakList<object>();

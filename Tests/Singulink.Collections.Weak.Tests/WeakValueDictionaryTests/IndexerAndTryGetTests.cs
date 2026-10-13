@@ -31,7 +31,7 @@ public class IndexerAndTryGetTests
 
         dictionary[1] = value;
 
-        dictionary.UnsafeCount.ShouldBe(1);
+        dictionary.Count.ShouldBe(1);
         dictionary[1].ShouldBeSameAs(value);
 
         GC.KeepAlive(value);
@@ -47,7 +47,7 @@ public class IndexerAndTryGetTests
 
         dictionary[1] = newValue;
 
-        dictionary.UnsafeCount.ShouldBe(1);
+        dictionary.Count.ShouldBe(1);
         dictionary[1].ShouldBeSameAs(newValue);
         dictionary.ContainsValue(oldValue).ShouldBeFalse();
 

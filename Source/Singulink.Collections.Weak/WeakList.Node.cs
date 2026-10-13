@@ -10,15 +10,16 @@ namespace Singulink.Collections;
 #pragma warning disable SA1401 // Fields should be private
 
 /// <content>
-/// Contains the <see cref="Node"/> nested type for <see cref="WeakList{T}"/> type.
+/// Contains the <see cref="Node"/> nested type for <see cref="WeakList{T}"/>.
 /// </content>
 public sealed partial class WeakList<T>
 {
     /// <summary>
-    /// Represents a node in a <see cref="WeakList{T}" />.
+    /// Represents a node in a <see cref="WeakList{T}"/>, which identifies the position of a value in the list.
     /// </summary>
     /// <remarks>
-    /// Holding a strong reference to a <see cref="Node" /> does not prevent the value it references from being garbage collected.
+    /// <para>Holding a reference to a node does not prevent its value from being garbage collected. Nodes can be used to remove a value from the list in O(1)
+    /// time, to add values relative to its position, or to start an enumeration from its position.</para>
     /// </remarks>
     public sealed partial class Node : IDisposable
     {
@@ -87,27 +88,27 @@ public sealed partial class WeakList<T>
         }
 
         /// <summary>
-        /// Gets the list that this node belongs to, or used to belong to.
+        /// Gets the list that this node belongs to. The list is still returned after the node has been removed from it.
         /// </summary>
         public WeakList<T> List => _impl.Container;
         internal WeakList<T> ListDirect => _impl.ContainerDirect;
 
         /// <summary>
-        /// Gets the target value of this node if it is still available, otherwise <see langword="null" />.
+        /// Gets the value of this node, or <see langword="null"/> if the value has been garbage collected.
         /// </summary>
         /// <remarks>
-        /// This method can return <see langword="null" /> even if the node has not yet been removed from the list, so don't try to use this to optimize
-        /// avoiding calling <see cref="Dispose()" /> unnecessarily; it's better to just call it unconditionally.
+        /// The value can be <see langword="null"/> before the node has been removed from the list, since removal happens on the finalizer thread shortly after
+        /// the value is collected. Do not use this property to decide whether to call <see cref="Dispose()"/>; disposing a node is always safe.
         /// </remarks>
         public T? Value => _impl.Value;
 
         /// <summary>
-        /// Gets the version of the list when this node was added.
+        /// Gets the version of the list at the time this node was added. See <see cref="WeakList{T}.Version"/>.
         /// </summary>
         public ListVersion Version => new(_version);
 
         /// <summary>
-        /// Gets a value indicating whether this node has been removed from the list.
+        /// Gets a value indicating whether this node has been removed from the list, either explicitly or because its value was garbage collected.
         /// </summary>
         public bool IsRemoved
         {
@@ -119,18 +120,21 @@ public sealed partial class WeakList<T>
         }
 
         /// <summary>
-        /// Disposes the node, removing it from the <see cref="WeakList{T}" /> it belongs to.
+        /// Removes this node from the list. Does nothing if the node has already been removed.
         /// </summary>
         public void Dispose() => _impl.Dispose(this);
 
 #if NET
         /// <summary>
-        /// Try to update the target of this node to a new value.
+        /// Replaces the value of this node with the specified value without changing its position in the list.
         /// </summary>
-        /// <exception cref="ArgumentNullException">If the value is null.</exception>
+        /// <param name="newTarget">The new value for the node.</param>
+        /// <returns><see langword="true"/> if the value was replaced; <see langword="false"/> if the node has been removed from the list or the list has been
+        /// disposed.</returns>
         /// <remarks>
-        /// This method is only supported on frameworks that have <see cref="DependentHandle" />.
+        /// This method is only available on .NET, since it depends on <see cref="DependentHandle"/>.
         /// </remarks>
+        /// <exception cref="ArgumentNullException"><paramref name="newTarget"/> is <see langword="null"/>.</exception>
         public bool TryUpdateTarget(T newTarget) => _impl.TryUpdateTarget(newTarget);
 #endif
 

@@ -142,7 +142,7 @@ public class LifetimeTests
         // Keys are held strongly, so a key that references its value keeps that value reachable: the entry is self-sustaining and neither dies.
         keyRef.TryGetTarget(out _).ShouldBeTrue();
         valueRef.TryGetTarget(out _).ShouldBeTrue();
-        dictionary.UnsafeCount.ShouldBe(1);
+        dictionary.Count.ShouldBe(1);
 
         GC.KeepAlive(dictionary);
     }

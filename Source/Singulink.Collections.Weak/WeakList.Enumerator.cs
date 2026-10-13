@@ -8,8 +8,12 @@ namespace Singulink.Collections;
 public sealed partial class WeakList<T>
 {
     /// <summary>
-    /// Structure for enumerating over values in the list.
+    /// Enumerates the values in a <see cref="WeakList{T}"/>.
     /// </summary>
+    /// <remarks>
+    /// <para>Enumerators are safe to use while other threads modify the list, and they skip nodes whose values have been garbage collected. They can move in
+    /// both directions, and moving past either end of the list wraps around to the other end.</para>
+    /// </remarks>
     public struct Enumerator
     {
         internal NodeEnumerator _nodeEnumerator;
@@ -22,17 +26,18 @@ public sealed partial class WeakList<T>
         }
 
         /// <summary>
-        /// Gets the current node in the enumeration.
+        /// Gets the node at the current position of the enumerator.
         /// </summary>
-        /// <exception cref="ObjectDisposedException">If the enumerator has been disposed.</exception>
-        /// <exception cref="InvalidOperationException">If the enumeration has not started or has already finished.</exception>
+        /// <exception cref="InvalidOperationException">The enumerator is not positioned on a value, either because enumeration has not started, has reached the
+        /// end, or the list has been disposed.</exception>
         public readonly Node CurrentNode => _nodeEnumerator.Current;
 
         /// <summary>
-        /// Gets the current value in the enumeration.
+        /// Gets the value at the current position of the enumerator.
         /// </summary>
-        /// <exception cref="InvalidOperationException">If the enumeration has not started or has already finished (including when the enumerator was created
-        /// from a starting node and neither <see cref="MoveNext" /> nor <see cref="MovePrevious" /> has been called yet).</exception>
+        /// <exception cref="InvalidOperationException">The enumerator is not positioned on a value, either because enumeration has not started, has reached the
+        /// end, or the list has been disposed. An enumerator created from a start node is not positioned on a value until <see cref="MoveNext"/> or
+        /// <see cref="MovePrevious"/> is called.</exception>
         public readonly T Current
         {
             get
@@ -47,23 +52,25 @@ public sealed partial class WeakList<T>
         }
 
         /// <summary>
-        /// Gets a value indicating whether the current value was added to the list during the enumeration.
+        /// Gets a value indicating whether the node at the current position was added to the list after the enumerator was created.
         /// </summary>
-        /// <exception cref="NullReferenceException">May be thrown if the current value is not valid.</exception>
+        /// <exception cref="InvalidOperationException">The enumerator is not positioned on a value.</exception>
         public readonly bool WasAddedDuringEnumeration => _nodeEnumerator.WasAddedDuringEnumeration;
 
         /// <summary>
-        /// Helper API to support enumerating over an instance of <see cref="WeakList{T}.Enumerator" />.
+        /// Returns this enumerator, which allows it to be used directly in a <see langword="foreach"/> statement.
         /// </summary>
         [EditorBrowsable(EditorBrowsableState.Never)]
         public readonly Enumerator GetEnumerator() => this;
 
         /// <summary>
-        /// Moves to the next value in the enumeration.
+        /// Advances the enumerator to the next value in the list.
         /// </summary>
+        /// <returns><see langword="true"/> if the enumerator advanced to a value; <see langword="false"/> if the end of the list was reached or the list has been
+        /// disposed.</returns>
         /// <remarks>
-        /// <para>If the enumeration has not begun, or has reached the end, calling this method will move to the first valid node.</para>
-        /// <para>If the enumerator or list has been disposed, this method will always return <see langword="false" />.</para>
+        /// If the enumerator is not positioned on a value, because enumeration has not started or has reached the end, this method moves to the first value in
+        /// the list.
         /// </remarks>
         public bool MoveNext()
         {
@@ -80,11 +87,13 @@ public sealed partial class WeakList<T>
         }
 
         /// <summary>
-        /// Moves to the previous value in the enumeration.
+        /// Moves the enumerator to the previous value in the list.
         /// </summary>
+        /// <returns><see langword="true"/> if the enumerator moved to a value; <see langword="false"/> if the start of the list was reached or the list has been
+        /// disposed.</returns>
         /// <remarks>
-        /// <para>If the enumeration has not begun, or has reached the end, calling this method will move to the last valid node.</para>
-        /// <para>If the enumerator or list has been disposed, this method will always return <see langword="false" />.</para>
+        /// If the enumerator is not positioned on a value, because enumeration has not started or has reached the start, this method moves to the last value in
+        /// the list.
         /// </remarks>
         public bool MovePrevious()
         {
@@ -101,14 +110,15 @@ public sealed partial class WeakList<T>
         }
 
         /// <summary>
-        /// Gets an enumerable for the remaining items in the enumeration.
+        /// Returns an enumerable that continues this enumeration from its current position.
         /// </summary>
-        /// <param name="reversed">If <see langword="true" />, the enumeration will be in reverse order.</param>
-        /// <param name="skipNewNodes">If <see langword="true" />, nodes added during enumeration will be skipped.</param>
+        /// <param name="reversed"><see langword="true"/> to enumerate towards the start of the list; <see langword="false"/> to enumerate towards the end.</param>
+        /// <param name="skipNewNodes"><see langword="true"/> to skip nodes that were added to the list after this enumerator was created; <see langword="false"/>
+        /// to include them.</param>
         /// <remarks>
-        /// Nodes that have values which have been collected will be skipped.
+        /// Nodes whose values have been garbage collected are skipped.
         /// </remarks>
-        /// <exception cref="ObjectDisposedException">If the enumerator has been disposed.</exception>
+        /// <exception cref="ObjectDisposedException">The enumerator was not created by a list.</exception>
         public readonly IEnumerable<T> AsEnumerable(bool reversed = false, bool skipNewNodes = false)
         {
             Throw.IfDisposed(_nodeEnumerator._list is null, typeof(Enumerator));

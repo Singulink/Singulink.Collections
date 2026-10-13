@@ -11,7 +11,7 @@ public class FuzzTests
     {
         // In this, we make an actual dictionary, perform random operations on both it and a WeakValueDictionary, and ensure they stay the same (we keep all
         // values alive, so nothing should be collected during the test). This exercises all of the core (non-wrapper) APIs other than the alternate lookup and
-        // custom comparer based ones: TryAdd, Add, the indexer setter, TryGetValue, Remove(key, out value), Remove(key, value), Clear, UnsafeCount and
+        // custom comparer based ones: TryAdd, Add, the indexer setter, TryGetValue, Remove(key, out value), Remove(key, value), Clear, Count and
         // enumeration.
         Random r = new(seed);
         var weakDictionary = new WeakValueDictionary<int, object>();
@@ -124,7 +124,7 @@ public class FuzzTests
             }
 
             // Check they're the same (order independent):
-            weakDictionary.UnsafeCount.ShouldBe(actualDictionary.Count);
+            weakDictionary.Count.ShouldBe(actualDictionary.Count);
             weakDictionary.ToList().ShouldBe(actualDictionary.ToList(), ignoreOrder: true);
         }
 

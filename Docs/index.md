@@ -22,7 +22,7 @@ The following collections are included in the package:
 - `WeakValueDictionary`: Collection of keys and weakly referenced values (with `AlternateLookup` support).
 
 > [!IMPORTANT]
-> `Singulink.Collections` v4 contains breaking changes. See the [v4 changes and migration guide](https://github.com/Singulink/Singulink.Collections/blob/main/V4-COLLECTIONS-CHANGES.md) on GitHub for details.
+> `Singulink.Collections` v4 and `Singulink.Collections.Weak` v3 contain breaking changes. See the [v4 changes and migration guide](https://github.com/Singulink/Singulink.Collections/blob/main/V4-COLLECTIONS-CHANGES.md) and the [v3 weak collections changes and migration guide](https://github.com/Singulink/Singulink.Collections/blob/main/V3-WEAK-COLLECTIONS-CHANGES.md) on GitHub for details.
 
 ### About Singulink
 

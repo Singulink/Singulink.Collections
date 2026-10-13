@@ -10,7 +10,7 @@ public class ClearTests
 
         dictionary.Clear();
 
-        dictionary.UnsafeCount.ShouldBe(0);
+        dictionary.Count.ShouldBe(0);
         dictionary.ToList().ShouldBeEmpty();
     }
 
@@ -23,7 +23,7 @@ public class ClearTests
 
         dictionary.Clear();
 
-        dictionary.UnsafeCount.ShouldBe(0);
+        dictionary.Count.ShouldBe(0);
         dictionary.ContainsKey(1).ShouldBeFalse();
         dictionary.ToList().ShouldBeEmpty();
 
@@ -41,7 +41,7 @@ public class ClearTests
 
         dictionary.Clear();
 
-        dictionary.UnsafeCount.ShouldBe(0);
+        dictionary.Count.ShouldBe(0);
         dictionary.ToList().ShouldBeEmpty();
 
         GC.KeepAlive(values);
@@ -57,11 +57,11 @@ public class ClearTests
             dictionary.TryAdd(i, values[i]);
 
         dictionary.Clear();
-        dictionary.UnsafeCount.ShouldBe(0);
+        dictionary.Count.ShouldBe(0);
         dictionary.ToList().ShouldBeEmpty();
 
         dictionary.Clear(); // Should be safe to call again
-        dictionary.UnsafeCount.ShouldBe(0);
+        dictionary.Count.ShouldBe(0);
         dictionary.ToList().ShouldBeEmpty();
 
         GC.KeepAlive(values);
@@ -77,7 +77,7 @@ public class ClearTests
             dictionary.TryAdd(i, oldValues[i]);
 
         dictionary.Clear();
-        dictionary.UnsafeCount.ShouldBe(0);
+        dictionary.Count.ShouldBe(0);
         dictionary.ToList().ShouldBeEmpty();
 
         object newValue1 = new();
@@ -85,7 +85,7 @@ public class ClearTests
         dictionary.TryAdd(1, newValue1);
         dictionary.TryAdd(2, newValue2);
 
-        dictionary.UnsafeCount.ShouldBe(2);
+        dictionary.Count.ShouldBe(2);
         dictionary.ToList().ShouldBe([new(1, newValue1), new(2, newValue2)], ignoreOrder: true);
 
         GC.KeepAlive(oldValues);

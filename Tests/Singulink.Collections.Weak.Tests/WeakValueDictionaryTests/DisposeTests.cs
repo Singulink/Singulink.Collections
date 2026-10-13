@@ -191,12 +191,12 @@ public class DisposeTests
     }
 
     [TestMethod]
-    public void UnsafeCountThrowsAfterDispose()
+    public void CountThrowsAfterDispose()
     {
         var dictionary = new WeakValueDictionary<int, object>();
         dictionary.Dispose();
 
-        Should.Throw<ObjectDisposedException>(() => _ = dictionary.UnsafeCount);
+        Should.Throw<ObjectDisposedException>(() => _ = dictionary.Count);
     }
 
     [TestMethod]

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
@@ -9,19 +10,22 @@ namespace Singulink.Collections;
 #pragma warning disable CA1816 // Dispose methods should call SuppressFinalize
 
 /// <summary>
-/// Represents a collection of weakly referenced values that maintains relative insertion order. This type is also automatically safe for concurrent access at
-/// an operation level (that is, individual operations are thread-safe, but your own custom compound operations may still need external synchronization).
+/// Represents a collection of weakly referenced values that maintains relative insertion order and automatically removes values as they are garbage
+/// collected.
 /// </summary>
+/// <typeparam name="T">The type of the values in the list.</typeparam>
 /// <remarks>
-/// <para>This type automatically cleans references for garbage collected values on its own without requiring any user interaction.</para>
-/// <para>Note: Highly contested scenarios may experience significant practical performance degradation due to lock contention, be aware of this when using in
-/// such environments.</para>
-/// <para>Note: All provided big O runtimes are strict, but those above O(1) assume the case where no new nodes were added by another thread during the
-/// operation - if new nodes were added concurrently, it may cause the operation to take longer than expected (e.g., if a concurrent operation happens to
-/// always add a new node just after an enumeration's current node, then it will have to loop through all of those until it gets past them).</para>
-/// <para>For optimal performance, avoid letting the finalizer run; instead, dispose the list explicitly or clear it - otherwise, the finalizer thread may be
-/// blocked for a significant amount of time if the list is large.</para>
-/// <para>Note: This type is not safe to resurrect, or use in a partially finalized state.</para>
+/// <para>Values are held through weak references, so adding a value to the list does not prevent it from being garbage collected. When a value is collected
+/// its node is removed from the list automatically on the finalizer thread shortly afterwards, so the list never needs to be cleaned and enumeration never
+/// returns <see langword="null"/> values.</para>
+/// <para>Individual operations are safe for concurrent use from multiple threads without external synchronization, including while other threads are
+/// enumerating the list. Compound operations that must observe a consistent view of the list still require synchronization, either with
+/// <see cref="UnsafePerformLockedOperation{TState}(TState, Action{WeakList{T}, TState})"/> or with your own lock. Heavily contended lists may experience
+/// reduced performance due to lock contention.</para>
+/// <para>Operation times stated in this documentation assume that no nodes are added by other threads while the operation runs. Operations that enumerate
+/// the list visit nodes that other threads add after the current position, so concurrent additions can lengthen them.</para>
+/// <para>Dispose lists that are no longer needed instead of letting them be finalized. The finalizer removes all remaining nodes, which can block the
+/// finalizer thread for a significant amount of time if the list is large. A list must not be used after it has been finalized.</para>
 /// </remarks>
 public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : class
 {
@@ -58,7 +62,7 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
 #endif
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="WeakList{T}"/> class with no elements.
+    /// Initializes a new instance of the <see cref="WeakList{T}"/> class.
     /// </summary>
     public WeakList()
     {
@@ -82,7 +86,11 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     /// <summary>
     /// Gets the number of nodes in the list.
     /// </summary>
-    /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
+    /// <remarks>
+    /// The count includes nodes whose values have been garbage collected but have not yet been removed from the list, so it may briefly exceed the number of
+    /// values that enumeration returns.
+    /// </remarks>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public nint Count
     {
         get
@@ -97,9 +105,19 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// Gets the version of the list - this allows callers to detect whether a node was added after they begun a non-atomic operation.
+    /// Gets the number of nodes in the list. This member is obsolete, use <see cref="Count"/> instead.
     /// </summary>
-    /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
+    /// <exception cref="OverflowException">The list contains more nodes than <see cref="int.MaxValue"/>.</exception>
+    [Obsolete($"Use {nameof(Count)} instead.")]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public int UnsafeCount => checked((int)Count);
+
+    /// <summary>
+    /// Gets the current version of the list. The version increases every time a node is added, so it can be compared to <see cref="Node.Version"/> to
+    /// determine whether a node was added before or after a point in time.
+    /// </summary>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public ListVersion Version
     {
         get
@@ -114,10 +132,14 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// Adds a value to the start of the list - takes O(1) time.
+    /// Adds a value to the start of the list.
     /// </summary>
-    /// <exception cref="ArgumentNullException">If the value is null.</exception>
-    /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
+    /// <returns>The node that was added.</returns>
+    /// <remarks>
+    /// This operation takes O(1) time.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public Node AddFirst(T value)
     {
         using var scope = EnterLock(out bool wasDisposed);
@@ -127,10 +149,14 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// Adds a value to the end of the list - takes O(1) time.
+    /// Adds a value to the end of the list.
     /// </summary>
-    /// <exception cref="ArgumentNullException">If the value is null.</exception>
-    /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
+    /// <returns>The node that was added.</returns>
+    /// <remarks>
+    /// This operation takes O(1) time.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public Node AddLast(T value)
     {
         using var scope = EnterLock(out bool wasDisposed);
@@ -140,19 +166,37 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// Adds a value before the specified node of the list - takes O(1) time.
+    /// Adds a value before the specified node.
     /// </summary>
+    /// <param name="currentNode">The node to add the value before.</param>
+    /// <param name="value">The value to add.</param>
+    /// <param name="allowBeforeRemovedNode"><see langword="true"/> to add the value near the position that <paramref name="currentNode"/> occupied if it has been
+    /// removed from the list, or <see langword="false"/> to return <see langword="null"/> in that case.</param>
+    /// <returns>The node that was added, or <see langword="null"/> if <paramref name="currentNode"/> has been removed from the list and
+    /// <paramref name="allowBeforeRemovedNode"/> is <see langword="false"/>.</returns>
     /// <remarks>
-    /// <para>The <see cref="AddBefore(Node, T)" /> override behaves as if <paramref name="allowBeforeRemovedNode"/> is <see langword="true" />.</para>
-    /// <para>If a node has been removed, multiple adds near it might result in inconsistent ordering compared to if it was still in the list.</para>
-    /// <para>If adding next to a removed node, then the O(1) runtime is no longer guaranteed.</para>
+    /// <para>This operation takes O(1) time unless <paramref name="currentNode"/> has been removed from the list, in which case the list is searched backwards
+    /// from its former position for the nearest node that is still present and the value is added after that node.</para>
+    /// <para>Values added relative to a node that has been removed may end up in a different relative order than they would have had if the node were still
+    /// in the list.</para>
     /// </remarks>
-    /// <exception cref="ArgumentNullException">If the value is null.</exception>
-    /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
-    /// <exception cref="InvalidOperationException">If the node does not belong to this list.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException"><paramref name="currentNode"/> does not belong to this list.</exception>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public Node? AddBefore(Node currentNode, T value, bool allowBeforeRemovedNode) => AddNear(currentNode, value, allowBeforeRemovedNode, addBefore: true);
 
-    /// <inheritdoc cref="AddBefore(Node, T, bool)" />
+    /// <summary>
+    /// Adds a value before the specified node, or near the position the node occupied if it has been removed from the list.
+    /// </summary>
+    /// <param name="currentNode">The node to add the value before.</param>
+    /// <param name="value">The value to add.</param>
+    /// <returns>The node that was added.</returns>
+    /// <remarks>
+    /// <inheritdoc cref="AddBefore(Node, T, bool)" path="/remarks/*"/>
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException"><paramref name="currentNode"/> does not belong to this list.</exception>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public Node AddBefore(Node currentNode, T value)
     {
         var result = AddBefore(currentNode, value, true);
@@ -161,19 +205,37 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// Adds a value after the specified node of the list - takes O(1) time.
+    /// Adds a value after the specified node.
     /// </summary>
+    /// <param name="currentNode">The node to add the value after.</param>
+    /// <param name="value">The value to add.</param>
+    /// <param name="allowAfterRemovedNode"><see langword="true"/> to add the value near the position that <paramref name="currentNode"/> occupied if it has been
+    /// removed from the list, or <see langword="false"/> to return <see langword="null"/> in that case.</param>
+    /// <returns>The node that was added, or <see langword="null"/> if <paramref name="currentNode"/> has been removed from the list and
+    /// <paramref name="allowAfterRemovedNode"/> is <see langword="false"/>.</returns>
     /// <remarks>
-    /// <para>The <see cref="AddAfter(Node, T)" /> override behaves as if <paramref name="allowAfterRemovedNode"/> is <see langword="true" />.</para>
-    /// <para>If a node has been removed, multiple adds near it might result in inconsistent ordering compared to if it was still in the list.</para>
-    /// <para>If adding next to a removed node, then the O(1) runtime is no longer guaranteed.</para>
+    /// <para>This operation takes O(1) time unless <paramref name="currentNode"/> has been removed from the list, in which case the list is searched backwards
+    /// from its former position for the nearest node that is still present and the value is added after that node.</para>
+    /// <para>Values added relative to a node that has been removed may end up in a different relative order than they would have had if the node were still
+    /// in the list.</para>
     /// </remarks>
-    /// <exception cref="ArgumentNullException">If the value is null.</exception>
-    /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
-    /// <exception cref="InvalidOperationException">If the node does not belong to this list.</exception>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException"><paramref name="currentNode"/> does not belong to this list.</exception>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public Node? AddAfter(Node currentNode, T value, bool allowAfterRemovedNode) => AddNear(currentNode, value, allowAfterRemovedNode, addBefore: false);
 
-    /// <inheritdoc cref="AddAfter(Node, T, bool)" />
+    /// <summary>
+    /// Adds a value after the specified node, or near the position the node occupied if it has been removed from the list.
+    /// </summary>
+    /// <param name="currentNode">The node to add the value after.</param>
+    /// <param name="value">The value to add.</param>
+    /// <returns>The node that was added.</returns>
+    /// <remarks>
+    /// <inheritdoc cref="AddAfter(Node, T, bool)" path="/remarks/*"/>
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException"><paramref name="currentNode"/> does not belong to this list.</exception>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public Node AddAfter(Node currentNode, T value)
     {
         var result = AddAfter(currentNode, value, true);
@@ -182,28 +244,49 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// Tries to add a value before the specified value of the list, or returns <see langword="null" /> - this method has the same runtime as
-    /// <see cref="GetEnumerator()" /> plus O(n * comparer.Equals).
+    /// Searches the list for the first value that is equal to <paramref name="existingValue"/> and adds <paramref name="value"/> before it.
     /// </summary>
-    /// <exception cref="ArgumentNullException">If the value is null.</exception>
-    /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
+    /// <param name="existingValue">The value to search for.</param>
+    /// <param name="value">The value to add.</param>
+    /// <param name="comparer">The comparer to use to determine equality, or <see langword="null"/> to use the default comparer.</param>
+    /// <returns>The node that was added, or <see langword="null"/> if <paramref name="existingValue"/> was not found in the list.</returns>
+    /// <remarks>
+    /// This operation enumerates the list, so it takes O(n) time plus the cost of the comparisons. Nodes added by other threads during the search are not
+    /// considered.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public Node? TryInsertBefore(T existingValue, T value, IEqualityComparer<T>? comparer = null) => TryInsertNear(existingValue, value, comparer, addBefore: true);
 
     /// <summary>
-    /// Tries to add a value after the specified value of the list, or returns <see langword="null" /> - this method has the same runtime as
-    /// <see cref="GetEnumerator()" /> plus O(n * comparer.Equals).
+    /// Searches the list for the first value that is equal to <paramref name="existingValue"/> and adds <paramref name="value"/> after it.
     /// </summary>
-    /// <exception cref="ArgumentNullException">If the value is null.</exception>
-    /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
+    /// <param name="existingValue">The value to search for.</param>
+    /// <param name="value">The value to add.</param>
+    /// <param name="comparer">The comparer to use to determine equality, or <see langword="null"/> to use the default comparer.</param>
+    /// <returns>The node that was added, or <see langword="null"/> if <paramref name="existingValue"/> was not found in the list.</returns>
+    /// <remarks>
+    /// This operation enumerates the list, so it takes O(n) time plus the cost of the comparisons. Nodes added by other threads during the search are not
+    /// considered.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public Node? TryInsertAfter(T existingValue, T value, IEqualityComparer<T>? comparer = null) => TryInsertNear(existingValue, value, comparer, addBefore: false);
 
     /// <summary>
-    /// Tries to add a value before the specified value of the list, or throws - this method has the same runtime as
-    /// <see cref="GetEnumerator()" /> plus O(n * comparer.Equals).
+    /// Searches the list for the first value that is equal to <paramref name="existingValue"/> and adds <paramref name="value"/> before it.
     /// </summary>
-    /// <exception cref="ArgumentNullException">If the value is null.</exception>
-    /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
-    /// <exception cref="ArgumentException">If the specified existing value was not found.</exception>
+    /// <param name="existingValue">The value to search for.</param>
+    /// <param name="value">The value to add.</param>
+    /// <param name="comparer">The comparer to use to determine equality, or <see langword="null"/> to use the default comparer.</param>
+    /// <returns>The node that was added.</returns>
+    /// <remarks>
+    /// This operation enumerates the list, so it takes O(n) time plus the cost of the comparisons. Nodes added by other threads during the search are not
+    /// considered.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="existingValue"/> was not found in the list.</exception>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public Node InsertBefore(T existingValue, T value, IEqualityComparer<T>? comparer = null)
     {
         var result = TryInsertNear(existingValue, value, comparer, addBefore: true);
@@ -215,12 +298,19 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// Tries to add a value after the specified value of the list, or throws - this method has the same runtime as
-    /// <see cref="GetEnumerator()" /> plus O(n * comparer.Equals).
+    /// Searches the list for the first value that is equal to <paramref name="existingValue"/> and adds <paramref name="value"/> after it.
     /// </summary>
-    /// <exception cref="ArgumentNullException">If the value is null.</exception>
-    /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
-    /// <exception cref="ArgumentException">If the specified existing value was not found.</exception>
+    /// <param name="existingValue">The value to search for.</param>
+    /// <param name="value">The value to add.</param>
+    /// <param name="comparer">The comparer to use to determine equality, or <see langword="null"/> to use the default comparer.</param>
+    /// <returns>The node that was added.</returns>
+    /// <remarks>
+    /// This operation enumerates the list, so it takes O(n) time plus the cost of the comparisons. Nodes added by other threads during the search are not
+    /// considered.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="value"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentException"><paramref name="existingValue"/> was not found in the list.</exception>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public Node InsertAfter(T existingValue, T value, IEqualityComparer<T>? comparer = null)
     {
         var result = TryInsertNear(existingValue, value, comparer, addBefore: false);
@@ -232,65 +322,54 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// Gets an enumerator for values in the list.
+    /// Returns an enumerator that iterates through the values in the list.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// This function only enumerates the available values, and skips nodes whose values have been collected.
-    /// </para>
-    /// <para>
-    /// New nodes added during enumeration may be included in the enumeration, depending on timing; see <see cref="Enumerator.WasAddedDuringEnumeration" />
-    /// and <see cref="Enumerator.AsEnumerable(bool, bool)" /> for controlling this behavior.
-    /// </para>
-    /// <inheritdoc cref="GetNodeEnumerator()" path="/remarks/*[position()>2]" />
+    /// <para>Nodes whose values have been garbage collected are skipped, so the enumerator never returns <see langword="null"/>. Use
+    /// <see cref="GetNodeEnumerator()"/> to enumerate nodes instead of values.</para>
+    /// <para>Nodes added by other threads while enumerating may be included depending on timing. Use <see cref="Enumerator.WasAddedDuringEnumeration"/> to
+    /// detect them, or <see cref="Enumerator.AsEnumerable(bool, bool)"/> to skip them.</para>
+    /// <para>Enumerating the entire list takes O(n) time. Each step takes O(1) time unless the current node was removed by another thread, in which case the
+    /// enumerator searches forward for the next node that is still present.</para>
     /// </remarks>
     public Enumerator GetEnumerator() => new(GetNodeEnumerator());
 
     /// <summary>
-    /// Gets an enumerator for the values in the list that enumerates from the <paramref name="startNode"/>.
+    /// Returns an enumerator that iterates through the values in the list starting from the position of the specified node.
     /// </summary>
+    /// <param name="startNode">The node to start enumerating from.</param>
     /// <remarks>
-    /// <para>
-    /// <paramref name="startNode"/> will not be included in the enumeration; enumeration will begin from the next valid node after or before it.
-    /// </para>
-    /// <inheritdoc cref="GetEnumerator()" path="/remarks/*" />
+    /// <para><paramref name="startNode"/> itself is not included in the enumeration. The first call to <see cref="Enumerator.MoveNext"/> moves to the value
+    /// after it and the first call to <see cref="Enumerator.MovePrevious"/> moves to the value before it.</para>
+    /// <inheritdoc cref="GetEnumerator()" path="/remarks/*"/>
     /// </remarks>
-    /// <exception cref="InvalidOperationException">If the specified node does not belong to this list.</exception>
+    /// <exception cref="InvalidOperationException"><paramref name="startNode"/> does not belong to this list.</exception>
     public Enumerator GetEnumerator(Node startNode) => new(GetNodeEnumerator(startNode));
 
     /// <summary>
-    /// Gets an enumerator for nodes in the list.
+    /// Returns an enumerator that iterates through the nodes in the list.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// This function enumerates over all nodes in the list, regardless of whether their values have been collected yet or not (value removal is not immediate).
-    /// </para>
-    /// <para>
-    /// New nodes added during enumeration may be included in the enumeration, depending on timing; see <see cref="NodeEnumerator.WasAddedDuringEnumeration" />
-    /// and <see cref="NodeEnumerator.AsEnumerable(bool, bool)" /> for controlling this behavior.
-    /// </para>
-    /// <para>
-    /// Given a list with no new nodes being added concurrently, full enumeration takes O(n) time.
-    /// </para>
-    /// <para>
-    /// An individual enumeration step takes O(1) time when not resuming from a removed node.
-    /// </para>
-    /// <para>
-    /// These big O runtimes assume no nodes being added concurrently, see <see cref="WeakList{T}" /> for remarks about that case.
-    /// </para>
+    /// <para>All nodes are enumerated, including nodes whose values have been garbage collected but have not yet been removed from the list, so
+    /// <see cref="Node.Value"/> may be <see langword="null"/> for some of them. Use <see cref="GetEnumerator()"/> to enumerate only the values that are still
+    /// available.</para>
+    /// <para>Nodes added by other threads while enumerating may be included depending on timing. Use <see cref="NodeEnumerator.WasAddedDuringEnumeration"/> to
+    /// detect them, or <see cref="NodeEnumerator.AsEnumerable(bool, bool)"/> to skip them.</para>
+    /// <para>Enumerating the entire list takes O(n) time. Each step takes O(1) time unless the current node was removed by another thread, in which case the
+    /// enumerator searches forward for the next node that is still present.</para>
     /// </remarks>
     public NodeEnumerator GetNodeEnumerator() => new(this, null);
 
     /// <summary>
-    /// Gets an enumerator for nodes in the list that enumerates from the <paramref name="startNode"/>.
+    /// Returns an enumerator that iterates through the nodes in the list starting from the position of the specified node.
     /// </summary>
+    /// <param name="startNode">The node to start enumerating from.</param>
     /// <remarks>
-    /// <para>
-    /// <paramref name="startNode"/> will not be included in the enumeration; enumeration will begin from the next valid node after or before it.
-    /// </para>
-    /// <inheritdoc cref="GetNodeEnumerator()" path="/remarks/*" />
+    /// <para><paramref name="startNode"/> itself is not included in the enumeration. The first call to <see cref="NodeEnumerator.MoveNext"/> moves to the node
+    /// after it and the first call to <see cref="NodeEnumerator.MovePrevious"/> moves to the node before it.</para>
+    /// <inheritdoc cref="GetNodeEnumerator()" path="/remarks/*"/>
     /// </remarks>
-    /// <exception cref="InvalidOperationException">If the specified node does not belong to this list.</exception>
+    /// <exception cref="InvalidOperationException"><paramref name="startNode"/> does not belong to this list.</exception>
     public NodeEnumerator GetNodeEnumerator(Node startNode)
     {
         CheckNode(startNode);
@@ -304,13 +383,15 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     IEnumerator IEnumerable.GetEnumerator() => new HeapValueEnumerator(GetEnumerator(), reversed: false, skipNewNodes: false);
 
     /// <summary>
-    /// Finds the first node matching the specified predicate - this method has the same runtime as <see cref="GetEnumerator()" /> plus O(n * predicate).
+    /// Searches for the first value in the list that matches the specified predicate.
     /// </summary>
+    /// <param name="match">The predicate that defines the conditions of the value to search for.</param>
+    /// <returns>The node and value of the first match, or <see langword="null"/> if no match was found.</returns>
     /// <remarks>
-    /// <para>
-    /// This method enumerates the list looking for a matching node; if nodes are added by other threads during the operation, they will not be included.
-    /// </para>
+    /// This operation enumerates the list, so it takes O(n) time plus the cost of the predicate calls. Nodes added by other threads during the search are not
+    /// considered.
     /// </remarks>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public (Node Node, T Value)? Find(Predicate<T> match)
     {
         var enumerator = GetEnumerator();
@@ -351,14 +432,16 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// Finds the first node that is considered equal according to the comparer - this method has the same runtime as <see cref="GetEnumerator()" /> plus
-    /// O(n * comparer.Equals).
+    /// Searches for the first value in the list that is equal to the specified value.
     /// </summary>
+    /// <param name="value">The value to search for.</param>
+    /// <param name="comparer">The comparer to use to determine equality, or <see langword="null"/> to use the default comparer.</param>
+    /// <returns>The node and value of the first match, or <see langword="null"/> if no match was found.</returns>
     /// <remarks>
-    /// <para>
-    /// This method enumerates the list looking for a matching node; if nodes are added by other threads during the operation, they will not be included.
-    /// </para>
+    /// This operation enumerates the list, so it takes O(n) time plus the cost of the comparisons. Nodes added by other threads during the search are not
+    /// considered.
     /// </remarks>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public (Node Node, T Value)? Find(T value, IEqualityComparer<T>? comparer = null)
     {
         comparer ??= EqualityComparer<T>.Default;
@@ -400,14 +483,16 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// Determines if the list contains any node that is considered equal according to the comparer - this method has the same runtime as
-    /// <see cref="GetEnumerator()" /> plus O(n * comparer.Equals).
+    /// Determines whether the list contains a value that is equal to the specified value.
     /// </summary>
+    /// <param name="value">The value to search for.</param>
+    /// <param name="comparer">The comparer to use to determine equality, or <see langword="null"/> to use the default comparer.</param>
+    /// <returns><see langword="true"/> if the value was found; otherwise <see langword="false"/>.</returns>
     /// <remarks>
-    /// <para>
-    /// This method enumerates the list looking for a matching node; if nodes are added by other threads during the operation, they will not be included.
-    /// </para>
+    /// This operation enumerates the list, so it takes O(n) time plus the cost of the comparisons. Nodes added by other threads during the search are not
+    /// considered.
     /// </remarks>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public bool Contains(T value, IEqualityComparer<T>? comparer = null)
     {
         // Just delegate to Find:
@@ -415,9 +500,13 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// Removes the specified node from the list if it is still in the list - takes O(1) time.
+    /// Removes the specified node from the list. Does nothing if the node has already been removed.
     /// </summary>
-    /// <exception cref="InvalidOperationException">If the specified node never belonged to this list.</exception>
+    /// <param name="node">The node to remove.</param>
+    /// <remarks>
+    /// This operation takes O(1) time.
+    /// </remarks>
+    /// <exception cref="InvalidOperationException"><paramref name="node"/> does not belong to this list.</exception>
     public void Remove(Node node)
     {
         CheckNode(node);
@@ -426,14 +515,16 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// Removes the first instance of the specified value from the list if it is in the list - this method has the same runtime as
-    /// <see cref="GetEnumerator()" /> plus O(n * comparer.Equals).
+    /// Removes the first value in the list that is equal to the specified value.
     /// </summary>
+    /// <param name="value">The value to remove.</param>
+    /// <param name="comparer">The comparer to use to determine equality, or <see langword="null"/> to use the default comparer.</param>
+    /// <returns><see langword="true"/> if a value was found and removed; otherwise <see langword="false"/>.</returns>
     /// <remarks>
-    /// <para>
-    /// This method enumerates the list looking for a matching node; if nodes are added by other threads during the operation, they will not be included.
-    /// </para>
+    /// This operation enumerates the list, so it takes O(n) time plus the cost of the comparisons. Nodes added by other threads during the search are not
+    /// considered.
     /// </remarks>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public bool Remove(T value, IEqualityComparer<T>? comparer = null)
     {
         comparer ??= EqualityComparer<T>.Default;
@@ -478,16 +569,12 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// Removes all nodes from the list - takes O(n) time if no new nodes are added concurrently.
+    /// Removes all nodes from the list.
     /// </summary>
     /// <remarks>
-    /// <para>
-    /// This method removes all nodes one-by-one; using <see cref="Dispose" /> is faster if you do not need to reuse the list instance.
-    /// </para>
-    /// <para>
-    /// This big O runtime assume no nodes being added concurrently, see <see cref="WeakList{T}" /> for remarks about that case.
-    /// </para>
+    /// Nodes are removed one at a time, so this operation takes O(n) time. <see cref="Dispose"/> is faster if the list will not be used again.
     /// </remarks>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public void Clear()
     {
         // We clear by repeatedly deleting any node we can find until none are left - it is important we do it like this to ensure we only block for O(1)
@@ -503,20 +590,19 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// <para>
-    /// Performs a locked operation on the list, allowing multiple operations to be completed without potential intermediate changes.
-    /// </para>
-    /// <para>
-    /// Note: holding the lock for more than a short period of time may cause finalizer starvation due to blocking the finalizer thread, hence why this API is
-    /// considered unsafe; if you need to perform long-running multi-part operations, you should use your own different lock and ensure you handle concurrent
-    /// removal with it from the list's internal lock (this setup won't block the finalizer).
-    /// </para>
-    /// <para>
-    /// Note: disposing the list from within <paramref name="operation"/> releases the lock immediately, so any code that runs after the dispose call inside the
-    /// operation is no longer protected by it.
-    /// </para>
+    /// Runs the specified operation while holding the list's internal lock, so that multiple operations can be performed without other threads modifying the
+    /// list in between them.
     /// </summary>
-    /// <exception cref="ObjectDisposedException">If the instance has been disposed.</exception>
+    /// <param name="state">A state value to pass to the operation.</param>
+    /// <param name="operation">The operation to run. It receives the list and the state value.</param>
+    /// <remarks>
+    /// <para>The lock is also required by the finalizer thread to remove nodes whose values have been garbage collected, so holding it for more than a short
+    /// time delays finalization of every object in the process. Keep operations short. For long-running compound operations, use your own lock and account for
+    /// nodes being removed from the list concurrently.</para>
+    /// <para>Disposing the list from within <paramref name="operation"/> releases the lock immediately, so any code that runs in the operation after the dispose
+    /// call is no longer protected by it.</para>
+    /// </remarks>
+    /// <exception cref="ObjectDisposedException">The list has been disposed.</exception>
     public void UnsafePerformLockedOperation<TState>(TState state, Action<WeakList<T>, TState> operation)
 #if NET9_0_OR_GREATER
         where TState : allows ref struct
@@ -528,23 +614,20 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// <para>
-    /// Attempts to perform a locked operation on the list, allowing multiple operations to be completed without potential intermediate changes.
-    /// </para>
-    /// <para>
-    /// If the lock could not be immediately acquired, or the list has been disposed, the operation will not be performed and <see langword="false" /> will be
-    /// returned.
-    /// </para>
-    /// <para>
-    /// Note: holding the lock for more than a short period of time may cause finalizer starvation due to blocking the finalizer thread, hence why this API is
-    /// considered unsafe; if you need to perform long-running multi-part operations, you should use your own different lock and ensure you handle concurrent
-    /// removal with it from the list's internal lock (this setup won't block the finalizer).
-    /// </para>
-    /// <para>
-    /// Note: disposing the list from within <paramref name="operation"/> releases the lock immediately, so any code that runs after the dispose call inside the
-    /// operation is no longer protected by it.
-    /// </para>
+    /// Runs the specified operation while holding the list's internal lock if the lock can be acquired immediately, so that multiple operations can be
+    /// performed without other threads modifying the list in between them.
     /// </summary>
+    /// <param name="state">A state value to pass to the operation.</param>
+    /// <param name="operation">The operation to run. It receives the list and the state value.</param>
+    /// <returns><see langword="true"/> if the operation was run; <see langword="false"/> if the lock could not be acquired immediately or the list has been
+    /// disposed.</returns>
+    /// <remarks>
+    /// <para>The lock is also required by the finalizer thread to remove nodes whose values have been garbage collected, so holding it for more than a short
+    /// time delays finalization of every object in the process. Keep operations short. For long-running compound operations, use your own lock and account for
+    /// nodes being removed from the list concurrently.</para>
+    /// <para>Disposing the list from within <paramref name="operation"/> releases the lock immediately, so any code that runs in the operation after the dispose
+    /// call is no longer protected by it.</para>
+    /// </remarks>
     public bool UnsafeTryPerformLockedOperation<TState>(TState state, Action<WeakList<T>, TState> operation)
 #if NET9_0_OR_GREATER
         where TState : allows ref struct
@@ -560,8 +643,13 @@ public sealed partial class WeakList<T> : IEnumerable<T>, IDisposable where T : 
     }
 
     /// <summary>
-    /// Disposes the <see cref="WeakList{T}" />, removing all nodes and preventing further use.
+    /// Removes all nodes from the list and prevents further use. Most members throw <see cref="ObjectDisposedException"/> afterwards, and existing enumerators
+    /// return no further values.
     /// </summary>
+    /// <remarks>
+    /// Disposing is faster than <see cref="Clear"/> and should be preferred for lists that will not be used again, since it also avoids the cost of finalizing
+    /// the list.
+    /// </remarks>
     public void Dispose()
     {
         using var scope = EnterLock(out bool wasDisposed);
