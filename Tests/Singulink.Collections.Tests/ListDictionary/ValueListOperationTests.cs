@@ -668,7 +668,7 @@ public class ValueListOperationTests
         dictionary["a"].ShouldBe([1, 2, 3]);
     }
 
-#if NET8_0_OR_GREATER
+#if NET8_0_OR_GREATER && !TESTING_NETSTANDARD21
 
     [TestMethod]
     public void EnsureCapacity()

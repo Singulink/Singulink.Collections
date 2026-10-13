@@ -1,0 +1,19 @@
+<Project Sdk="MSTest.Sdk/4.5.1">
+  <PropertyGroup>
+    <!-- Runs the main test suite against the .NET Standard 2.1 build of the library, which no supported test runtime would otherwise pick. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Singulink.Collections.Tests</RootNamespace>
+    <LangVersion>14</LangVersion>
+    <DefineConstants>$(DefineConstants);TESTING_NETSTANDARD21</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Singulink.Collections.Tests\**\*.cs" Exclude="..\Singulink.Collections.Tests\bin\**;..\Singulink.Collections.Tests\obj\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The .NET Standard 2.1 build compiles against this package version, so the test project must reference it too. -->
+    <PackageReference Include="System.Collections.Immutable" Version="10.0.12" />
+    <ProjectReference Include="..\..\Source\Singulink.Collections\Singulink.Collections.csproj" SetTargetFramework="TargetFramework=netstandard2.1" />
+  </ItemGroup>
+</Project>

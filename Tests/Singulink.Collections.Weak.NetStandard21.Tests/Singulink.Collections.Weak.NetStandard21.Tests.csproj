@@ -1,0 +1,15 @@
+<Project Sdk="MSTest.Sdk/4.5.1">
+  <PropertyGroup>
+    <!-- Runs the weak collection test suite against the .NET Standard 2.1 build of the library, which no supported test runtime would otherwise pick. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Singulink.Collections.Weak.Tests</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Singulink.Collections.Weak.Tests\**\*.cs" Exclude="..\Singulink.Collections.Weak.Tests\bin\**;..\Singulink.Collections.Weak.Tests\obj\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Source\Singulink.Collections.Weak\Singulink.Collections.Weak.csproj" SetTargetFramework="TargetFramework=netstandard2.1" />
+  </ItemGroup>
+</Project>
