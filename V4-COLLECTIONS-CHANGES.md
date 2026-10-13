@@ -49,7 +49,10 @@ Because every value collection now implements `IGrouping<TKey, TValue>`, a colle
 Previously the read-only and mutable dictionary interfaces were largely parallel sibling hierarchies. They now form a proper inheritance chain where each mutable interface derives from its read-only counterpart:
 
 ```
-IReadOnlyCollectionDictionary<TKey, TValue, TValueCollection>
+IReadOnlyCollectionDictionaryBase<TKey, TValue>                 (members that do not depend on the value collection type)
+        ▲
+        │
+IReadOnlyCollectionDictionary<TKey, TValue, TValueCollection>   (indexer, ValueCollections, TryGetValues)
         ▲                       ▲                   ▲
         │                       │                   │
 IReadOnlyCollectionDictionary<TKey, TValue>   IReadOnlyListDictionary<TKey, TValue>   IReadOnlySetDictionary<TKey, TValue>
@@ -61,6 +64,8 @@ ISetDictionary<TKey, TValue>                           : ICollectionDictionary<T
 ```
 
 `IMap<,>` similarly now derives from `IReadOnlyMap<,>`.
+
+The mutable interfaces derive from two different `TValueCollection` instantiations of the generic read-only interface, so the members that do not depend on `TValueCollection` live in `IReadOnlyCollectionDictionaryBase<TKey, TValue>` where there is only one copy of each. This keeps `Count`, `Keys` and the other shared members unambiguous when accessed through `ICollectionDictionary<TKey, TValue>`, `IListDictionary<TKey, TValue>` or `ISetDictionary<TKey, TValue>`.
 
 #### Why this matters
 

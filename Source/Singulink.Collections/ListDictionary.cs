@@ -78,10 +78,10 @@ public partial class ListDictionary<TKey, TValue> :
     /// </summary>
     public IEqualityComparer<TKey> KeyComparer => _lookup.Comparer;
 
-    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.Keys"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionaryBase{TKey, TValue}.Keys"/>
     public KeyCollection Keys => _keys ??= new KeyCollection(this);
 
-    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.ValueCount"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionaryBase{TKey, TValue}.ValueCount"/>
     public int ValueCount => _valueCount;
 
     /// <summary>
@@ -89,7 +89,7 @@ public partial class ListDictionary<TKey, TValue> :
     /// </summary>
     public ValueListCollection ValueLists => _valueLists ??= new ValueListCollection(this);
 
-    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.Values"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionaryBase{TKey, TValue}.Values"/>
     public ValueCollection Values => _values ??= new ValueCollection(this);
 
     /// <summary>
@@ -137,7 +137,7 @@ public partial class ListDictionary<TKey, TValue> :
         return false;
     }
 
-    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.Contains(TKey, TValue)"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionaryBase{TKey, TValue}.Contains(TKey, TValue)"/>
     public bool Contains(TKey key, TValue value)
     {
         if (_lookup.TryGetValue(key, out var valueList))
@@ -149,7 +149,7 @@ public partial class ListDictionary<TKey, TValue> :
         return false;
     }
 
-    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.ContainsKey(TKey)"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionaryBase{TKey, TValue}.ContainsKey(TKey)"/>
     public bool ContainsKey(TKey key) => _lookup.ContainsKey(key);
 
     /// <summary>
@@ -179,7 +179,7 @@ public partial class ListDictionary<TKey, TValue> :
     /// </summary>
     public ILookup<TKey, TValue> ToLookup() => new Internal.SnapshotLookup<TKey, TValue>(ValueLists, KeyComparer);
 
-    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.GetValueCount(TKey)"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionaryBase{TKey, TValue}.GetValueCount(TKey)"/>
     public int GetValueCount(TKey key)
     {
         if (_lookup.TryGetValue(key, out var valueList))
@@ -281,16 +281,10 @@ public partial class ListDictionary<TKey, TValue> :
     IReadOnlyKeyedList<TKey, TValue> IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyKeyedList<TKey, TValue>>.this[TKey key] => this[key];
 
     /// <inheritdoc cref="Keys"/>
-    IReadOnlyCollection<TKey> IReadOnlyCollectionDictionary<TKey, TValue, IKeyedList<TKey, TValue>>.Keys => Keys;
-
-    /// <inheritdoc cref="Keys"/>
-    IReadOnlyCollection<TKey> IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyKeyedList<TKey, TValue>>.Keys => Keys;
+    IReadOnlyCollection<TKey> IReadOnlyCollectionDictionaryBase<TKey, TValue>.Keys => Keys;
 
     /// <inheritdoc cref="Values"/>
-    IReadOnlyCollection<TValue> IReadOnlyCollectionDictionary<TKey, TValue, IKeyedList<TKey, TValue>>.Values => Values;
-
-    /// <inheritdoc cref="Values"/>
-    IReadOnlyCollection<TValue> IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyKeyedList<TKey, TValue>>.Values => Values;
+    IReadOnlyCollection<TValue> IReadOnlyCollectionDictionaryBase<TKey, TValue>.Values => Values;
 
     /// <inheritdoc cref="ValueLists"/>
     IReadOnlyCollection<IKeyedList<TKey, TValue>> IListDictionary<TKey, TValue>.ValueCollections => ValueLists;

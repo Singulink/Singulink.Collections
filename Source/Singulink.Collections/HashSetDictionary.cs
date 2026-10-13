@@ -80,7 +80,7 @@ public partial class HashSetDictionary<TKey, TValue> :
     /// </summary>
     public IEqualityComparer<TKey> KeyComparer => _lookup.Comparer;
 
-    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.Keys"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionaryBase{TKey, TValue}.Keys"/>
     public KeyCollection Keys => _keys ??= new KeyCollection(this);
 
     /// <summary>
@@ -88,7 +88,7 @@ public partial class HashSetDictionary<TKey, TValue> :
     /// </summary>
     public IEqualityComparer<TValue> ValueComparer => _valueComparer ?? EqualityComparer<TValue>.Default;
 
-    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.ValueCount"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionaryBase{TKey, TValue}.ValueCount"/>
     public int ValueCount => _valueCount;
 
     /// <summary>
@@ -96,7 +96,7 @@ public partial class HashSetDictionary<TKey, TValue> :
     /// </summary>
     public ValueSetCollection ValueSets => _valueSets ??= new ValueSetCollection(this);
 
-    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.Values"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionaryBase{TKey, TValue}.Values"/>
     public ValueCollection Values => _values ??= new ValueCollection(this);
 
     /// <summary>
@@ -144,7 +144,7 @@ public partial class HashSetDictionary<TKey, TValue> :
         return false;
     }
 
-    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.Contains(TKey, TValue)"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionaryBase{TKey, TValue}.Contains(TKey, TValue)"/>
     public bool Contains(TKey key, TValue value)
     {
         if (_lookup.TryGetValue(key, out var valueSet))
@@ -156,7 +156,7 @@ public partial class HashSetDictionary<TKey, TValue> :
         return false;
     }
 
-    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.ContainsKey(TKey)"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionaryBase{TKey, TValue}.ContainsKey(TKey)"/>
     public bool ContainsKey(TKey key) => _lookup.ContainsKey(key);
 
     /// <summary>
@@ -175,7 +175,7 @@ public partial class HashSetDictionary<TKey, TValue> :
         return false;
     }
 
-    /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.GetValueCount(TKey)"/>
+    /// <inheritdoc cref="IReadOnlyCollectionDictionaryBase{TKey, TValue}.GetValueCount(TKey)"/>
     public int GetValueCount(TKey key) => _lookup.TryGetValue(key, out var valueSet) ? valueSet.Count : 0;
 
     /// <inheritdoc cref="IReadOnlyCollectionDictionary{TKey, TValue, TValueCollection}.TryGetValues(TKey, out TValueCollection)"/>
@@ -273,16 +273,10 @@ public partial class HashSetDictionary<TKey, TValue> :
     IReadOnlyKeyedSet<TKey, TValue> IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyKeyedSet<TKey, TValue>>.this[TKey key] => this[key];
 
     /// <inheritdoc cref="Keys"/>
-    IReadOnlyCollection<TKey> IReadOnlyCollectionDictionary<TKey, TValue, IKeyedSet<TKey, TValue>>.Keys => Keys;
-
-    /// <inheritdoc cref="Keys"/>
-    IReadOnlyCollection<TKey> IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyKeyedSet<TKey, TValue>>.Keys => Keys;
+    IReadOnlyCollection<TKey> IReadOnlyCollectionDictionaryBase<TKey, TValue>.Keys => Keys;
 
     /// <inheritdoc cref="Values"/>
-    IReadOnlyCollection<TValue> IReadOnlyCollectionDictionary<TKey, TValue, IKeyedSet<TKey, TValue>>.Values => Values;
-
-    /// <inheritdoc cref="Values"/>
-    IReadOnlyCollection<TValue> IReadOnlyCollectionDictionary<TKey, TValue, IReadOnlyKeyedSet<TKey, TValue>>.Values => Values;
+    IReadOnlyCollection<TValue> IReadOnlyCollectionDictionaryBase<TKey, TValue>.Values => Values;
 
     /// <inheritdoc cref="ValueSets"/>
     IReadOnlyCollection<IKeyedSet<TKey, TValue>> ISetDictionary<TKey, TValue>.ValueCollections => ValueSets;

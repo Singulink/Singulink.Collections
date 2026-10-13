@@ -17,7 +17,7 @@ public interface IReadOnlyCollectionDictionary<TKey, TValue> : IReadOnlyCollecti
 /// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
 /// <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
 /// <typeparam name="TValueCollection">The type of the keyed value collection associated with each key.</typeparam>
-public interface IReadOnlyCollectionDictionary<TKey, TValue, TValueCollection>
+public interface IReadOnlyCollectionDictionary<TKey, TValue, TValueCollection> : IReadOnlyCollectionDictionaryBase<TKey, TValue>
     where TValueCollection : class, IReadOnlyKeyedCollection<TKey, TValue>
 {
     /// <summary>
@@ -29,6 +29,29 @@ public interface IReadOnlyCollectionDictionary<TKey, TValue, TValueCollection>
     /// </remarks>
     TValueCollection this[TKey key] { get; }
 
+    /// <summary>
+    /// Gets a collection containing the keyed value collections in the dictionary.
+    /// </summary>
+    IReadOnlyCollection<TValueCollection> ValueCollections { get; }
+
+    /// <summary>
+    /// Gets the keyed value collection associated with the specified key.
+    /// </summary>
+    /// <param name="key">The key whose value collection to get.</param>
+    /// <param name="valueCollection">When this method returns, contains the keyed value collection associated with the specified key if the key was found;
+    /// otherwise, <see langword="null"/>.</param>
+    /// <returns><see langword="true"/> if the dictionary contains the specified key, otherwise <see langword="false"/>.</returns>
+    bool TryGetValues(TKey key, [MaybeNullWhen(false)] out TValueCollection valueCollection);
+}
+
+/// <summary>
+/// Represents the members of a read-only collection dictionary that do not depend on the type of the keyed value collections. This is the common base of
+/// every collection dictionary interface so that these members remain unambiguous when an interface derives from more than one value collection type.
+/// </summary>
+/// <typeparam name="TKey">The type of the keys in the dictionary.</typeparam>
+/// <typeparam name="TValue">The type of the values in the dictionary.</typeparam>
+public interface IReadOnlyCollectionDictionaryBase<TKey, TValue>
+{
     /// <summary>
     /// Gets the number of keys and associated value collections in the dictionary.
     /// </summary>
@@ -43,11 +66,6 @@ public interface IReadOnlyCollectionDictionary<TKey, TValue, TValueCollection>
     /// Gets the total number of values in the dictionary across all keys.
     /// </summary>
     int ValueCount { get; }
-
-    /// <summary>
-    /// Gets a collection containing the keyed value collections in the dictionary.
-    /// </summary>
-    IReadOnlyCollection<TValueCollection> ValueCollections { get; }
 
     /// <summary>
     /// Gets a collection containing all the values across all the keys in the dictionary.
@@ -77,13 +95,4 @@ public interface IReadOnlyCollectionDictionary<TKey, TValue, TValueCollection>
     /// Gets the number of values associated with the specified key, or zero if the key is not present.
     /// </summary>
     int GetValueCount(TKey key);
-
-    /// <summary>
-    /// Gets the keyed value collection associated with the specified key.
-    /// </summary>
-    /// <param name="key">The key whose value collection to get.</param>
-    /// <param name="valueCollection">When this method returns, contains the keyed value collection associated with the specified key if the key was found;
-    /// otherwise, <see langword="null"/>.</param>
-    /// <returns><see langword="true"/> if the dictionary contains the specified key, otherwise <see langword="false"/>.</returns>
-    bool TryGetValues(TKey key, [MaybeNullWhen(false)] out TValueCollection valueCollection);
 }
