@@ -60,8 +60,10 @@ public class LockedOperationTests
         bool? innerResult = null;
 
         list.UnsafePerformLockedOperation(0, (l, _) => {
-            var task = Task.Run(() => l.UnsafeTryPerformLockedOperation(0, (_, _) => { }));
-            innerResult = task.GetAwaiter().GetResult();
+            // A dedicated thread is used instead of a task because waiting on an unstarted task can inline it onto this thread, which holds the lock.
+            var thread = new Thread(() => innerResult = l.UnsafeTryPerformLockedOperation(0, (_, _) => { }));
+            thread.Start();
+            thread.Join();
         });
 
         innerResult.ShouldBe(false);
@@ -78,7 +80,11 @@ public class LockedOperationTests
         Should.Throw<InvalidOperationException>(() => list.UnsafePerformLockedOperation(0, (_, _) => throw new InvalidOperationException()));
         Should.Throw<InvalidOperationException>(() => list.UnsafeTryPerformLockedOperation(0, (_, _) => throw new InvalidOperationException()));
 
-        Task.Run(() => list.UnsafeTryPerformLockedOperation(0, (_, _) => { })).GetAwaiter().GetResult().ShouldBeTrue();
+        bool? result = null;
+        var thread = new Thread(() => result = list.UnsafeTryPerformLockedOperation(0, (_, _) => { }));
+        thread.Start();
+        thread.Join();
+        result.ShouldBe(true);
         list.AddLast(new object());
         list.Count.ShouldBe(1);
     }
@@ -104,20 +110,22 @@ public class LockedOperationTests
         using var started = new ManualResetEventSlim();
         using var release = new ManualResetEventSlim();
 
-        var locked = Task.Run(() => list.UnsafePerformLockedOperation(0, (l, _) => {
+        var locked = new Thread(() => list.UnsafePerformLockedOperation(0, (l, _) => {
             started.Set();
             release.Wait();
             l.AddLast(value);
         }));
 
+        locked.Start();
         started.Wait();
 
-        var adder = Task.Run(() => list.AddLast(new object()));
-        adder.Wait(100).ShouldBeFalse();
+        var adder = new Thread(() => list.AddLast(new object()));
+        adder.Start();
+        adder.Join(100).ShouldBeFalse();
 
         release.Set();
-        locked.GetAwaiter().GetResult();
-        adder.GetAwaiter().GetResult();
+        locked.Join();
+        adder.Join();
 
         list.Count.ShouldBe(2);
         list.First().ShouldBeSameAs(value);

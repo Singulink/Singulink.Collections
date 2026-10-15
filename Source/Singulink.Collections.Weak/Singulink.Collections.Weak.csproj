@@ -19,13 +19,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="PolySharp" Version="1.16.0" PrivateAssets="All" />
+    <PackageReference Include="PolySharp" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('netstandard2.1', '$(TargetFramework)'))">
-    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" />
   </ItemGroup>
   <ItemGroup Condition="$([MSBuild]::IsTargetFrameworkCompatible('netstandard2.0', '$(TargetFramework)'))">
-    <PackageReference Include="System.Memory" Version="4.6.3" />
+    <PackageReference Include="System.Memory" />
   </ItemGroup>
 </Project>
