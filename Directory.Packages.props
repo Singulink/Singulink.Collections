@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Weavers">
-    <PackageVersion Include="Singulink.RuntimeNullables" Version="3.0.0" />
+    <PackageVersion Include="Singulink.RuntimeNullables" Version="3.1.0" />
   </ItemGroup>
 
   <ItemGroup Label="Testing">
