@@ -243,14 +243,14 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
 #if NET
                 Debug.Assert(
                     !(hasNodeValue
-                        && (_dependentHandle.IsAllocated || _finalizeHelperNode.Handle != IntPtr.Zero || _trackingInfoHandle.Handle != IntPtr.Zero)),
+                        && (_dependentHandle.IsAllocated || _finalizeHelperNode.Handle != nint.Zero || _trackingInfoHandle.Handle != nint.Zero)),
                     "These values should already have been disposed in RemoveFromContainer.");
                 _dependentHandle.Dispose();
                 _finalizeHelperNode.Dispose();
                 _trackingInfoHandle.Dispose();
 #else
                 Debug.Assert(
-                    !(hasNodeValue && (_value.Handle != IntPtr.Zero || _cwtNode.Handle != IntPtr.Zero)),
+                    !(hasNodeValue && (_value.Handle != nint.Zero || _cwtNode.Handle != nint.Zero)),
                     "These values should already have been disposed in RemoveFromContainer.");
                 _value.Dispose();
                 _cwtNode.Dispose();
@@ -266,9 +266,9 @@ internal sealed class InternalNode<T, TNode, TContainer, TNodeHelpers>
     // Helper for all the places where we want to quickly dispose the internal node from the container (e.g., for disposing the list):
     internal void EarlyDispose(InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelpers> internalNodeHelper, Lock? locker, bool isDisposed)
     {
-        var impl = new StrongHandle(Interlocked.Exchange(ref internalNodeHelper._impl.Handle, IntPtr.Zero));
+        var impl = new StrongHandle(Interlocked.Exchange(ref internalNodeHelper._impl.Handle, nint.Zero));
 
-        if (impl.Handle != IntPtr.Zero)
+        if (impl.Handle != nint.Zero)
         {
             Debug.Assert(isDisposed || locker is null || locker.IsHeldByCurrentThread, "Lock should be held by current thread.");
             _finalizeAttemptCount = -1;

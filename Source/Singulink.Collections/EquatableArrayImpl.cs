@@ -81,7 +81,7 @@ internal struct EquatableArrayImpl<T>
         foreach (T item in _array)
             hc.Add(item);
         int result = hc.ToHashCode();
-        if (IntPtr.Size < 8)
+        if (nint.Size < 8)
             result += (result == 0) ? 1 : 0;
         Volatile.Write(ref _hashCode, ((nint)1 << 32) | (nint)(nuint)(uint)result);
         return result;
@@ -95,7 +95,7 @@ internal struct EquatableArrayImpl<T>
         foreach (T item in _array)
             hc.Add(item is null ? 0 : equalityComparer.GetHashCode(item));
         int result = hc.ToHashCode();
-        if (IntPtr.Size < 8)
+        if (nint.Size < 8)
             result += (result == 0) ? 1 : 0;
         Volatile.Write(ref _hashCode, ((nint)1 << 32) | (nint)(nuint)(uint)result);
         return result;

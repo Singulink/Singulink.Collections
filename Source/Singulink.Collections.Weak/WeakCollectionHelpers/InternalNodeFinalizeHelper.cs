@@ -19,9 +19,9 @@ internal sealed class InternalNodeFinalizeHelper<T, TNode, TContainer, TNodeHelp
     ~InternalNodeFinalizeHelper()
     {
         // Get the node to remove, or discover if we've already been disposed:
-        var impl = new StrongHandle(Interlocked.Exchange(ref _impl.Handle, IntPtr.Zero));
+        var impl = new StrongHandle(Interlocked.Exchange(ref _impl.Handle, nint.Zero));
 
-        if (impl.Handle == IntPtr.Zero)
+        if (impl.Handle == nint.Zero)
         {
             Debug.Fail("InternalNodeFinalizeHelper finalizer invoked, but was already disposed.");
         }

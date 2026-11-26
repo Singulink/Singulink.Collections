@@ -143,9 +143,9 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
         {
             if (GetInternalNodeHelper() is { } helper)
             {
-                var impl = new StrongHandle(Interlocked.Exchange(ref helper._impl.Handle, IntPtr.Zero));
+                var impl = new StrongHandle(Interlocked.Exchange(ref helper._impl.Handle, nint.Zero));
 
-                if (impl.Handle != IntPtr.Zero && internalNode.Dispose(disposing: true, self, ref helper._impl, impl))
+                if (impl.Handle != nint.Zero && internalNode.Dispose(disposing: true, self, ref helper._impl, impl))
                 {
                     GC.SuppressFinalize(helper);
                 }
@@ -192,7 +192,7 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
         if (wasDisposed)
             return false;
 
-        if (helper._impl.Handle == IntPtr.Zero)
+        if (helper._impl.Handle == nint.Zero)
             return false;
 
         var internalNode = _internalNode;
@@ -393,6 +393,6 @@ internal struct NodeState<T, TNode, TContainer, TNodeHelpers>
     /// </remarks>
     public readonly bool IsFinalizeHelperHandleZero()
     {
-        return (GetInternalNodeHelper()?._impl.Handle).GetValueOrDefault() == IntPtr.Zero;
+        return (GetInternalNodeHelper()?._impl.Handle).GetValueOrDefault() == nint.Zero;
     }
 }
