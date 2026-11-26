@@ -400,3 +400,30 @@ dotnet_diagnostic.IDE0059.severity = warning
 
 # RS0030: Do not use banned APIs
 dotnet_diagnostic.RS0030.severity = error
+
+# SA1504: All accessors should be single-line or multi-line
+dotnet_diagnostic.SA1504.severity = none
+
+########### Opaque GC handle values (IntPtr) ###########
+[{Source/Singulink.Collections.Weak/StrongHandle.cs,Source/Singulink.Collections.Weak/WeakHandle.cs,Source/Singulink.Collections.Weak/WeakCollectionHelpers/InternalNode.cs,Source/Singulink.Collections.Weak/WeakCollectionHelpers/InternalNodeFinalizeHelper.cs,Source/Singulink.Collections.Weak/WeakCollectionHelpers/NodeState.cs,Source/Singulink.Collections/EquatableArrayImpl.cs}]
+
+# SA1121 asks for nint in place of IntPtr on .NET 7+ targets, but these projects also build .NET Standard targets where nint.Zero/nint.Size
+# do not exist, and the code uses IntPtr for opaque handles on purpose. StyleCop's own fix for multi-targeted projects
+# (stylecop.compatibility.multiTargetsLegacyFrameworks, DotNetAnalyzers/StyleCopAnalyzers#4443) is not in a release yet: remove this section when it ships.
+
+# SA1121: Use built-in type alias
+dotnet_diagnostic.SA1121.severity = none
+
+########### Vendored BCL source ###########
+[Source/Singulink.Collections.Weak/Polyfills/**.cs]
+
+# Copied .NET BCL source (dotnet/runtime ConcurrentDictionary and HashHelpers): kept as upstream wrote it, so StyleCop rules it doesn't follow are off here
+
+# SA1143: Conditional expressions must be formatted consistently
+dotnet_diagnostic.SA1143.severity = none
+
+# SA1315: Parameter names should match inherited names
+dotnet_diagnostic.SA1315.severity = none
+
+# SA1413: Use trailing comma in multi-line initializers
+dotnet_diagnostic.SA1413.severity = none

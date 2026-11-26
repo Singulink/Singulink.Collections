@@ -32,7 +32,9 @@ public partial class HashSetDictionary<TKey, TValue>
         /// <summary>
         /// Returns a value indicating whether this collection contains the given value set.
         /// </summary>
+#pragma warning disable SA1315 // Parameter names should match inherited names: public API, a rename would break callers using named arguments
         public bool Contains(ValueSet valueSet) => valueSet.Count > 0 && valueSet.Dictionary == _dictionary;
+#pragma warning restore SA1315
 
         /// <summary>
         /// Copies the value sets in this collection to an array starting at the specified index.

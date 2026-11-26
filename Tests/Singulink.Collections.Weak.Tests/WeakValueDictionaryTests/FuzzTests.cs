@@ -154,9 +154,9 @@ public class FuzzTests
         // dictionary.
         void AddDyingValue(int key)
         {
-            Helpers.NotInlined((dictionary: weakDictionary, key), static state =>
+            Helpers.NotInlined((Dictionary: weakDictionary, Key: key), static state =>
             {
-                state.dictionary[state.key] = new();
+                state.Dictionary[state.Key] = new();
             });
         }
 
